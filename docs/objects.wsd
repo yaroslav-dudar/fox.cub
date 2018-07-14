@@ -1,0 +1,26 @@
+@startuml "DB_Objects"
+
+object GameStats
+object Team
+
+object Tournament
+
+object Player
+object PlayerStats
+
+object SportType
+
+object User
+
+GameStats o-- Team
+GameStats o-- Tournament
+
+Team o-- SportType
+
+Tournament o-- SportType
+
+PlayerStats o-- Player
+PlayerStats o-- Tournament
+
+Player o-- SportType
+@enduml

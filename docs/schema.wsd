@@ -1,0 +1,10 @@
+@startuml "Fox.Cub"
+participant DataSourceFactory
+database DB
+participant APIServer
+participant GUI
+
+DataSourceFactory -> DB: import data to persist storage
+DB <-> APIServer: CRUD data
+APIServer <-> GUI: transfer data to graphic interface
+@enduml
