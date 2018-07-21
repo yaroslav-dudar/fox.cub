@@ -1,2 +1,11 @@
 out/
 .vscode
+project/target/*
+target/
+
+ensime-langserver.log
+.ensime
+.vertx/*
+.ensime_cache/*
+
+*.log

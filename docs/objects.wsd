@@ -1,9 +1,10 @@
-@startuml "DB_Objects"
+@startuml "Object diagram"
 
 object GameStats
 object Team
 
 object Tournament
+object TournamentStage
 
 object Player
 object PlayerStats
@@ -13,14 +14,16 @@ object SportType
 object User
 
 GameStats o-- Team
-GameStats o-- Tournament
+GameStats o-- TournamentStage
 
 Team o-- SportType
 
 Tournament o-- SportType
 
+TournamentStage o-- Tournament
+
 PlayerStats o-- Player
-PlayerStats o-- Tournament
+PlayerStats o-- TournamentStage
 
 Player o-- SportType
 @enduml
