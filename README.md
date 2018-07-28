@@ -1,9 +1,3 @@
-# Deploy Vert.x with sbt
+# Fox.Cub
 
-`sbt console`
-
-`import io.vertx.core.Vertx`
-
-`val vertx = Vertx.vertx`
-
-`vertx.deployVerticle("scala:fox.cub.HttpVerticle")`
+`sbt run`

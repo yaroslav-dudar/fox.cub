@@ -1,0 +1,19 @@
+{
+    "restapi": {
+        "port": 8888,
+        "host": "0.0.0.0"
+    },
+    "database": {
+        "host" : "127.0.0.1",
+        "port" : 27017,
+
+        "maxPoolSize" : 50,
+        "minPoolSize" : 25,
+        "maxIdleTimeMS" : 300000, 
+        "maxLifeTimeMS" : 3600000,
+        "waitQueueMultiple"  : 10,
+        "waitQueueTimeoutMS" : 10000,
+        "maintenanceFrequencyMS" : 2000,
+        "maintenanceInitialDelayMS" : 500
+    }
+}
