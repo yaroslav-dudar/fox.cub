@@ -4,6 +4,9 @@
         "host": "0.0.0.0"
     },
     "database": {
+        "db_name": "fox_cub",
+        "useObjectId": true,
+
         "host" : "127.0.0.1",
         "port" : 27017,
 
