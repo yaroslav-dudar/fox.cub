@@ -1,11 +1,18 @@
 package fox.cub.math
 
 import scala.math
+import scala.collection.mutable.ArrayBuffer
 
 /**
  * Conway–Maxwell–Poisson distribution utils
 */
 class CMP {
+
+    /**
+     * @param mu location parameter (e.g Expected value)
+     * @param nu shape parameter
+     * @param x value for each probability calculated
+    */
     def dist(mu: Double, nu: Double, x: Int): Double = {
         val norm = Z(mu, nu)
         val logLike = nu * x * math.log(mu) - nu * math.log(factorial(x)) - norm
@@ -34,5 +41,74 @@ class CMP {
             result
         else
             factorial(number -1, result * number)
+    }
+
+    def distRange(mu: Double, nu: Double, max: Int = 5): ArrayBuffer[Double] = {
+        var dists = ArrayBuffer[Double]()
+        for( x <- 0 to max) {
+            dists += dist(mu, nu, x)
+        }
+        dists
+    }
+
+    /**
+     * Calculate distribution in range [0 - max]
+     * Split [max - Inf] probabilities within [0 - max]
+     * @return probability distribution within [0 - max] range
+    */
+    def adjustedDistRange(mu: Double, nu: Double): ArrayBuffer[Double] = {
+        // configure max value in a result range
+        val max: Int = 5
+
+        var thresholdLow = 0.05
+        var thresholdHigh = 0.15
+
+        var range = distRange(mu, nu, max)
+        var probLeft = 1 - range.sum
+        var dists = ArrayBuffer[Double]()
+        var coefs: List[Double] = null // should be 1 in total
+
+        if (probLeft > thresholdLow && probLeft < thresholdHigh) {
+            // update all probs uniformly
+            coefs = (0 to max).toList.map(_ => 1 / (max + 1).toDouble)
+        } else if (probLeft > thresholdHigh) {
+            // update all probs, but high outcomes should have an advantage
+            coefs = List(0.1, 0.1, 0.15, 0.15, 0.25, 0.25)
+        } else {
+            // update only 0, 1 probs
+            coefs = List(0.5, 0.5) ++ (2 to max).toList.map(_ => 0.0)
+        }
+
+        for( x <- 0 to max) {
+            dists += range(x) + coefs(x) * probLeft
+        }
+        dists
+    }
+
+    /**
+     * Calculate nu param based on input observations
+     * @param observs list of discrete random variables
+     */
+    def getShapeParam(observs: Seq[Int]): Double = {
+        var overdispersionMax = 0.75
+        var underdispersionMax = 1.5
+        // normal dispersion by default
+        var defaultShape = 1.0
+
+        var variance = helpers.discreteVariance(observs)
+        var expVal = helpers.expectedValue(observs)
+
+        var variabilityDiff = variance - expVal
+        if (variabilityDiff < 0) {
+            // underdispersion
+            var extraShape = math.abs(variabilityDiff) / expVal * (underdispersionMax - defaultShape)
+            return extraShape + defaultShape
+        } else if (variabilityDiff > 0) {
+            // overdispersion
+            var extraShape = math.abs(variabilityDiff) / expVal * (defaultShape - overdispersionMax)
+            return defaultShape - math.min(extraShape, defaultShape - overdispersionMax)
+        }
+
+        return defaultShape
     }
 }

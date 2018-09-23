@@ -4,15 +4,19 @@ db.createCollection("game_stats", {
    validator: {
       $jsonSchema: {
          bsonType: "object",
-         required: [ "team", "opponent", "date", "venue", "goals_for", "goals_against", "xG_for", "xG_against" ],
+         required: [ "team", "opponent", "date", "venue", "goals_for", "goals_against", "xG_for", "xG_against", "tournament" ],
          properties: {
             team: {
-               bsonType: "object",
-               description: "must be a string and is required"
+               bsonType: "string",
+               description: "must be an id of a team collection and is required"
             },
             opponent: {
-               bsonType: "object",
-               description: "must be a object and is required"
+               bsonType: "string",
+               description: "must be an id of a team collection and is required"
+            },
+            tournament: {
+                bsonType: "string",
+                description: "must be an id of a tournament collection and is required"
             },
             date: {
                bsonType: "int",
