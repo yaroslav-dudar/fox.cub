@@ -34,7 +34,10 @@ class DatabaseVerticle extends ScalaVerticle {
             consumer.handler(msg => {
                 client.runCommandFuture(msg.body.command, msg.body.query).onComplete{
                     case Success(result: JsonObject) => {
-                        msg.reply(ResultEvent(result))
+                        msg.body.command match {
+                            case "find" | "aggregate" => msg.reply(ResultEvent(result.getJsonObject("cursor")))
+                            case _ => msg.reply(ResultEvent(result))
+                        }
                     }
                     case Failure(cause: com.mongodb.MongoCommandException) => {
                         msg.fail(422, cause.toString)

@@ -8,9 +8,15 @@ import fox.cub.internals.QueryEvent
 object Team {
     private val Collection = "team"
 
-    def get(name: String): QueryEvent = {
-        val nameFilter = Json.obj(("name", Json.obj(("$eq", name))))
-        val query = new JsonObject().put("find", Collection).put("filter", nameFilter)
+    def get(id: String): QueryEvent = {
+        val filter = Json.obj(("_id", id))
+        val query = new JsonObject().put("find", Collection).put("filter", filter)
+        QueryEvent("find", query)
+    }
+
+    def getByTournament(tournamentId: String): QueryEvent = {
+        val filter = Json.obj(("tournaments", tournamentId))
+        val query = new JsonObject().put("find", Collection).put("filter", filter)
         QueryEvent("find", query)
     }
 }

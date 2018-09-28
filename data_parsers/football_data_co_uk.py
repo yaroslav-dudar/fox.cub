@@ -53,13 +53,14 @@ class Downloader:
             print("Download file: %s" % file_url)
             urllib.request.urlretrieve(file_url, file_path)
 
-    def get_db_data(self, tournamnet=DEFUALT_LEAGUES[0]):
+    def get_db_data(self):
         """ Fetch current data from DB """
 
-        tournament_id = str(self.client.fox_cub.tournament.\
-            find_one({"name": tournamnet})["_id"])
-        self.db_data.extend(list(self.client.fox_cub.game_stats.\
-            find({"tournament": tournament_id})))
+        for tournament in DEFUALT_LEAGUES:
+            tournament_id = str(self.client.fox_cub.tournament.\
+                find_one({"name": tournament})["_id"])
+            self.db_data.extend(list(self.client.fox_cub.game_stats.\
+                find({"tournament": tournament_id})))
 
     def is_exists(self, tournament_id, date, team_id):
         """ Check if given data already exists in DB """
@@ -152,6 +153,10 @@ class Downloader:
 if __name__ == "__main__":
     d = Downloader()
     d.get_db_data()
-    d.download()
-    d.upload()
+    #d.download()
+
+    for tournament in DEFUALT_LEAGUES:
+        print("===", tournament, "===")
+        d.upload(tournament)
+
     d.client.close()
