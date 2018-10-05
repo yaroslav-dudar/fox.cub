@@ -105,6 +105,13 @@ class Downloader:
                 except StopIteration:
                     continue
 
+                try:
+                    # check if goals data present
+                    int(row[home_goals])
+                    int(row[away_goals])
+                except:
+                    continue
+
                 team_id = str(team["_id"])
                 opponent_id = str(opponent["_id"])
                 date = int(time.mktime(
@@ -153,7 +160,7 @@ class Downloader:
 if __name__ == "__main__":
     d = Downloader()
     d.get_db_data()
-    #d.download()
+    d.download()
 
     for tournament in DEFUALT_LEAGUES:
         print("===", tournament, "===")

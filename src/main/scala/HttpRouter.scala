@@ -36,17 +36,17 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
     eb.asJava.asInstanceOf[EventBus].registerDefaultCodec(
         classOf[ResultEvent], new ResultEventCodec())
 
-    router.get("/api/v1/game/:id").handler(getGame)
+    router.get("/api/v1/game/:team_id").handler(getGames)
     router.get("/api/v1/team/:tournament_id").handler(getTournamentTeams)
     router.get("/api/v1/tournament").handler(getTournaments)
     router.get("/api/v1/stats/:tournament_id").handler(getGameStats)
 
     def router = _router
 
-    def getGame(context: RoutingContext) {
+    def getGames(context: RoutingContext) {
         var response = context.response
-        var id = context.request.getParam("id")
-        var query = GameStats.get(id.get)
+        var team = context.request.getParam("team_id")
+        var query = GameStats.get(team.get)
 
         val data = eb.sendFuture[ResultEvent](DbQueueName, query).onComplete {
             case Success(result) => {
@@ -54,6 +54,7 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
 
                 logger.info(context.request.path.get)
                 response.putHeader("content-type", "application/json")
+                response.putHeader("Access-Control-Allow-Origin", "*")
                 response.setChunked(true)
                 response.write(json).end()
             }
@@ -75,6 +76,7 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
 
                 logger.info(context.request.path.get)
                 response.putHeader("content-type", "application/json")
+                response.putHeader("Access-Control-Allow-Origin", "*")
                 response.setChunked(true)
                 response.write(json).end()
             }
@@ -95,34 +97,52 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
         val data = eb.sendFuture[ResultEvent](DbQueueName, query).onComplete {
             case Success(result) => {
                 val json = result.body.result
-                
-                val matchupStr = GameStats.getTeamsStrength(json)
-                var homeDist = cmp.adjustedDistRange(matchupStr._1, 1)
-                var awayDist = cmp.adjustedDistRange(matchupStr._2, 1)
+                var matchupStr: Tuple2[Float, Float] = null
 
-                var bEv = new BettingEvents(homeDist, awayDist)
-                
-                var draw = bEv.draw
-                var home = bEv.homeWin
-                var away = bEv.awayWin
-                println(json)
+                try {
+                    matchupStr = GameStats.getTeamsStrength(json)
+                } catch {
+                    case err: Throwable => {
+                        logger.error(err.toString)
+                        val json = Json.obj(("error", err.toString))
+                        response.putHeader("content-type", "application/json")
+                        response.putHeader("Access-Control-Allow-Origin", "*")
+                        response.setChunked(true)
+                        response.write(json.encode).end()
+                        context.fail(404)
+                    }
+                }
 
-                var statsJson = Json.obj(
-                    ("under 2.5", bEv._2_5._1),
-                    ("over 2.5", bEv._2_5._2),
-                    ("under 3.5", bEv._3_5._1),
-                    ("over 3.5", bEv._3_5._2),
-                    ("BTTS", bEv.btts),
-                    ("Home Win", home),
-                    ("Away Win", away),
-                    ("Draw", draw),
-                    ("Home Double Chance", home + draw),
-                    ("Away Double Chance", away + draw))
+                if (matchupStr != null) {
+                    var homeDist = cmp.adjustedDistRange(matchupStr._1, 1)
+                    var awayDist = cmp.adjustedDistRange(matchupStr._2, 1)
 
-                logger.info(context.request.path.get)
-                response.putHeader("content-type", "application/json")
-                response.setChunked(true)
-                response.write(statsJson.encode).end()
+                    var bEv = new BettingEvents(homeDist, awayDist)
+
+                    var draw = bEv.draw
+                    var home = bEv.homeWin
+                    var away = bEv.awayWin
+                    println(json)
+
+                    var statsJson = Json.obj(
+                        ("under 2.5", bEv._2_5._1),
+                        ("over 2.5", bEv._2_5._2),
+                        ("under 3.5", bEv._3_5._1),
+                        ("over 3.5", bEv._3_5._2),
+                        ("BTTS", bEv.btts),
+                        ("Home Win", home),
+                        ("Away Win", away),
+                        ("Draw", draw),
+                        ("Home Double Chance", home + draw),
+                        ("Away Double Chance", away + draw))
+
+                    logger.info(context.request.path.get)
+                    response.putHeader("content-type", "application/json")
+                    response.putHeader("Access-Control-Allow-Origin", "*")
+                    response.setChunked(true)
+                    response.write(statsJson.encode).end()
+                }
+
             }
             case Failure(cause) => {
                 logger.error(cause.toString)
@@ -141,6 +161,7 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
 
                 logger.info(context.request.path.get)
                 response.putHeader("content-type", "application/json")
+                response.putHeader("Access-Control-Allow-Origin", "*")
                 response.setChunked(true)
                 response.write(json).end()
             }

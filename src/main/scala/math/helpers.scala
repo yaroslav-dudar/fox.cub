@@ -1,9 +1,13 @@
 package fox.cub.math
 
 import scala.math
+import scala.collection.mutable.Buffer
 
 object helpers {
-
+    // minimum Mean value
+    val minMean = 0.2F
+    // minimum dataset size for adjustedMean
+    val minSize = 4
     /**
      * Calculate Discrete random variable
     */
@@ -18,7 +22,19 @@ object helpers {
     /**
      * Calculate the Expectation of Discrete varaibale
     */
-    def expectedValue(data: Seq[Int]): Double = {
-        data.sum / data.length.toDouble
+    def expectedValue(data: Seq[Int]): Float = {
+        data.sum / data.length.toFloat
+    }
+
+    /**
+     * Remove extreme outliers from a dataset and calculate mean
+     * Extreme outliers - Max value and Min value
+     * If dataset size < minSize don't remove data
+     */
+    def adjustedMean(data: Buffer[Int]): Float = {
+        if (data.size >= minSize) {
+            data -= (data.max, data.min)
+        }
+        math.max(expectedValue(data), minMean)
     }
 }

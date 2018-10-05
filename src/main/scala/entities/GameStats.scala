@@ -1,15 +1,21 @@
 package fox.cub.model
 
+import scala.collection.JavaConverters._
+import scala.collection.mutable.Buffer
+
 import io.vertx.core.json.JsonObject
 import io.vertx.lang.scala.json.Json
 
 import fox.cub.internals.QueryEvent
+import fox.cub.math.helpers.{adjustedMean, expectedValue}
+import fox.cub.utils.JsonUtils
 
 object GameStats {
     private val Collection = "game_stats"
 
-    def get(id: String): QueryEvent = {
-        val query = new JsonObject().put("find", Collection).put("_id", id)
+    def get(teamId: String): QueryEvent = {
+        val filter = Json.obj(("team", teamId))
+        val query = Json.obj(("find", Collection), ("filter", filter))
         QueryEvent("find", query)
     }
 
@@ -38,16 +44,17 @@ object GameStats {
             )))
         )
 
-        // list of of scored goals by a team
+        // list of of scored and conceded goals by a team
         var teamOutput = (overallOutput._1, overallOutput._2)
         teamOutput._2.put("scored", Json.obj(("$push", "$goals_for")))
+        teamOutput._2.put("conceded", Json.obj(("$push", "$goals_against")))
 
         var homeMatch = Json.obj(("$match", Json.obj(
             ("tournament", touranmentId),
-            //("venue", "home"),
+            ("venue", "home"),
             ("team", homeTeamId))))
 
-        var avgHomeTeam = Json.arr(
+        var homeTeam = Json.arr(
             homeMatch,
             Json.obj(("$bucket",  Json.obj(
                 groupBy, boundaries, default, teamOutput
@@ -56,10 +63,10 @@ object GameStats {
 
         var awayMatch = Json.obj(("$match", Json.obj(
             ("tournament", touranmentId),
-            //("venue", "away"),
+            ("venue", "away"),
             ("team", awayTeamId))))
 
-        var avgAwayTeam = Json.arr(
+        var awayTeam = Json.arr(
             awayMatch,
             Json.obj(("$bucket",  Json.obj(
                 groupBy, boundaries, default, teamOutput
@@ -68,8 +75,8 @@ object GameStats {
 
         var facet = Json.obj(("$facet", Json.obj(
             ("tournament_avg", avgTournament),
-            ("home_team_avg", avgHomeTeam),
-            ("away_team_avg", avgAwayTeam)
+            ("home_team", homeTeam),
+            ("away_team", awayTeam)
         )))
 
         var pipeline = Json.arr(facet)
@@ -84,20 +91,25 @@ object GameStats {
 
     def getTeamsStrength(json: JsonObject) = {
         val stats = json.getJsonArray("firstBatch").getJsonObject(0)
-        println(stats)
         val touranmentStats = stats.getJsonArray("tournament_avg").getJsonObject(0)
-        val homeStats = stats.getJsonArray("home_team_avg").getJsonObject(0)
-        val awayStats = stats.getJsonArray("away_team_avg").getJsonObject(0)
+        val homeStats = stats.getJsonArray("home_team").getJsonObject(0)
+        val awayStats = stats.getJsonArray("away_team").getJsonObject(0)
 
-        var homeAttack = homeStats.getFloat("avgScoredHome") / touranmentStats.getFloat("avgScoredHome")
-        var homeDefend = homeStats.getFloat("avgScoredAway") / touranmentStats.getFloat("avgScoredAway")
+        var homeScoredMean = adjustedMean(JsonUtils.arrayToBuffer(homeStats.getJsonArray("scored")))
+        var awayScoredMean = adjustedMean(JsonUtils.arrayToBuffer(awayStats.getJsonArray("scored")))
 
-        var awayAttack = awayStats.getFloat("avgScoredHome") / touranmentStats.getFloat("avgScoredHome")
-        var awayDefend = awayStats.getFloat("avgScoredAway") / touranmentStats.getFloat("avgScoredAway")
+        var homeConcededMean = adjustedMean(JsonUtils.arrayToBuffer(homeStats.getJsonArray("conceded")))
+        var awayConcededMean = adjustedMean(JsonUtils.arrayToBuffer(awayStats.getJsonArray("conceded")))
+
+        var homeAttack = homeScoredMean / touranmentStats.getFloat("avgScoredHome")
+        var homeDefend = homeConcededMean / touranmentStats.getFloat("avgScoredAway")
+        // avgScoredAway - away team scored avg, avgScoredHome - away team conceded
+        var awayAttack = awayScoredMean / touranmentStats.getFloat("avgScoredAway")
+        var awayDefend = awayConcededMean / touranmentStats.getFloat("avgScoredHome")
 
         var homeStrength = homeAttack * touranmentStats.getFloat("avgScoredHome") * awayDefend
         var awayStrangth = awayAttack * touranmentStats.getFloat("avgScoredAway") * homeDefend
-
+        println((homeStrength, awayStrangth))
         (homeStrength, awayStrangth)
     }
 }
