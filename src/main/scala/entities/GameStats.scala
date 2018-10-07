@@ -13,10 +13,38 @@ import fox.cub.utils.JsonUtils
 object GameStats {
     private val Collection = "game_stats"
 
-    def get(teamId: String): QueryEvent = {
-        val filter = Json.obj(("team", teamId))
-        val query = Json.obj(("find", Collection), ("filter", filter))
-        QueryEvent("find", query)
+    def get(teamId: String, tournamentId: String): QueryEvent = {
+        val aggMatch = Json.obj(
+            ("$match", Json.obj(
+                ("team", teamId), ("tournament", tournamentId))
+            ))
+
+        val teamsToObjects =  Json.obj(("$addFields", Json.obj(
+                ("team", Json.obj(("$toObjectId", "$team"))),
+                ("opponent", Json.obj(("$toObjectId", "$opponent")))
+            )))
+
+        val joinTeam = Json.obj(("$lookup", Json.obj(
+            ("from", "team"),
+            ("localField", "team"),
+            ("foreignField", "_id"),
+            ("as", "team")
+            )))
+
+        val joinOpponent = Json.obj(("$lookup", Json.obj(
+            ("from", "team"),
+            ("localField", "opponent"),
+            ("foreignField", "_id"),
+            ("as", "opponent")
+            )))
+
+        var pipeline = Json.arr(aggMatch, teamsToObjects, joinTeam, joinOpponent)
+        // cursor with the default batch size
+        var cursor = Json.obj()
+        val query = new JsonObject().put("aggregate", Collection).
+            put("pipeline", pipeline).put("cursor", cursor)
+
+        QueryEvent("aggregate", query)
     }
 
     /**

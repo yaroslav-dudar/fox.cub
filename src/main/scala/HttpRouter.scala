@@ -36,7 +36,7 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
     eb.asJava.asInstanceOf[EventBus].registerDefaultCodec(
         classOf[ResultEvent], new ResultEventCodec())
 
-    router.get("/api/v1/game/:team_id").handler(getGames)
+    router.get("/api/v1/game").handler(getGames)
     router.get("/api/v1/team/:tournament_id").handler(getTournamentTeams)
     router.get("/api/v1/tournament").handler(getTournaments)
     router.get("/api/v1/stats/:tournament_id").handler(getGameStats)
@@ -46,7 +46,8 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
     def getGames(context: RoutingContext) {
         var response = context.response
         var team = context.request.getParam("team_id")
-        var query = GameStats.get(team.get)
+        var tournament = context.request.getParam("tournament_id")
+        var query = GameStats.get(team.get, tournament.get)
 
         val data = eb.sendFuture[ResultEvent](DbQueueName, query).onComplete {
             case Success(result) => {
