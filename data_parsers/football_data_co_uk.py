@@ -73,16 +73,16 @@ class Downloader:
         
         return False
 
-    def upload(self, tournamnet=DEFUALT_LEAGUES[0]):
+    def upload(self, tournament=DEFUALT_LEAGUES[0]):
         """ Move data from csv to DB """
 
-        filename = self.file_names[tournamnet]
+        filename = self.file_names[tournament]
         filepath = os.path.join(self.download_to, filename)
         teams = list(self.client.fox_cub.team.find())
 
         # get tournament id from DB
         tournament_id = str(self.client.fox_cub.tournament.\
-            find_one({"name": tournamnet})["_id"])
+            find_one({"name": tournament})["_id"])
 
         with open(filepath, newline='') as csvfile:
             reader = csv.reader(csvfile, delimiter=',', quotechar='|')

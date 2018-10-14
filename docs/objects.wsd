@@ -2,6 +2,7 @@
 
 object GameStats
 object Team
+object TeamNotes
 
 object Tournament
 object TournamentStage
@@ -12,6 +13,8 @@ object PlayerStats
 object SportType
 
 object User
+
+object GameOdds
 
 GameStats o-- Team
 GameStats o-- TournamentStage
@@ -27,4 +30,12 @@ PlayerStats o-- Player
 PlayerStats o-- TournamentStage
 
 Player o-- SportType
+Player o-- Tournament
+
+GameOdds o-- Tournament
+GameOdds o-- TournamentStage
+GameOdds o-- Team
+
+TeamNotes o-- Team
+TeamNotes o-- User
 @enduml

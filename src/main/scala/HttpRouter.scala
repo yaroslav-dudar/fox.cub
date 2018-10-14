@@ -19,6 +19,8 @@ import fox.cub.model.{GameStats, Team, Tournament}
 import fox.cub.math.CMP
 import fox.cub.betting.BettingEvents
 
+import fox.cub.utils.HttpUtils.jsonResponse
+
 /**
  * Web routers, handlers
 */
@@ -51,13 +53,9 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
 
         val data = eb.sendFuture[ResultEvent](DbQueueName, query).onComplete {
             case Success(result) => {
-                val json = result.body.result.encode
-
+                val json = result.body.result
                 logger.info(context.request.path.get)
-                response.putHeader("content-type", "application/json")
-                response.putHeader("Access-Control-Allow-Origin", "*")
-                response.setChunked(true)
-                response.write(json).end()
+                jsonResponse(response, json)
             }
             case Failure(cause) => {
                 logger.error(cause.toString)
@@ -73,13 +71,9 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
 
         val data = eb.sendFuture[ResultEvent](DbQueueName, query).onComplete {
             case Success(result) => {
-                val json = result.body.result.encode
-
+                val json = result.body.result
                 logger.info(context.request.path.get)
-                response.putHeader("content-type", "application/json")
-                response.putHeader("Access-Control-Allow-Origin", "*")
-                response.setChunked(true)
-                response.write(json).end()
+                jsonResponse(response, json)
             }
             case Failure(cause) => {
                 logger.error(cause.toString)
@@ -106,10 +100,7 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
                     case err: Throwable => {
                         logger.error(err.toString)
                         val json = Json.obj(("error", err.toString))
-                        response.putHeader("content-type", "application/json")
-                        response.putHeader("Access-Control-Allow-Origin", "*")
-                        response.setChunked(true)
-                        response.write(json.encode).end()
+                        jsonResponse(response, json)
                         context.fail(404)
                     }
                 }
@@ -138,10 +129,7 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
                         ("Away Double Chance", away + draw))
 
                     logger.info(context.request.path.get)
-                    response.putHeader("content-type", "application/json")
-                    response.putHeader("Access-Control-Allow-Origin", "*")
-                    response.setChunked(true)
-                    response.write(statsJson.encode).end()
+                    jsonResponse(response, statsJson)
                 }
 
             }
@@ -158,13 +146,9 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
 
         val data = eb.sendFuture[ResultEvent](DbQueueName, query).onComplete {
             case Success(result) => {
-                val json = result.body.result.encode
-
+                val json = result.body.result
                 logger.info(context.request.path.get)
-                response.putHeader("content-type", "application/json")
-                response.putHeader("Access-Control-Allow-Origin", "*")
-                response.setChunked(true)
-                response.write(json).end()
+                jsonResponse(response, json)
             }
             case Failure(cause) => {
                 logger.error(cause.toString)
