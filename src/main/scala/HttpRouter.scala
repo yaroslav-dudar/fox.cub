@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import fox.cub.internals.{QueryEvent, QueryEventCodec}
 import fox.cub.internals.{ResultEvent, ResultEventCodec}
 
-import fox.cub.model.{GameStats, Team, Tournament}
+import fox.cub.model.{GameStats, Team, Tournament, GameOdds}
 import fox.cub.math.CMP
 import fox.cub.betting.BettingEvents
 
@@ -42,6 +42,7 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
     router.get("/api/v1/team/:tournament_id").handler(getTournamentTeams)
     router.get("/api/v1/tournament").handler(getTournaments)
     router.get("/api/v1/stats/:tournament_id").handler(getGameStats)
+    router.get("/api/v1/odds/:tournament_id").handler(getOdds)
 
     def router = _router
 
@@ -152,6 +153,24 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
             }
             case Failure(cause) => {
                 logger.error(cause.toString)
+                context.fail(500)
+            }
+        }
+    }
+
+    def getOdds(context: RoutingContext) {
+        var response = context.response
+        var tournamentId = context.request.getParam("tournament_id")
+        var query = GameOdds.getRecent(tournamentId.get)
+
+        val data = eb.sendFuture[ResultEvent](DbQueueName, query).onComplete {
+            case Success(result) => {
+                val json = result.body.result
+                logger.info(context.request.path.get)
+                jsonResponse(response, json)
+            }
+            case Failure(cause) => {
+                logger.error(cause.getStackTraceString)
                 context.fail(500)
             }
         }

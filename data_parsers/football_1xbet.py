@@ -32,9 +32,9 @@ class Downloader:
     HOME_WIN_IDX = 0
     DRAW_IDX = 1
     AWAY_WIN_IDX = 2
-    TOTAL_UNDER_IDX = 6
+    TOTAL_OVER_IDX = 6
     TOTAL_IDX = 7
-    TOTAL_OVER_IDX = 8
+    TOTAL_UNDER_IDX = 8
 
     now = datetime.utcnow()
 
