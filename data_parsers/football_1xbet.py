@@ -50,7 +50,9 @@ class Downloader:
             self.config['database']['port'])
 
         self.league_pages = {
-            DEFUALT_LEAGUES[0]: self.site + "/88637-England-Premier-League/"
+            DEFUALT_LEAGUES[0]: self.site + "/88637-England-Premier-League/",
+            DEFUALT_LEAGUES[1]: self.site + "/105759-England-Championship/",
+            DEFUALT_LEAGUES[2]: self.site + "/96463-Germany-Bundesliga/"
         }
 
         self.html_pages = {}
@@ -103,17 +105,24 @@ class Downloader:
             date = ev.xpath(self.event_date)[0].strip()
             odds = ev.xpath(self.odds_list)
 
+            home_win = odds[self.HOME_WIN_IDX].strip()
+            draw = odds[self.DRAW_IDX].strip()
+            away_win = odds[self.AWAY_WIN_IDX].strip()
+            total = odds[self.TOTAL_IDX].strip()
+            total_under = odds[self.TOTAL_UNDER_IDX].strip()
+            total_over = odds[self.TOTAL_OVER_IDX].strip()
+
             parsed_ev.append({
                 "home_team": teams[0].strip(),
                 "away_team": teams[1].strip(),
                 "event_date": self.get_event_date(date),
                 "odds": {
-                    "home_win": float(odds[self.HOME_WIN_IDX].strip()),
-                    "draw": float(odds[self.DRAW_IDX].strip()),
-                    "away_win": float(odds[self.AWAY_WIN_IDX].strip()),
-                    "total": float(odds[self.TOTAL_IDX].strip()),
-                    "total_under": float(odds[self.TOTAL_UNDER_IDX].strip()),
-                    "total_over": float(odds[self.TOTAL_OVER_IDX].strip()),
+                    "home_win": float(home_win) if home_win != "-" else None,
+                    "draw": float(draw) if draw != "-" else None,
+                    "away_win": float(away_win) if away_win != "-" else None,
+                    "total": float(total) if total != "-" else None,
+                    "total_under": float(total_under) if total_under != "-" else None,
+                    "total_over": float(total_over) if total_over != "-" else None,
                     "scraping_date": self.now
                 }
             })
@@ -156,6 +165,8 @@ class Downloader:
 if __name__ == "__main__":
     d = Downloader()
     d.download()
-    d.upload()
+
+    for tournament in DEFUALT_LEAGUES:
+        d.upload(tournament)
 
     d.client.close()

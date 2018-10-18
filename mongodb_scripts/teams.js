@@ -1,0 +1,76 @@
+db = db.getSiblingDB('fox_cub');
+
+epl = db.tournament.findOne({"name": "Premier League England"})
+efl = db.tournament.findOne({"name": "EFL Championship"})
+bundesliga = db.tournament.findOne({"name": "Bundesliga"})
+
+db.team.insertMany( [
+    // English Premier League
+
+    { name: "Manchester City", news_feed: [], market_value: 1060750000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Man City", football_1xbet_name: "Manchester City"},
+    { name: "Liverpool", news_feed: [], market_value: 891000000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Liverpool", football_1xbet_name: "Liverpool"},
+    { name: "Chelsea", news_feed: [], market_value: 874750000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Chelsea", football_1xbet_name: "Chelsea"},
+    { name: "Manchester United", news_feed: [], market_value: 855000000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Man United", football_1xbet_name: "Manchester United"},
+    { name: "Tottenham Hotspur", news_feed: [], market_value: 834500000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Tottenham", football_1xbet_name: "Tottenham Hotspur"},
+    { name: "Arsenal", news_feed: [], market_value: 554000000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Arsenal", football_1xbet_name: "Arsenal"},
+    { name: "Everton", news_feed: [], market_value: 428000000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Everton", football_1xbet_name: "Everton"},
+    { name: "Leicester City", news_feed: [], market_value: 333500000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Leicester", football_1xbet_name: "Leicester City"},
+    { name: "West Ham United", news_feed: [], market_value: 286500000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "West Ham", football_1xbet_name: "West Ham United"},
+    { name: "Southampton", news_feed: [], market_value: 265600000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Southampton", football_1xbet_name: "Southampton"},
+    { name: "Fulham", news_feed: [], market_value: 248250000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Fulham", football_1xbet_name: "Fulham"},
+    { name: "Crystal Palace", news_feed: [], market_value: 215330000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Crystal Palace", football_1xbet_name: "Crystal Palace"},
+    { name: "Wolverhampton", news_feed: [], market_value: 197700000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Wolves", football_1xbet_name: "Wolverhampton Wanderers"},
+    { name: "Burnley", news_feed: [], market_value: 183750000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Burnley", football_1xbet_name: "Burnley"},
+    { name: "Brighton", news_feed: [], market_value: 177200000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Brighton", football_1xbet_name: "Brighton & Hove Albion"},
+    { name: "Newcastle United", news_feed: [], market_value: 176600000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Newcastle", football_1xbet_name: "Newcastle United"},
+    { name: "Bournemouth", news_feed: [], market_value: 164250000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Bournemouth", football_1xbet_name: "Bournemouth"},
+    { name: "Watford", news_feed: [], market_value: 160700000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Watford", football_1xbet_name: "Watford"},
+    { name: "Huddersfield Town", news_feed: [], market_value: 116100000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Huddersfield", football_1xbet_name: "Huddersfield Town"},
+    { name: "Cardiff City", news_feed: [], market_value: 95150000 , tournaments: [epl._id.valueOf()], football_co_uk_name: "Cardiff", football_1xbet_name: "Cardiff City"},
+    
+    // English Championship
+    { name: "Stoke City", news_feed: [], market_value: 125330000 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Stoke", football_1xbet_name: "Stoke City"},
+    { name: "Aston Villa", news_feed: [], market_value: 89150000 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Aston Villa", football_1xbet_name: "Aston Villa"},
+    { name: "West Bromwich Albion", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "West Brom", football_1xbet_name: "West Bromwich Albion"},
+    { name: "Middlesbrough", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Middlesbrough", football_1xbet_name: "Middlesbrough"},
+    { name: "Swansea City", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Swansea", football_1xbet_name: "Swansea City"},
+    { name: "Leeds United", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Leeds", football_1xbet_name: "Leeds United"},
+    { name: "Derby County", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Derby", football_1xbet_name: "Derby County"},
+    { name: "Sheffield Wednesday", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Sheffield Weds", football_1xbet_name: "Sheffield Wednesday"},
+    { name: "Nottingham Forest", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Nott'm Forest", football_1xbet_name: "Nottingham Forest"},
+    { name: "Hull City", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Hull", football_1xbet_name: "Hull City"},
+    { name: "Reading", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Reading", football_1xbet_name: "Reading"},
+    { name: "Norwich City", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Norwich", football_1xbet_name: "Norwich City"},
+    { name: "Brentford", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Brentford", football_1xbet_name: "Brentford"},
+    { name: "Queens Park Rangers", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "QPR", football_1xbet_name: "Queens Park Rangers"},
+    { name: "Bristol City", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Bristol City", football_1xbet_name: "Bristol City"},
+    { name: "Birmingham City", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Birmingham", football_1xbet_name: "Birmingham City"},
+    { name: "Sheffield United", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Sheffield United", football_1xbet_name: "Sheffield United"},
+    { name: "Blackburn Rovers", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Blackburn", football_1xbet_name: "Blackburn Rovers"},
+    { name: "Bolton Wanderers", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Bolton", football_1xbet_name: "Bolton Wanderers"},
+    { name: "Wigan Athletic", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Wigan", football_1xbet_name: "Wigan Athletic"},
+    { name: "Ipswich Town", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Ipswich", football_1xbet_name: "Ipswich Town"},
+    { name: "Millwall", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Millwall", football_1xbet_name: "Millwall"},
+    { name: "Preston North End", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Preston", football_1xbet_name: "Preston North End"},
+    { name: "Rotherham United", news_feed: [], market_value: 0 , tournaments: [efl._id.valueOf()], football_co_uk_name: "Rotherham", football_1xbet_name: "Rotherham United"},
+
+    // Bundesliga
+    { name: "Bayern Munich", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "Bayern Munich", football_1xbet_name: "Bayern Munich"},
+    { name: "Borussia Dortmund", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "Dortmund", football_1xbet_name: "Borussia Dortmund"},
+    { name: "Bayer 04 Leverkusen", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "Leverkusen", football_1xbet_name: "Bayer 04 Leverkusen"},
+    { name: "RB Leipzig", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "RB Leipzig", football_1xbet_name: "RasenBallsport Leipzig"},
+    { name: "FC Schalke 04", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "Schalke 04", football_1xbet_name: "Schalke 04"},
+    { name: "TSG 1899 Hoffenheim", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "Hoffenheim", football_1xbet_name: "TSG 1899 Hoffenheim"},
+    { name: "Borussia Mönchengladbach", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "M'gladbach", football_1xbet_name: "Borussia Monchengladbach"},
+    { name: "VfB Stuttgart", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "Stuttgart", football_1xbet_name: "VfB Stuttgart"},
+    { name: "VfL Wolfsburg", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "Wolfsburg", football_1xbet_name: "VfL Wolfsburg"},
+    { name: "Eintracht Frankfurt", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "Ein Frankfurt", football_1xbet_name: "Eintracht Frankfurt"},
+    { name: "Hertha BSC", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "Hertha", football_1xbet_name: "Hertha BSC"},
+    { name: "Werder Bremen", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "Werder Bremen", football_1xbet_name: "Werder Вremen"},
+    { name: "Mainz 05", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "Mainz", football_1xbet_name: "1. FSV Mainz 05"},
+    { name: "FC Augsburg", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "Augsburg", football_1xbet_name: "Augsburg"},
+    { name: "Hannover 96", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "Hannover", football_1xbet_name: "Hannover 96"},
+    { name: "SC Freiburg", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "Freiburg", football_1xbet_name: "Freiburg"},
+    { name: "FC Nuremberg", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "Nurnberg", football_1xbet_name: "1. Nurnberg"},
+    { name: "Fortuna Düsseldorf", news_feed: [], market_value: 0 , tournaments: [bundesliga._id.valueOf()], football_co_uk_name: "Fortuna Dusseldorf", football_1xbet_name: "Fortuna Dusseldorf"},
+]);
