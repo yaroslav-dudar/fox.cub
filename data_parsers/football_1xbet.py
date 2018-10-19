@@ -17,12 +17,7 @@ import lxml.html
 
 from config import Config
 
-DEFUALT_LEAGUES = ['Premier League England', 'EFL Championship', 'Bundesliga']
-
 class Downloader:
-
-    team_name = "football_1xbet_name"
-    site = "https://1xbet.com/en/line/Football"
 
     events_list = "//div[@id='games_content']//div[contains(@class, 'c-events__item_col')]"
     team_names = ".//span[@class='c-events__teams']//span[@class='c-events__team']/text()"
@@ -42,18 +37,16 @@ class Downloader:
         ' AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36'
     proxy_list = ['58.27.244.42:41719']
 
-    def __init__(self, leagues=DEFUALT_LEAGUES):
-        self.config = Config()
+    def __init__(self):
+        self.global_conf = Config()
+        self.config = self.global_conf['1xbet_parser']
+        self.db_conf = self.global_conf['database']
 
         self.client = pymongo.MongoClient(
-            self.config['database']['host'],
-            self.config['database']['port'])
-
-        self.league_pages = {
-            DEFUALT_LEAGUES[0]: self.site + "/88637-England-Premier-League/",
-            DEFUALT_LEAGUES[1]: self.site + "/105759-England-Championship/",
-            DEFUALT_LEAGUES[2]: self.site + "/96463-Germany-Bundesliga/"
-        }
+            self.db_conf['host'],
+            self.db_conf['port']
+        )
+        self.db = self.client[self.db_conf['db_name']]
 
         self.html_pages = {}
 
@@ -77,8 +70,8 @@ class Downloader:
     def download(self):
         """ Download html page with odds fron 1xbet site """
 
-        for l in self.league_pages:
-            html = self.request(self.league_pages[l])
+        for l in self.config['tournaments_list']:
+            html = self.request(self.config['tournaments_list'][l])
             self.html_pages[l] = html
 
     def get_event_date(self, str_date):
@@ -93,7 +86,7 @@ class Downloader:
         year = self.now.year+1 if date.month < self.now.month else self.now.year
         return date.replace(year=year)
 
-    def parse_html_page(self, tournament=DEFUALT_LEAGUES[0]):
+    def parse_html_page(self, tournament):
         """ Fetch events with teams and odds from html page """
 
         html_tree = lxml.html.fromstring(self.html_pages[tournament])
@@ -129,19 +122,19 @@ class Downloader:
 
         return parsed_ev
 
-    def upload(self, tournament=DEFUALT_LEAGUES[0]):
+    def upload(self, tournament):
         """ Move data from csv to DB """
 
-        teams = list(self.client.fox_cub.team.find())
+        teams = list(self.db[self.db_conf['collections']['team']].find())
 
         # get tournament id from DB
-        tournament_id = str(self.client.fox_cub.tournament.\
+        tournament_id = str(self.db[self.db_conf['collections']['tournament']].\
             find_one({"name": tournament})["_id"])
 
         for ev in self.parse_html_page(tournament):
             try:
-                team = next(filter(lambda t: t[self.team_name] == ev["home_team"], teams))
-                opponent = next(filter(lambda t: t[self.team_name] == ev["away_team"], teams))
+                team = next(filter(lambda t: t[self.config["find_team_by"]] == ev["home_team"], teams))
+                opponent = next(filter(lambda t: t[self.config["find_team_by"]] == ev["away_team"], teams))
             except StopIteration as e:
                 continue
             
@@ -156,8 +149,10 @@ class Downloader:
             }
 
             push_odds = {"$push": {"odds": ev['odds']}}
+            print(ev['odds'])
             try:
-                self.client.fox_cub.game_odds.update(filter_query, push_odds, upsert=True)
+                self.db[self.db_conf['collections']['odds']].\
+                    update(filter_query, push_odds, upsert=True)
             except Exception as err:
                 print(err)
 
@@ -166,7 +161,7 @@ if __name__ == "__main__":
     d = Downloader()
     d.download()
 
-    for tournament in DEFUALT_LEAGUES:
+    for tournament in d.config['tournaments_list'].keys():
         d.upload(tournament)
 
     d.client.close()

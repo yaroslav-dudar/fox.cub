@@ -17,6 +17,20 @@
         "waitQueueMultiple"  : 10,
         "waitQueueTimeoutMS" : 10000,
         "maintenanceFrequencyMS" : 2000,
-        "maintenanceInitialDelayMS" : 500
+        "maintenanceInitialDelayMS" : 500,
+
+        "collections": {
+            "odds": "game_odds",
+            "tournament": "tournament",
+            "team": "team"
+        }
+    },
+    "1xbet_parser": {
+        "find_team_by": "football_1xbet_name",
+        "tournaments_list": {
+            "Premier League England": "https://1xbet.com/en/line/Football/88637-England-Premier-League/",
+            "EFL Championship": "https://1xbet.com/en/line/Football/105759-England-Championship/",
+            "Bundesliga": "https://1xbet.com/en/line/Football/96463-Germany-Bundesliga/"
+        }
     }
 }
