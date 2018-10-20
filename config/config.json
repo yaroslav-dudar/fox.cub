@@ -22,7 +22,8 @@
         "collections": {
             "odds": "game_odds",
             "tournament": "tournament",
-            "team": "team"
+            "team": "team",
+            "game": "game_stats"
         }
     },
     "1xbet_parser": {
@@ -31,6 +32,14 @@
             "Premier League England": "https://1xbet.com/en/line/Football/88637-England-Premier-League/",
             "EFL Championship": "https://1xbet.com/en/line/Football/105759-England-Championship/",
             "Bundesliga": "https://1xbet.com/en/line/Football/96463-Germany-Bundesliga/"
+        }
+    },
+    "data_co_uk_parser": {
+        "find_team_by": "football_co_uk_name",
+        "tournaments_list": {
+            "Premier League England": "http://www.football-data.co.uk/mmz4281/1819/E0.csv",
+            "EFL Championship": "http://www.football-data.co.uk/mmz4281/1819/E1.csv",
+            "Bundesliga": "http://www.football-data.co.uk/mmz4281/1819/D1.csv"
         }
     }
 }

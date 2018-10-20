@@ -14,52 +14,49 @@ import time
 
 import pymongo
 
-from bson.objectid import ObjectId
-
-DEFUALT_LEAGUES = ['Premier League England', 'EFL Championship', 'Bundesliga']
+from config import Config
 
 class Downloader:
 
-    team_name = "football_co_uk_name"
+    DATA_FOLDER = "data"
 
-    def __init__(self, season='1819', leagues=DEFUALT_LEAGUES):
-        self.file_names = {
-            DEFUALT_LEAGUES[0]: 'E0.csv',
-            DEFUALT_LEAGUES[1]: 'E1.csv',
-            DEFUALT_LEAGUES[2]: 'D1.csv',
-        }
+    def __init__(self):
+        self.global_conf = Config()
+        self.config = self.global_conf['data_co_uk_parser']
+        self.db_conf = self.global_conf['database']
 
-        self.url = 'http://www.football-data.co.uk/mmz4281/'
-
-        self.season = season + "/"
-        self.leagues = leagues
+        self.client = pymongo.MongoClient(
+            self.db_conf['host'],
+            self.db_conf['port']
+        )
+        self.db = self.client[self.db_conf['db_name']]
 
         self.download_to = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), 'data'
+            os.path.dirname(os.path.realpath(__file__)), self.DATA_FOLDER
         )
 
         self.date_format = "%d/%m/%y"
-        self.client = pymongo.MongoClient("localhost", 27017)
-
         self.db_data = []
+
+    def get_filename(self, url):
+        """ Fetch file name from URL """
+        return url.split("/")[-1]
 
     def download(self):
         """ Download csv files with statistics from football-data.co.uk """
 
-        for league in self.leagues:
-            file_name = self.file_names[league]
-            file_path = os.path.join(self.download_to, file_name)
-            file_url = reduce(urljoin, [self.url, self.season, file_name])
-            print("Download file: %s" % file_url)
-            urllib.request.urlretrieve(file_url, file_path)
+        for _, t_url in self.config['tournaments_list'].items():
+            file_path = os.path.join(self.download_to, self.get_filename(t_url))
+            print("Download file: %s" % t_url)
+            urllib.request.urlretrieve(t_url, file_path)
 
     def get_db_data(self):
         """ Fetch current data from DB """
 
-        for tournament in DEFUALT_LEAGUES:
-            tournament_id = str(self.client.fox_cub.tournament.\
+        for tournament in self.config['tournaments_list']:
+            tournament_id = str(self.db[self.db_conf['collections']['tournament']].\
                 find_one({"name": tournament})["_id"])
-            self.db_data.extend(list(self.client.fox_cub.game_stats.\
+            self.db_data.extend(list(self.db[self.db_conf['collections']['game']].\
                 find({"tournament": tournament_id})))
 
     def is_exists(self, tournament_id, date, team_id):
@@ -73,15 +70,17 @@ class Downloader:
         
         return False
 
-    def upload(self, tournament=DEFUALT_LEAGUES[0]):
+    def upload(self, tournament):
         """ Move data from csv to DB """
 
-        filename = self.file_names[tournament]
+        filename = self.get_filename(
+            self.config['tournaments_list'][tournament]
+        )
         filepath = os.path.join(self.download_to, filename)
         teams = list(self.client.fox_cub.team.find())
 
         # get tournament id from DB
-        tournament_id = str(self.client.fox_cub.tournament.\
+        tournament_id = str(self.db[self.db_conf['collections']['tournament']].\
             find_one({"name": tournament})["_id"])
 
         with open(filepath, newline='') as csvfile:
@@ -100,8 +99,8 @@ class Downloader:
             documents = []
             for row in reader:
                 try:
-                    team = next(filter(lambda t: t[self.team_name] == row[home_team], teams))
-                    opponent = next(filter(lambda t: t[self.team_name] == row[away_team], teams))
+                    team = next(filter(lambda t: t[self.config['find_team_by']] == row[home_team], teams))
+                    opponent = next(filter(lambda t: t[self.config['find_team_by']] == row[away_team], teams))
                 except StopIteration:
                     continue
 
@@ -150,7 +149,7 @@ class Downloader:
 
             try:
                 if documents:
-                    self.client.fox_cub.game_stats.insert_many(documents)
+                    self.db[self.db_conf['collections']['game']].insert_many(documents)
                 else:
                     print("No fresh data!")
             except Exception as err:
@@ -162,7 +161,7 @@ if __name__ == "__main__":
     d.get_db_data()
     d.download()
 
-    for tournament in DEFUALT_LEAGUES:
+    for tournament in d.config['tournaments_list']:
         print("===", tournament, "===")
         d.upload(tournament)
 

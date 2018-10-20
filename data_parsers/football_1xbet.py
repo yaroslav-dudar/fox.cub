@@ -161,7 +161,7 @@ if __name__ == "__main__":
     d = Downloader()
     d.download()
 
-    for tournament in d.config['tournaments_list'].keys():
+    for tournament in d.config['tournaments_list']:
         d.upload(tournament)
 
     d.client.close()
