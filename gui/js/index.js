@@ -164,16 +164,24 @@ var GameComponent = {
 var TeamResultsComponent = Vue.component('team-results', {
     props: ['games'],
     template: `
-    <table border="1">
-        <tr>
-            <th>Home Team</th>
-            <th>Score</th>
-            <th>Away Team</th>
-        </tr>
+    <table class="pure-table pure-table-bordered">
+        <thead>
+            <tr>
+                <th>Home Team</th>
+                <th>Score</th>
+                <th>Away Team</th>
+            </tr>
+        </thead>
         <tr v-for="g in games">
-            <td v-if="g.venue == 'home'">{{g.team[0].name}}</td> <td v-else>{{g.opponent[0].name}}</td>
-            <td v-if="g.venue == 'home'">{{g.goals_for}} - {{g.goals_against}}</td> <td v-else>{{g.goals_against}} - {{g.goals_for}}</td>
-            <td v-if="g.venue == 'home'">{{g.opponent[0].name}}</td> <td v-else>{{g.team[0].name}}</td>
+            <td v-if="g.venue == 'home'"><strong>{{g.team[0].name}}</strong></td>
+            <td v-else>{{g.opponent[0].name}}</td>
+
+            <td v-if="g.venue == 'home'">{{g.goals_for}} - {{g.goals_against}}</td>
+            <td v-else>{{g.goals_against}} - {{g.goals_for}}</td>
+
+            <td v-if="g.venue == 'home'">{{g.opponent[0].name}}</td>
+            <td v-else><strong>{{g.team[0].name}}</strong>
+            </td>
         </tr>
     </table>
     `
@@ -182,23 +190,25 @@ var TeamResultsComponent = Vue.component('team-results', {
 var GameOddsHistory = Vue.component('game-odds', {
     props: ['odds_history'],
     template: `
-    <table border="1">
-        <tr>
-            <th>Home Win</th>
-            <th>Draw</th>
-            <th>Away Win</th>
-            <th>Total</th>
-            <th>Total Under</th>
-            <th>Total Over</th>
-            <th>Scraping Date</th>
-        </tr>
+    <table class="pure-table pure-table-bordered">
+        <thead>
+            <tr>
+                <th>Home Win</th>
+                <th>Draw</th>
+                <th>Away Win</th>
+                <th>Total</th>
+                <th>Total Under</th>
+                <th>Total Over</th>
+                <th>Scraping Date</th>
+            </tr>
+        </thead>
         <tr v-for="o in odds_history">
             <td>{{o.home_win}}</td>
             <td>{{o.draw}}</td>
             <td>{{o.away_win}}</td>
             <td>{{o.total}}</td>
-            <td>{{o.total_over}}</td>
             <td>{{o.total_under}}</td>
+            <td>{{o.total_over}}</td>
             <td>{{o.scraping_date.$date}}</td>
         </tr>
     </table>
@@ -208,19 +218,21 @@ var GameOddsHistory = Vue.component('game-odds', {
 var TournamentOddsComponent = Vue.component('tournament-odds', {
     props: ['odds'],
     template: `
-    <table border="1">
-        <tr>
-            <th>Home Team</th>
-            <th>Away Team</th>
-            <th>Home Win</th>
-            <th>Draw</th>
-            <th>Away Win</th>
-            <th>Total</th>
-            <th>Total Under</th>
-            <th>Total Over</th>
-            <th>Event Date</th>
-            <th>Detail Stats</th>
-        </tr>
+    <table class="pure-table pure-table-bordered">
+        <thead>
+            <tr>
+                <th>Home Team</th>
+                <th>Away Team</th>
+                <th>Home Win</th>
+                <th>Draw</th>
+                <th>Away Win</th>
+                <th>Total</th>
+                <th>Total Under</th>
+                <th>Total Over</th>
+                <th>Event Date</th>
+                <th>Detail Stats</th>
+            </tr>
+        </thead>
         <tr v-for="(o,i) in odds">
             <td>{{o.home_team[0].name}}</td>
             <td>{{o.away_team[0].name}}</td>
@@ -228,8 +240,8 @@ var TournamentOddsComponent = Vue.component('tournament-odds', {
             <td>{{o.odds[o.odds.length-1].draw}}</td>
             <td>{{o.odds[o.odds.length-1].away_win}}</td>
             <td>{{o.odds[o.odds.length-1].total}}</td>
-            <td>{{o.odds[o.odds.length-1].total_over}}</td>
             <td>{{o.odds[o.odds.length-1].total_under}}</td>
+            <td>{{o.odds[o.odds.length-1].total_over}}</td>
             <td>{{o.event_date.$date}}</td>
             <td><button
                 v-on:click="redirectToGame(
