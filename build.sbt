@@ -7,14 +7,20 @@ version := "0.0.1"
 scalaVersion := "2.12.6"
 
 libraryDependencies ++= Seq(
-    "io.vertx" %% "vertx-lang-scala" % "3.5.3",
-    "io.vertx" %% "vertx-web-scala" % "3.5.3",
-    "io.vertx" %% "vertx-config-scala" % "3.5.3",
-    "io.vertx" %% "vertx-mongo-client-scala" % "3.5.3"
+    "io.vertx" %% "vertx-lang-scala" % "3.5.4",
+    "io.vertx" %% "vertx-web-scala" % "3.5.4",
+    "io.vertx" %% "vertx-config-scala" % "3.5.4",
+    "io.vertx" %% "vertx-mongo-client-scala" % "3.5.4",
+    "io.vertx" % "vertx-web-api-contract" % "3.5.4"
 )
 
 packageOptions += ManifestAttributes(
     ("Main-Verticle", "scala:fox.cub.HttpVerticle")
+)
+
+resolvers ++= Seq(
+  "Typesafe" at "http://repo.typesafe.com/typesafe/releases/",
+  "Java.net Maven2 Repository" at "http://download.java.net/maven/2/"
 )
 
 fork := true

@@ -35,7 +35,7 @@ class Downloader:
 
     useragent = 'Mozilla/5.0 (X11; Linux x86_64)' +\
         ' AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36'
-    proxy_list = ['58.27.244.42:41719']
+    proxy_list = ['89.17.232.46:60872']
 
     def __init__(self):
         self.global_conf = Config()
