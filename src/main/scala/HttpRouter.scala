@@ -1,36 +1,30 @@
 package fox.cub.http
 
-import io.vertx.scala.ext.web.{Router, RoutingContext}
-import io.vertx.scala.ext.mongo.MongoClient
+import io.vertx.scala.ext.web.Router
 import io.vertx.core.json.JsonObject
 import io.vertx.lang.scala.ScalaLogger
-import io.vertx.lang.scala.json.Json
 import io.vertx.scala.core.Vertx
-import io.vertx.scala.core.eventbus.Message
-import io.vertx.core.eventbus.{EventBus, ReplyException}
-
-import scala.util.{Failure, Success}
-import scala.concurrent.ExecutionContext.Implicits.global
+import io.vertx.core.eventbus.EventBus
+import io.vertx.scala.ext.web.handler.BodyHandler
 
 import fox.cub.internals.{QueryEvent, QueryEventCodec}
 import fox.cub.internals.{ResultEvent, ResultEventCodec}
 
-import fox.cub.model.{GameStats, Team, Tournament, GameOdds}
-import fox.cub.math.CMP
-import fox.cub.betting.BettingEvents
-
-import fox.cub.utils.HttpUtils.jsonResponse
+import fox.cub.router.{
+    GameOdds => RouterGameOdds,
+    GameStats => RouterGameStats,
+    Team => RouterTeam,
+    Tournament => RouterTournament
+}
 
 /**
- * Web routers, handlers
+ * Setup web routers and handlers
 */
 class HttpRouter(vertx: Vertx, config: JsonObject) {
-    private val DbQueueName = "db.queue"
-    // init logger
-    private val logger = ScalaLogger.getLogger(this.getClass.getName)
-    private val _router = Router.router(vertx)
 
-    private val eb = vertx.eventBus()
+    implicit private val logger = ScalaLogger.getLogger(this.getClass.getName)
+    private val _router = Router.router(vertx)
+    implicit private val eb = vertx.eventBus()
 
     // register custom message codecs
     eb.asJava.asInstanceOf[EventBus].registerDefaultCodec(
@@ -38,141 +32,19 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
     eb.asJava.asInstanceOf[EventBus].registerDefaultCodec(
         classOf[ResultEvent], new ResultEventCodec())
 
-    router.get("/api/v1/game").handler(getGames)
-    router.get("/api/v1/team/:tournament_id").handler(getTournamentTeams)
-    router.get("/api/v1/tournament").handler(getTournaments)
-    router.get("/api/v1/stats/:tournament_id").handler(getGameStats)
-    router.get("/api/v1/odds/:tournament_id").handler(getOdds)
+    router.route().handler(BodyHandler.create())
+
+    router.get("/api/v1/game").handler(RouterTeam.getGames)
+    router.get("/api/v1/team/:tournament_id").handler(RouterTournament.getTournamentTeams)
+    router.get("/api/v1/tournament").handler(RouterTournament.getTournamentsList)
+
+    router.get("/api/v1/stats/:tournament_id")
+        .handler(RouterGameStats.getGameStatsValidator.handle)
+        .handler(RouterGameStats.getGameStats)
+
+    router.get("/api/v1/odds/:tournament_id")
+        .handler(RouterGameOdds.getOddsValidator.handle)
+        .handler(RouterGameOdds.getOdds)
 
     def router = _router
-
-    def getGames(context: RoutingContext) {
-        var response = context.response
-        var team = context.request.getParam("team_id")
-        var tournament = context.request.getParam("tournament_id")
-        var query = GameStats.get(team.get, tournament.get)
-
-        val data = eb.sendFuture[ResultEvent](DbQueueName, query).onComplete {
-            case Success(result) => {
-                val json = result.body.result
-                logger.info(context.request.path.get)
-                jsonResponse(response, json)
-            }
-            case Failure(cause) => {
-                logger.error(cause.toString)
-                context.fail(500)
-            }
-        }
-    }
-
-    def getTournamentTeams(context: RoutingContext) {
-        var response = context.response
-        var tournament = context.request.getParam("tournament_id")
-        var query = Team.getByTournament(tournament.get)
-
-        val data = eb.sendFuture[ResultEvent](DbQueueName, query).onComplete {
-            case Success(result) => {
-                val json = result.body.result
-                logger.info(context.request.path.get)
-                jsonResponse(response, json)
-            }
-            case Failure(cause) => {
-                logger.error(cause.toString)
-                context.fail(500)
-            }
-        }
-    }
-
-    def getGameStats(context: RoutingContext) {
-        var response = context.response
-        var tournamentId = context.request.getParam("tournament_id")
-        var homeTeamId = context.request.getParam("home_team_id")
-        var awayTeamId = context.request.getParam("away_team_id")
-        var query = GameStats.getTeamsStrength(tournamentId.get, awayTeamId.get, homeTeamId.get)
-        var cmp = new CMP()
-        val data = eb.sendFuture[ResultEvent](DbQueueName, query).onComplete {
-            case Success(result) => {
-                val json = result.body.result
-                var matchupStr: Tuple2[Float, Float] = null
-
-                try {
-                    matchupStr = GameStats.getTeamsStrength(json)
-                } catch {
-                    case err: Throwable => {
-                        logger.error(err.toString)
-                        val json = Json.obj(("error", err.toString))
-                        jsonResponse(response, json)
-                        context.fail(404)
-                    }
-                }
-
-                if (matchupStr != null) {
-                    var homeDist = cmp.adjustedDistRange(matchupStr._1, 1)
-                    var awayDist = cmp.adjustedDistRange(matchupStr._2, 1)
-
-                    var bEv = new BettingEvents(homeDist, awayDist)
-
-                    var draw = bEv.draw
-                    var home = bEv.homeWin
-                    var away = bEv.awayWin
-                    println(json)
-
-                    var statsJson = Json.obj(
-                        ("under 2.5", bEv._2_5._1),
-                        ("over 2.5", bEv._2_5._2),
-                        ("under 3.5", bEv._3_5._1),
-                        ("over 3.5", bEv._3_5._2),
-                        ("BTTS", bEv.btts),
-                        ("Home Win", home),
-                        ("Away Win", away),
-                        ("Draw", draw),
-                        ("Home Double Chance", home + draw),
-                        ("Away Double Chance", away + draw))
-
-                    logger.info(context.request.path.get)
-                    jsonResponse(response, statsJson)
-                }
-
-            }
-            case Failure(cause) => {
-                logger.error(cause.toString)
-                context.fail(500)
-            }
-        }
-    }
-
-    def getTournaments(context: RoutingContext) {
-        var response = context.response
-        var query = Tournament.getAll()
-
-        val data = eb.sendFuture[ResultEvent](DbQueueName, query).onComplete {
-            case Success(result) => {
-                val json = result.body.result
-                logger.info(context.request.path.get)
-                jsonResponse(response, json)
-            }
-            case Failure(cause) => {
-                logger.error(cause.toString)
-                context.fail(500)
-            }
-        }
-    }
-
-    def getOdds(context: RoutingContext) {
-        var response = context.response
-        var tournamentId = context.request.getParam("tournament_id")
-        var query = GameOdds.getRecent(tournamentId.get)
-
-        val data = eb.sendFuture[ResultEvent](DbQueueName, query).onComplete {
-            case Success(result) => {
-                val json = result.body.result
-                logger.info(context.request.path.get)
-                jsonResponse(response, json)
-            }
-            case Failure(cause) => {
-                logger.error(cause.getStackTraceString)
-                context.fail(500)
-            }
-        }
-    }
 }

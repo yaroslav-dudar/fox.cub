@@ -6,7 +6,7 @@ import scala.collection.mutable.ArrayBuffer
 /**
  * Conway–Maxwell–Poisson distribution utils
 */
-class CMP {
+object CMP {
 
     /**
      * @param mu location parameter (e.g Expected value)

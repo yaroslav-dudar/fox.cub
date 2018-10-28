@@ -79,7 +79,7 @@ object GameStats {
 
         var homeMatch = Json.obj(("$match", Json.obj(
             ("tournament", touranmentId),
-            ("venue", "home"),
+            //("venue", "home"),
             ("team", homeTeamId))))
 
         var homeTeam = Json.arr(
@@ -91,7 +91,7 @@ object GameStats {
 
         var awayMatch = Json.obj(("$match", Json.obj(
             ("tournament", touranmentId),
-            ("venue", "away"),
+            //("venue", "away"),
             ("team", awayTeamId))))
 
         var awayTeam = Json.arr(
@@ -117,9 +117,14 @@ object GameStats {
         QueryEvent("aggregate", query)
     }
 
+    /**
+     * Get team strength based on team attack and opponent defence
+    */
     def getTeamsStrength(json: JsonObject) = {
         val stats = json.getJsonArray("firstBatch").getJsonObject(0)
-        val touranmentStats = stats.getJsonArray("tournament_avg").getJsonObject(0)
+        var touranmentStats = _getTournamentStats(stats)
+
+        println(touranmentStats)
         val homeStats = stats.getJsonArray("home_team").getJsonObject(0)
         val awayStats = stats.getJsonArray("away_team").getJsonObject(0)
 
@@ -139,5 +144,25 @@ object GameStats {
         var awayStrangth = awayAttack * touranmentStats.getFloat("avgScoredAway") * homeDefend
         println((homeStrength, awayStrangth))
         (homeStrength, awayStrangth)
+    }
+
+    /**
+     * Fetch average goals scored in tournament
+     * @param vanueFiltered if true result filtered by vanue
+     *  else return avg scores in tournament
+    */
+    def _getTournamentStats(stats: JsonObject, vanueFiltered: Boolean = false): JsonObject = {
+        var touranmentStats = stats.getJsonArray("tournament_avg").getJsonObject(0)
+
+        if (!vanueFiltered) {
+            val tournamentAvg = (touranmentStats.getFloat("avgScoredAway") +
+                touranmentStats.getFloat("avgScoredHome")) / 2
+            touranmentStats = Json.obj(
+                ("avgScoredHome", tournamentAvg),
+                ("avgScoredAway", tournamentAvg)
+            )
+        }
+
+        touranmentStats
     }
 }

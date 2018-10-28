@@ -7,7 +7,7 @@ object helpers {
     // minimum Mean value
     val minMean = 0.5F
     // minimum dataset size for adjustedMean
-    val minSize = 4
+    val minSize = 5
     /**
      * Calculate Discrete random variable
     */

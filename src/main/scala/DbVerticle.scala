@@ -13,17 +13,21 @@ import scala.collection.mutable.Buffer
 
 import fox.cub.internals.{QueryEvent, ResultEvent}
 
+object DbProps {
+    val QueueName = "db.queue"
+}
+
 /**
  * Module to interact with DB. Contain db connection pool
 */
 class DatabaseVerticle extends ScalaVerticle {
-    private val DbSettings = "database"
-    private val QueueName = "db.queue"
+
+    val DbSettings = "database"
     private var client: MongoClient = null
 
     override def startFuture(): Future[Unit] = {
         var retriever = ConfigRetriever.create(vertx)
-        var consumer = vertx.eventBus.consumer[QueryEvent](QueueName)
+        var consumer = vertx.eventBus.consumer[QueryEvent](DbProps.QueueName)
 
         retriever.getConfigFuture.flatMap(config => {
             client = MongoClient.createShared(
