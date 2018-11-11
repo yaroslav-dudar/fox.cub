@@ -1,20 +1,25 @@
 package fox.cub.http
 
 import io.vertx.scala.ext.web.Router
-import io.vertx.core.json.JsonObject
 import io.vertx.lang.scala.ScalaLogger
 import io.vertx.scala.core.Vertx
+import io.vertx.scala.ext.web.handler.{BodyHandler, CorsHandler}
+
 import io.vertx.core.eventbus.EventBus
-import io.vertx.scala.ext.web.handler.BodyHandler
+import io.vertx.core.json.JsonObject
+import io.vertx.core.http.HttpMethod
 
 import fox.cub.internals.{QueryEvent, QueryEventCodec}
 import fox.cub.internals.{ResultEvent, ResultEventCodec}
+
+import scala.collection.mutable.SortedSet
 
 import fox.cub.router.{
     GameOdds => RouterGameOdds,
     GameStats => RouterGameStats,
     Team => RouterTeam,
-    Tournament => RouterTournament
+    Tournament => RouterTournament,
+    UserNotes => RouterUserNotes
 }
 
 /**
@@ -25,6 +30,7 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
     implicit private val logger = ScalaLogger.getLogger(this.getClass.getName)
     private val _router = Router.router(vertx)
     implicit private val eb = vertx.eventBus()
+    private val crossHeadersAllowed = SortedSet("Content-Type", "X-Requested-With")
 
     // register custom message codecs
     eb.asJava.asInstanceOf[EventBus].registerDefaultCodec(
@@ -33,6 +39,12 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
         classOf[ResultEvent], new ResultEventCodec())
 
     router.route().handler(BodyHandler.create())
+    router.route().handler(
+        CorsHandler.create("*")
+            .allowedMethod(HttpMethod.GET)
+            .allowedMethod(HttpMethod.POST)
+            .allowedHeaders(crossHeadersAllowed)
+    )
 
     router.get("/api/v1/game").handler(RouterTeam.getGames)
     router.get("/api/v1/team/:tournament_id").handler(RouterTournament.getTournamentTeams)
@@ -45,6 +57,14 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
     router.get("/api/v1/odds/:tournament_id")
         .handler(RouterGameOdds.getOddsValidator.handle)
         .handler(RouterGameOdds.getOdds)
+    
+    router.post("/api/v1/note")
+        .handler(RouterUserNotes.addNoteValidator.handle)
+        .handler(RouterUserNotes.addNote)
+    
+    router.get("/api/v1/note/:ref_id")
+        .handler(RouterUserNotes.getNoteValidator.handle)
+        .handler(RouterUserNotes.getNotes)
 
     def router = _router
 }

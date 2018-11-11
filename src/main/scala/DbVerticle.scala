@@ -39,8 +39,8 @@ class DatabaseVerticle extends ScalaVerticle {
                 client.runCommandFuture(msg.body.command, msg.body.query).onComplete{
                     case Success(result: JsonObject) => {
                         msg.body.command match {
-                            case "find" | "aggregate" => msg.reply(ResultEvent(result.getJsonObject("cursor")))
-                            case _ => msg.reply(ResultEvent(result))
+                            case "find" | "aggregate" | "insert" => _processResult(result, msg)
+                            case _ => _processResult(result, msg)
                         }
                     }
                     case Failure(cause: com.mongodb.MongoCommandException) => {
@@ -56,5 +56,16 @@ class DatabaseVerticle extends ScalaVerticle {
 
     override def stopFuture(): Future[Unit] =  {
         Future { client.close }
+    }
+
+    def _processResult(result: JsonObject, msg: Message[QueryEvent]) {
+        val cursor = result.getJsonObject("cursor")
+        val ok = result.getDouble("ok")
+        val writeErr = result.getJsonArray("writeErrors")
+
+        if (cursor != null) msg.reply(ResultEvent(cursor))
+        else if (writeErr != null) msg.fail(422, writeErr.toString)
+        else if (ok == 1) msg.reply(ResultEvent(result))
+        else msg.reply(ResultEvent(result))
     }
 }

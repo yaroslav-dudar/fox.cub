@@ -36,4 +36,40 @@ object Team {
         }
     }
 
+    def getTeam(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
+        var response = context.response
+        var team = context.request.getParam("team_id")
+        var query = model.Team.get(team.get)
+
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+            case Success(result) => {
+                val json = result.body.result
+                logger.info(context.request.path.get)
+                jsonResponse(response, json)
+            }
+            case Failure(cause) => {
+                logger.error(cause.toString)
+                context.fail(500)
+            }
+        }
+    }
+
+    def getTeamNotes(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
+        var response = context.response
+        var team = context.request.getParam("team_id")
+        var user = context.request.getParam("user_id")
+        var query = model.Team.get(team.get)
+
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+            case Success(result) => {
+                val json = result.body.result
+                logger.info(context.request.path.get)
+                jsonResponse(response, json)
+            }
+            case Failure(cause) => {
+                logger.error(cause.toString)
+                context.fail(500)
+            }
+        }
+    }
 }

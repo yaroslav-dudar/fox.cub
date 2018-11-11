@@ -1,12 +1,10 @@
 package fox.cub.model
 
-import java.text.SimpleDateFormat
-import java.util.TimeZone
-
 import io.vertx.lang.scala.json.Json
 import io.vertx.core.json.JsonObject
 
 import fox.cub.internals.QueryEvent
+import fox.cub.utils.Utils.getUTCdate
 
 object GameOdds {
     private val Collection = "game_odds"
@@ -15,8 +13,7 @@ object GameOdds {
      * Get list of not expired game odds
     */
     def getRecent(tournamentId: String): QueryEvent = {
-        val dateFormat = "yyyy-MM-dd'T'HH:mm:ssXXX"
-        val dateFilter = Json.obj(("$gt", Json.obj(("$date", _getUTCdate(dateFormat)))))
+        val dateFilter = Json.obj(("$gt", Json.obj(("$date", getUTCdate()))))
 
         val aggMatch = Json.obj(
             ("$match", Json.obj(
@@ -50,12 +47,6 @@ object GameOdds {
             put("pipeline", pipeline).put("cursor", cursor)
 
         QueryEvent("aggregate", query)
-    }
-
-    def _getUTCdate(dateFormat: String) = {
-        val df = new SimpleDateFormat(dateFormat)
-        df.setTimeZone(TimeZone.getTimeZone("UTC"))
-        df.format(System.currentTimeMillis)
     }
 
 }

@@ -35,7 +35,6 @@ class Downloader:
 
     useragent = 'Mozilla/5.0 (X11; Linux x86_64)' +\
         ' AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36'
-    proxy_list = ['195.138.83.218:53281']
 
     def __init__(self):
         self.global_conf = Config()
@@ -49,11 +48,7 @@ class Downloader:
         self.db = self.client[self.db_conf['db_name']]
 
         self.html_pages = {}
-
-    def get_proxy(self):
-        """ Get proxy host """
-
-        return random.choice(self.proxy_list)
+        self.proxy = "131.108.6.118:50435"
 
     def request(self, url):
         """ Set proxy host and send request to URL """
@@ -61,8 +56,9 @@ class Downloader:
         req = urllib.request.Request(url)
         req.add_header('User-Agent', self.useragent)
 
-        req.set_proxy(self.get_proxy(), 'https')
-        req.set_proxy(self.get_proxy(), 'http')
+        print(self.proxy)
+        req.set_proxy(self.proxy, 'https')
+        req.set_proxy(self.proxy, 'http')
 
         resp = urllib.request.urlopen(req)
         return resp.read().decode('utf-8')
@@ -123,7 +119,12 @@ class Downloader:
         return parsed_ev
 
     def upload(self, tournament):
-        """ Move data from csv to DB """
+        """
+        Upload parsed data to Database
+
+        Raises:
+            ServerSelectionTimeoutError: DB server query timeout
+        """
 
         teams = list(self.db[self.db_conf['collections']['team']].find())
 
