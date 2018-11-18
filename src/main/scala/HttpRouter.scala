@@ -57,11 +57,11 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
     router.get("/api/v1/odds/:tournament_id")
         .handler(RouterGameOdds.getOddsValidator.handle)
         .handler(RouterGameOdds.getOdds)
-    
+
     router.post("/api/v1/note")
         .handler(RouterUserNotes.addNoteValidator.handle)
         .handler(RouterUserNotes.addNote)
-    
+
     router.get("/api/v1/note/:ref_id")
         .handler(RouterUserNotes.getNoteValidator.handle)
         .handler(RouterUserNotes.getNotes)

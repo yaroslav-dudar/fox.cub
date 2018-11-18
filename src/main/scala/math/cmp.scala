@@ -60,8 +60,8 @@ object CMP {
         // configure max value in a result range
         val max: Int = 5
 
-        var thresholdLow = 0.05
-        var thresholdHigh = 0.15
+        var thresholdLow = 0.035
+        var thresholdHigh = 0.07
 
         var range = distRange(mu, nu, max)
         var probLeft = 1 - range.sum
