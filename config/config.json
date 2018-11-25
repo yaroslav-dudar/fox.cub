@@ -28,10 +28,11 @@
     },
     "1xbet_parser": {
         "find_team_by": "football_1xbet_name",
+        "mode": "json",
         "tournaments_list": {
-            "Premier League England": "https://1xbet.com/en/line/Football/88637-England-Premier-League/",
-            "EFL Championship": "https://1xbet.com/en/line/Football/105759-England-Championship/",
-            "Bundesliga": "https://1xbet.com/en/line/Football/96463-Germany-Bundesliga/"
+            "Premier League England": "https://1xbet.com/LineFeed/Get1x2_VZip?sports=1&champs=88637&count=50&lng=en&tf=2200000&tz=2&mode=4&country=2&partner=25&getEmpty=true",
+            "EFL Championship": "https://1xbet.com/LineFeed/Get1x2_VZip?sports=1&champs=105759&count=50&lng=en&tf=2200000&tz=2&mode=4&country=2&partner=25&getEmpty=true",
+            "Bundesliga": "https://1xbet.com/LineFeed/Get1x2_VZip?sports=1&champs=96463&count=50&lng=en&tf=2200000&tz=2&mode=4&country=2&partner=25&getEmpty=true"
         }
     },
     "data_co_uk_parser": {

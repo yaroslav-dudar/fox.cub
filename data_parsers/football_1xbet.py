@@ -2,10 +2,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
-import csv
 import time
-import random
+import json
 
 import urllib.request
 from datetime import datetime
@@ -24,12 +22,22 @@ class Downloader:
     odds_list = ".//div[@class='c-bets']/a/text()"
     event_date = ".//div[contains(@class, 'c-events__time')]/span/text()"
 
-    HOME_WIN_IDX = 0
-    DRAW_IDX = 1
-    AWAY_WIN_IDX = 2
-    TOTAL_OVER_IDX = 6
-    TOTAL_IDX = 7
-    TOTAL_UNDER_IDX = 8
+    html = {
+        'HOME_WIN_IDX': 0,
+        'DRAW_IDX': 1,
+        'AWAY_WIN_IDX': 2,
+        'TOTAL_OVER_IDX': 6,
+        'TOTAL_IDX': 7,
+        'TOTAL_UNDER_IDX': 8
+    }
+
+    json = {
+        'HOME_WIN_IDX': 1,
+        'DRAW_IDX': 2,
+        'AWAY_WIN_IDX': 3,
+        'TOTAL_OVER_IDX': 9,
+        'TOTAL_UNDER_IDX': 10
+    }
 
     now = datetime.utcnow()
 
@@ -68,7 +76,7 @@ class Downloader:
 
         for l in self.config['tournaments_list']:
             html = self.request(self.config['tournaments_list'][l])
-            self.html_pages[l] = html
+            self.html_pages[l] = {'page': html, 'time': int(time.time())}
 
     def get_event_date(self, str_date):
         """
@@ -85,7 +93,7 @@ class Downloader:
     def parse_html_page(self, tournament):
         """ Fetch events with teams and odds from html page """
 
-        html_tree = lxml.html.fromstring(self.html_pages[tournament])
+        html_tree = lxml.html.fromstring(self.html_pages[tournament]['page'])
         events = html_tree.xpath(self.events_list)
 
         parsed_ev = []
@@ -94,12 +102,12 @@ class Downloader:
             date = ev.xpath(self.event_date)[0].strip()
             odds = ev.xpath(self.odds_list)
 
-            home_win = odds[self.HOME_WIN_IDX].strip()
-            draw = odds[self.DRAW_IDX].strip()
-            away_win = odds[self.AWAY_WIN_IDX].strip()
-            total = odds[self.TOTAL_IDX].strip()
-            total_under = odds[self.TOTAL_UNDER_IDX].strip()
-            total_over = odds[self.TOTAL_OVER_IDX].strip()
+            home_win = odds[self.html['HOME_WIN_IDX']].strip()
+            draw = odds[self.html['DRAW_IDX']].strip()
+            away_win = odds[self.html['AWAY_WIN_IDX']].strip()
+            total = odds[self.html['TOTAL_IDX']].strip()
+            total_under = odds[self.html['TOTAL_UNDER_IDX']].strip()
+            total_over = odds[self.html['TOTAL_OVER_IDX']].strip()
 
             parsed_ev.append({
                 "home_team": teams[0].strip(),
@@ -118,6 +126,55 @@ class Downloader:
 
         return parsed_ev
 
+    def parse_json_feed(self, tournament):
+        """ Fetch events with teams and odds from json """
+
+        data = json.loads(self.html_pages[tournament]['page'])
+        parsed_ev = []
+
+        for ev in data['Value']:
+            new_event = {"odds": {}}
+            if ev.get('DI'):
+                # skip aggregate events
+                continue
+
+            new_event['home_team'] = ev['O1']
+            new_event['away_team'] = ev['O2']
+            event_ts = round(self.html_pages[tournament]['time'] + ev['B'], -1)
+            new_event['event_date'] = datetime.utcfromtimestamp(event_ts)
+
+            new_event['odds']['home_win'] = self.get_json_odd(
+                ev['E'], self.json['HOME_WIN_IDX'], 'C')
+            new_event['odds']['draw'] = self.get_json_odd(
+                ev['E'], self.json['DRAW_IDX'], 'C')
+            new_event['odds']['away_win'] = self.get_json_odd(
+                ev['E'], self.json['AWAY_WIN_IDX'], 'C')
+            new_event['odds']['total'] = self.get_json_odd(
+                ev['E'], self.json['TOTAL_OVER_IDX'], 'P')
+            new_event['odds']['total_under'] = self.get_json_odd(
+                ev['E'], self.json['TOTAL_UNDER_IDX'], 'C')
+            new_event['odds']['total_over'] = self.get_json_odd(
+                ev['E'], self.json['TOTAL_OVER_IDX'], 'C')
+            new_event['odds']['scraping_date'] = self.now
+
+            parsed_ev.append(new_event)
+
+        return parsed_ev
+
+    def get_json_odd(self, ev_odds, odd_idx, odd_key):
+        """ Get odd value from array of events """
+        ev = next(filter(lambda e: e['T'] == odd_idx, ev_odds), None)
+        return None if not ev else ev[odd_key]
+
+    def parse(self):
+        if self.config['mode'] == 'json':
+            return self.parse_json_feed
+        elif self.config['mode'] == 'html':
+            return self.parse_html_page
+        else:
+            raise Exception("Invalid scraper mode. Supoort [json, html]")
+
+
     def upload(self, tournament):
         """
         Upload parsed data to Database
@@ -132,7 +189,7 @@ class Downloader:
         tournament_id = str(self.db[self.db_conf['collections']['tournament']].\
             find_one({"name": tournament})["_id"])
 
-        for ev in self.parse_html_page(tournament):
+        for ev in self.parse()(tournament):
             try:
                 team = next(filter(lambda t: t[self.config["find_team_by"]] == ev["home_team"], teams))
                 opponent = next(filter(lambda t: t[self.config["find_team_by"]] == ev["away_team"], teams))
