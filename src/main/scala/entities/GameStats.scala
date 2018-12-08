@@ -9,6 +9,7 @@ import io.vertx.lang.scala.json.Json
 import fox.cub.internals.QueryEvent
 import fox.cub.math.helpers.{adjustedMean, expectedValue}
 import fox.cub.utils.JsonUtils
+import fox.cub.math.CMP
 
 object GameStats {
     private val Collection = "game_stats"
@@ -124,7 +125,6 @@ object GameStats {
         val stats = json.getJsonArray("firstBatch").getJsonObject(0)
         var touranmentStats = _getTournamentStats(stats)
 
-        println(touranmentStats)
         val homeStats = stats.getJsonArray("home_team").getJsonObject(0)
         val awayStats = stats.getJsonArray("away_team").getJsonObject(0)
 
@@ -140,10 +140,29 @@ object GameStats {
         var awayAttack = awayScoredMean / touranmentStats.getFloat("avgScoredAway")
         var awayDefend = awayConcededMean / touranmentStats.getFloat("avgScoredHome")
 
+        touranmentStats = _getTournamentStats(stats, true)
         var homeStrength = homeAttack * touranmentStats.getFloat("avgScoredHome") * awayDefend
         var awayStrangth = awayAttack * touranmentStats.getFloat("avgScoredAway") * homeDefend
-        println((homeStrength, awayStrangth))
         (homeStrength, awayStrangth)
+    }
+
+    def getTeamsScoring(json: JsonObject) = {
+        val stats = json.getJsonArray("firstBatch").getJsonObject(0)
+        var touranmentStats = _getTournamentStats(stats)
+
+        val homeStats = stats.getJsonArray("home_team").getJsonObject(0)
+        val awayStats = stats.getJsonArray("away_team").getJsonObject(0)
+
+        var homeScored: Buffer[Int] = JsonUtils.arrayToBuffer(homeStats.getJsonArray("scored"))
+        var awayScored: Buffer[Int] = JsonUtils.arrayToBuffer(awayStats.getJsonArray("scored"))
+
+        var homeConceded: Buffer[Int] = JsonUtils.arrayToBuffer(homeStats.getJsonArray("conceded"))
+        var awayConceded: Buffer[Int] = JsonUtils.arrayToBuffer(awayStats.getJsonArray("conceded"))
+
+        var shape = CMP.getShapeParam((homeScored, homeConceded).zipped.map(_+_).toList)
+        var meanTotal = (adjustedMean(homeScored) + adjustedMean(awayScored) +
+        adjustedMean(homeConceded) + adjustedMean(awayConceded)) / 2
+        (meanTotal, shape)
     }
 
     /**

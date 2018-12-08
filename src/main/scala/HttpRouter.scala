@@ -19,7 +19,8 @@ import fox.cub.router.{
     GameStats => RouterGameStats,
     Team => RouterTeam,
     Tournament => RouterTournament,
-    UserNotes => RouterUserNotes
+    UserNotes => RouterUserNotes,
+    TestModel => RouterTestModel
 }
 
 /**
@@ -65,6 +66,8 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
     router.get("/api/v1/note/:ref_id")
         .handler(RouterUserNotes.getNoteValidator.handle)
         .handler(RouterUserNotes.getNotes)
+
+    router.post("/api/v1/test/stats").handler(RouterTestModel.getGameStats)
 
     def router = _router
 }

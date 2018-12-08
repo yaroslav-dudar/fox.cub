@@ -39,9 +39,11 @@ object GameStats {
             case Success(result) => {
                 val json = result.body.result
                 var matchupStr: Tuple2[Float, Float] = null
+                var mutchupTotal: Tuple2[Float, Double] = null
 
                 try {
                     matchupStr = model.GameStats.getTeamsStrength(json)
+                    mutchupTotal = model.GameStats.getTeamsScoring(json)
                 } catch {
                     case err: Throwable => {
                         logger.error(err.toString)
@@ -54,8 +56,9 @@ object GameStats {
                 if (matchupStr != null) {
                     var homeDist = CMP.adjustedDistRange(matchupStr._1, 1)
                     var awayDist = CMP.adjustedDistRange(matchupStr._2, 1)
+                    var totalDist = CMP.distRange(mutchupTotal._1, mutchupTotal._2, 8)
 
-                    var bEv = new BettingEvents(homeDist, awayDist)
+                    var bEv = new BettingEvents(homeDist, awayDist, totalDist)
 
                     var draw = bEv.draw
                     var home = bEv.homeWin

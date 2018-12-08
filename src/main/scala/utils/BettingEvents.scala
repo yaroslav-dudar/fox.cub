@@ -1,8 +1,10 @@
 package fox.cub.betting
 
 import scala.collection.mutable.ArrayBuffer
+import scala.math
 
-class BettingEvents(home: ArrayBuffer[Double], away: ArrayBuffer[Double]) {
+class BettingEvents(home: ArrayBuffer[Double], away: ArrayBuffer[Double],
+    total: ArrayBuffer[Double]) {
 
     val home_2_5 = List(2, 1, 0, 0, 1, 0)
     val away_2_5 = List(0, 1, 2, 0, 0, 1)
@@ -15,6 +17,8 @@ class BettingEvents(home: ArrayBuffer[Double], away: ArrayBuffer[Double]) {
         for (i <- 0 to home_2_5.size -1) {
             under += home(home_2_5(i)) * away(away_2_5(i))
         }
+        // take total only if CMP value too low
+        under = math.min(total.take(3).sum, under)
         val over = 1 - under
         (under, over)
     }
@@ -24,6 +28,8 @@ class BettingEvents(home: ArrayBuffer[Double], away: ArrayBuffer[Double]) {
         for (i <- 0 to home_3_5.size -1) {
             under += home(home_3_5(i)) * away(away_3_5(i))
         }
+        // take total only if CMP value too low
+        under = math.min(total.take(4).sum, under)
         val over = 1 - under
         (under, over)
     }

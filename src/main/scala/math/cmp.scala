@@ -56,9 +56,7 @@ object CMP {
      * Split [max - Inf] probabilities within [0 - max]
      * @return probability distribution within [0 - max] range
     */
-    def adjustedDistRange(mu: Double, nu: Double): ArrayBuffer[Double] = {
-        // configure max value in a result range
-        val max: Int = 5
+    def adjustedDistRange(mu: Double, nu: Double, max: Int = 5): ArrayBuffer[Double] = {
 
         var thresholdLow = 0.035
         var thresholdHigh = 0.07
@@ -73,7 +71,8 @@ object CMP {
             coefs = (0 to max).toList.map(_ => 1 / (max + 1).toDouble)
         } else if (probLeft > thresholdHigh) {
             // update all probs, but high outcomes should have an advantage
-            coefs = List(0.1, 0.1, 0.15, 0.15, 0.25, 0.25)
+            val coef_avg = 0.8 / (max - 2)
+            coefs = List(0.1, 0.1) ++ (2 to max).toList.map(_ => coef_avg)
         } else {
             // update only 0, 1 probs
             coefs = List(0.5, 0.5) ++ (2 to max).toList.map(_ => 0.0)
@@ -90,8 +89,8 @@ object CMP {
      * @param observs list of discrete random variables
      */
     def getShapeParam(observs: Seq[Int]): Double = {
-        var overdispersionMax = 0.75
-        var underdispersionMax = 1.5
+        var overdispersionMax = 0.5
+        var underdispersionMax = 1.25
         // normal dispersion by default
         var defaultShape = 1.0
 
