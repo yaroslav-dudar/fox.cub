@@ -51,7 +51,7 @@ object GameStats {
     /**
      * Get both teams avg offensive and defensive strength
      * Get touranment avg offensive and defensive strength
-     * 
+     *
      * @param venue should be away or home
     */
     def getTeamsStrength(touranmentId: String, awayTeamId: String, homeTeamId: String)
@@ -146,6 +146,9 @@ object GameStats {
         (homeStrength, awayStrangth)
     }
 
+    /**
+     * Get metrics for total goals mlp model
+    */
     def getTeamsScoring(json: JsonObject) = {
         val stats = json.getJsonArray("firstBatch").getJsonObject(0)
         var touranmentStats = _getTournamentStats(stats)
@@ -159,10 +162,12 @@ object GameStats {
         var homeConceded: Buffer[Int] = JsonUtils.arrayToBuffer(homeStats.getJsonArray("conceded"))
         var awayConceded: Buffer[Int] = JsonUtils.arrayToBuffer(awayStats.getJsonArray("conceded"))
 
-        var shape = CMP.getShapeParam((homeScored, homeConceded).zipped.map(_+_).toList)
-        var meanTotal = (adjustedMean(homeScored) + adjustedMean(awayScored) +
-        adjustedMean(homeConceded) + adjustedMean(awayConceded)) / 2
-        (meanTotal, shape)
+        Array(
+            getAvgTournamentTotal(stats),
+            expectedValue(homeScored),
+            expectedValue(homeConceded),
+            expectedValue(awayScored),
+            expectedValue(awayConceded))
     }
 
     /**
@@ -183,5 +188,13 @@ object GameStats {
         }
 
         touranmentStats
+    }
+
+    /**
+     * Get average amount of goals per game
+    */
+    def getAvgTournamentTotal(stats: JsonObject) = {
+        var touranmentStats = stats.getJsonArray("tournament_avg").getJsonObject(0)
+        touranmentStats.getFloat("avgScoredAway") + touranmentStats.getFloat("avgScoredHome")
     }
 }

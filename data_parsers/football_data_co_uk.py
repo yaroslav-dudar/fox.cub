@@ -35,7 +35,9 @@ class Downloader:
             os.path.dirname(os.path.realpath(__file__)), self.DATA_FOLDER
         )
 
-        self.date_format = "%d/%m/%y"
+        self.date_format_1 = "%d/%m/%y"
+        self.date_format_2 = "%d/%m/%Y"
+
         self.db_data = []
 
     def get_filename(self, url):
@@ -67,7 +69,7 @@ class Downloader:
                 row["date"] == date and row["team"] == team_id:
 
                 return True
-        
+
         return False
 
     def upload(self, tournament):
@@ -85,7 +87,7 @@ class Downloader:
 
         with open(filepath, newline='') as csvfile:
             reader = csv.reader(csvfile, delimiter=',', quotechar='|')
-            
+
             fields = next(reader)
 
             home_team = fields.index("HomeTeam")
@@ -113,9 +115,15 @@ class Downloader:
 
                 team_id = str(team["_id"])
                 opponent_id = str(opponent["_id"])
-                date = int(time.mktime(
-                    time.strptime(row[game_date], self.date_format)
-                ))
+
+                try:
+                    date = int(time.mktime(
+                        time.strptime(row[game_date], self.date_format_1)
+                    ))
+                except ValueError:
+                    date = int(time.mktime(
+                        time.strptime(row[game_date], self.date_format_2)
+                    ))
 
                 if not self.is_exists(tournament_id, date, team_id):
                     # home team

@@ -16,6 +16,7 @@ import fox.cub.model
 import fox.cub.math.CMP
 import fox.cub.betting.BettingEvents
 import fox.cub.http.validator.{HttpRequestValidator, MongoIdValidator}
+import fox.cub.net.MLPNet
 
 object TestModel {
 
@@ -24,6 +25,7 @@ object TestModel {
     */
     def getGameStats(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
         var response = context.response
+        var tournamentId = context.request.getParam("tournament_id")
         var json = context.getBodyAsJson.get
 
         var matchupStr: Tuple2[Float, Float] = null
@@ -39,11 +41,11 @@ object TestModel {
             }
         }
 
-        val mutchupTotal = model.GameStats.getTeamsScoring(json)
-        println(mutchupTotal)
-        var homeDist = CMP.adjustedDistRange(matchupStr._1, mutchupTotal._2)
-        var awayDist = CMP.adjustedDistRange(matchupStr._2, mutchupTotal._2)
-        var totalDist = CMP.distRange(mutchupTotal._1, mutchupTotal._2, 8)
+        val teamsScoring = model.GameStats.getTeamsScoring(json)
+        println(teamsScoring)
+        var homeDist = CMP.adjustedDistRange(matchupStr._1, 1)
+        var awayDist = CMP.adjustedDistRange(matchupStr._2, 1)
+        var totalDist = MLPNet.predict(teamsScoring, tournamentId.get + ".totals")
 
         var bEv = new BettingEvents(homeDist, awayDist, totalDist)
 

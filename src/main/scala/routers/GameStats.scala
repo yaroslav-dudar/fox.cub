@@ -15,6 +15,7 @@ import fox.cub.model
 import fox.cub.math.CMP
 import fox.cub.betting.BettingEvents
 import fox.cub.http.validator.{HttpRequestValidator, MongoIdValidator}
+import fox.cub.net.MLPNet
 
 object GameStats {
 
@@ -39,11 +40,12 @@ object GameStats {
             case Success(result) => {
                 val json = result.body.result
                 var matchupStr: Tuple2[Float, Float] = null
-                var mutchupTotal: Tuple2[Float, Double] = null
+                var teamsScoring: Array[Float] = null
 
                 try {
                     matchupStr = model.GameStats.getTeamsStrength(json)
-                    mutchupTotal = model.GameStats.getTeamsScoring(json)
+                    teamsScoring = model.GameStats.getTeamsScoring(json)
+                    println(teamsScoring.mkString(" "))
                 } catch {
                     case err: Throwable => {
                         logger.error(err.toString)
@@ -56,14 +58,13 @@ object GameStats {
                 if (matchupStr != null) {
                     var homeDist = CMP.adjustedDistRange(matchupStr._1, 1)
                     var awayDist = CMP.adjustedDistRange(matchupStr._2, 1)
-                    var totalDist = CMP.distRange(mutchupTotal._1, mutchupTotal._2, 8)
+                    var totalDist = MLPNet.predict(teamsScoring, tournamentId.get + ".totals")
 
                     var bEv = new BettingEvents(homeDist, awayDist, totalDist)
 
                     var draw = bEv.draw
                     var home = bEv.homeWin
                     var away = bEv.awayWin
-                    println(json)
 
                     var statsJson = Json.obj(
                         ("under 2.5", bEv._2_5._1),

@@ -1,7 +1,8 @@
 {
     "restapi": {
         "port": 8888,
-        "host": "0.0.0.0"
+        "host": "0.0.0.0",
+        "mlp_models_dir": "mlp.models"
     },
     "database": {
         "db_name": "fox_cub",
@@ -12,7 +13,7 @@
 
         "maxPoolSize" : 50,
         "minPoolSize" : 25,
-        "maxIdleTimeMS" : 300000, 
+        "maxIdleTimeMS" : 300000,
         "maxLifeTimeMS" : 3600000,
         "waitQueueMultiple"  : 10,
         "waitQueueTimeoutMS" : 10000,

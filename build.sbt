@@ -11,7 +11,10 @@ libraryDependencies ++= Seq(
     "io.vertx" %% "vertx-web-scala" % "3.5.4",
     "io.vertx" %% "vertx-config-scala" % "3.5.4",
     "io.vertx" %% "vertx-mongo-client-scala" % "3.5.4",
-    "io.vertx" % "vertx-web-api-contract" % "3.5.4"
+    "io.vertx" % "vertx-web-api-contract" % "3.5.4",
+
+    "org.deeplearning4j" % "deeplearning4j-core" % "1.0.0-beta3",
+    "org.nd4j" % "nd4j-native-platform" % "1.0.0-beta3"
 )
 
 packageOptions += ManifestAttributes(
