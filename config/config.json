@@ -43,5 +43,12 @@
             "EFL Championship": "http://www.football-data.co.uk/mmz4281/1819/E1.csv",
             "Bundesliga": "http://www.football-data.co.uk/mmz4281/1819/D1.csv"
         }
+    },
+    "infogol_parser": {
+        "find_team_by": "infogol_id",
+        "tournaments_list": {
+            "Premier League England": 88,
+            "EFL Championship": 89
+        }
     }
 }

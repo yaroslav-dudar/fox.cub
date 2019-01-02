@@ -9,7 +9,6 @@ import urllib.request
 from datetime import datetime
 
 import pymongo
-from bson.objectid import ObjectId
 
 import lxml.html
 
@@ -195,7 +194,7 @@ class Downloader:
                 opponent = next(filter(lambda t: t[self.config["find_team_by"]] == ev["away_team"], teams))
             except StopIteration as e:
                 continue
-            
+
             team_id = str(team["_id"])
             opponent_id = str(opponent["_id"])
 
