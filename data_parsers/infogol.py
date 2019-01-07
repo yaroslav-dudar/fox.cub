@@ -32,7 +32,6 @@ class InfogolSpider(scrapy.Spider):
     }
 
     url = "https://www.infogolapp.com/DataRequest/ExecuteRequest?r=getTeamCompetitionResults&v={team_id}&v={comp_id}"
-    teams = [[27,88], [163,88]]
 
     def __init__(self, *a, **kw):
         super(InfogolSpider, self).__init__(*a, **kw)

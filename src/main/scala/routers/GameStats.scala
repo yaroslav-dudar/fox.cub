@@ -33,34 +33,37 @@ object GameStats {
         var tournamentId = context.request.getParam("tournament_id")
         var homeTeamId = context.request.getParam("home_team_id")
         var awayTeamId = context.request.getParam("away_team_id")
+        var useActualGoals = true // true by default
+
+        if (context.request.getParam("use_actual_goals") == Some("0")) {
+            useActualGoals = false
+        }
+
         var query = model.GameStats.getTeamsStrength(
             tournamentId.get, awayTeamId.get, homeTeamId.get)
 
         val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
             case Success(result) => {
                 val json = result.body.result
-                var matchupStr: Tuple2[Float, Float] = null
                 var teamsScoring: Array[Float] = null
 
                 try {
-                    matchupStr = model.GameStats.getTeamsStrength(json)
-                    teamsScoring = model.GameStats.getTeamsScoring(json)
+                    teamsScoring = model.GameStats.getTeamsScoring(json, useActualGoals)
                     println(teamsScoring.mkString(" "))
                 } catch {
                     case err: Throwable => {
-                        logger.error(err.toString)
+                        logger.error(err.getStackTraceString)
                         val json = Json.obj(("error", err.toString))
                         jsonResponse(response, json)
                         context.fail(404)
                     }
                 }
 
-                if (matchupStr != null) {
-                    var homeDist = CMP.adjustedDistRange(matchupStr._1, 1)
-                    var awayDist = CMP.adjustedDistRange(matchupStr._2, 1)
+                if (teamsScoring != null) {
                     var totalDist = MLPNet.predict(teamsScoring, tournamentId.get + ".totals")
+                    var scorelineDist = MLPNet.predict(teamsScoring, tournamentId.get + ".score")
 
-                    var bEv = new BettingEvents(homeDist, awayDist, totalDist)
+                    var bEv = new BettingEvents(scorelineDist, totalDist)
 
                     var draw = bEv.draw
                     var home = bEv.homeWin
@@ -85,6 +88,7 @@ object GameStats {
             }
             case Failure(cause) => {
                 logger.error(cause.toString)
+                logger.error(cause.getStackTraceString)
                 context.fail(500)
             }
         }

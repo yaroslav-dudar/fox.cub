@@ -28,10 +28,11 @@ object TestModel {
         var tournamentId = context.request.getParam("tournament_id")
         var json = context.getBodyAsJson.get
 
-        var matchupStr: Tuple2[Float, Float] = null
+        var teamsScoring: Array[Float] = null
 
         try {
-            matchupStr = model.GameStats.getTeamsStrength(json)
+            teamsScoring = model.GameStats.getTeamsScoring(json, false)
+            println(teamsScoring.mkString(" "))
         } catch {
             case err: Throwable => {
                 logger.error(err.toString)
@@ -41,13 +42,10 @@ object TestModel {
             }
         }
 
-        val teamsScoring = model.GameStats.getTeamsScoring(json)
-        println(teamsScoring)
-        var homeDist = CMP.adjustedDistRange(matchupStr._1, 1)
-        var awayDist = CMP.adjustedDistRange(matchupStr._2, 1)
         var totalDist = MLPNet.predict(teamsScoring, tournamentId.get + ".totals")
+        var scorelineDist = MLPNet.predict(teamsScoring, tournamentId.get + ".score")
 
-        var bEv = new BettingEvents(homeDist, awayDist, totalDist)
+        var bEv = new BettingEvents(scorelineDist, totalDist)
 
         var draw = bEv.draw
         var home = bEv.homeWin

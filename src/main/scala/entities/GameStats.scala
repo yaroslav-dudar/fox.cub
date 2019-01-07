@@ -61,8 +61,8 @@ object GameStats {
         var boundaries = ("boundaries", Json.arr(0, 150))
         var default = ("default", "Other")
         var overallOutput = ("output", Json.obj(
-            ("avgScoredHome", Json.obj(("$avg", "$goals_for"))),
-            ("avgScoredAway", Json.obj(("$avg", "$goals_against")))
+            ("avgScoredHome", Json.obj(("$avg", "$xG_for"))),
+            ("avgScoredAway", Json.obj(("$avg", "$xG_against")))
         ))
         var overallMatch = Json.obj(("$match", Json.obj(("tournament", touranmentId), ("venue", "home"))))
 
@@ -75,6 +75,8 @@ object GameStats {
 
         // list of of scored and conceded goals by a team
         var teamOutput = (overallOutput._1, overallOutput._2)
+        teamOutput._2.put("scored_xg", Json.obj(("$push", "$xG_for")))
+        teamOutput._2.put("conceded_xg", Json.obj(("$push", "$xG_against")))
         teamOutput._2.put("scored", Json.obj(("$push", "$goals_for")))
         teamOutput._2.put("conceded", Json.obj(("$push", "$goals_against")))
 
@@ -119,55 +121,51 @@ object GameStats {
     }
 
     /**
-     * Get team strength based on team attack and opponent defence
+     * Get metrics for goals mlp model
+     * @param considerActualGoals
+     *  true - use also actual goals scored and conceded
+     *  false - use only expected goals
     */
-    def getTeamsStrength(json: JsonObject) = {
+    def getTeamsScoring(json: JsonObject, considerActualGoals: Boolean = true) = {
         val stats = json.getJsonArray("firstBatch").getJsonObject(0)
         var touranmentStats = _getTournamentStats(stats)
+
+        var homeScored = 0.0f
+        var awayScored = 0.0f
+        var homeConceded = 0.0f
+        var awayConceded = 0.0f
 
         val homeStats = stats.getJsonArray("home_team").getJsonObject(0)
         val awayStats = stats.getJsonArray("away_team").getJsonObject(0)
 
-        var homeScoredMean = adjustedMean(JsonUtils.arrayToBuffer(homeStats.getJsonArray("scored")))
-        var awayScoredMean = adjustedMean(JsonUtils.arrayToBuffer(awayStats.getJsonArray("scored")))
+        var homeScoredXG: Buffer[Double] = JsonUtils.arrayToBuffer(homeStats.getJsonArray("scored_xg"))
+        var awayScoredXG: Buffer[Double] = JsonUtils.arrayToBuffer(awayStats.getJsonArray("scored_xg"))
+        var homeConcededXG: Buffer[Double] = JsonUtils.arrayToBuffer(homeStats.getJsonArray("conceded_xg"))
+        var awayConcededXG: Buffer[Double] = JsonUtils.arrayToBuffer(awayStats.getJsonArray("conceded_xg"))
 
-        var homeConcededMean = adjustedMean(JsonUtils.arrayToBuffer(homeStats.getJsonArray("conceded")))
-        var awayConcededMean = adjustedMean(JsonUtils.arrayToBuffer(awayStats.getJsonArray("conceded")))
+        homeScored = expectedValue(homeScoredXG)
+        awayScored = expectedValue(awayScoredXG)
+        homeConceded = expectedValue(homeConcededXG)
+        awayConceded = expectedValue(awayConcededXG)
 
-        var homeAttack = homeScoredMean / touranmentStats.getFloat("avgScoredHome")
-        var homeDefend = homeConcededMean / touranmentStats.getFloat("avgScoredAway")
-        // avgScoredAway - away team scored avg, avgScoredHome - away team conceded
-        var awayAttack = awayScoredMean / touranmentStats.getFloat("avgScoredAway")
-        var awayDefend = awayConcededMean / touranmentStats.getFloat("avgScoredHome")
+        if (considerActualGoals) {
+            var homeScoredActual: Buffer[Int] = JsonUtils.arrayToBuffer(homeStats.getJsonArray("scored"))
+            var awayScoredActual: Buffer[Int] = JsonUtils.arrayToBuffer(awayStats.getJsonArray("scored"))
+            var homeConcededActual: Buffer[Int] = JsonUtils.arrayToBuffer(homeStats.getJsonArray("conceded"))
+            var awayConcededActual: Buffer[Int] = JsonUtils.arrayToBuffer(awayStats.getJsonArray("conceded"))
 
-        touranmentStats = _getTournamentStats(stats, true)
-        var homeStrength = homeAttack * touranmentStats.getFloat("avgScoredHome") * awayDefend
-        var awayStrangth = awayAttack * touranmentStats.getFloat("avgScoredAway") * homeDefend
-        (homeStrength, awayStrangth)
-    }
-
-    /**
-     * Get metrics for total goals mlp model
-    */
-    def getTeamsScoring(json: JsonObject) = {
-        val stats = json.getJsonArray("firstBatch").getJsonObject(0)
-        var touranmentStats = _getTournamentStats(stats)
-
-        val homeStats = stats.getJsonArray("home_team").getJsonObject(0)
-        val awayStats = stats.getJsonArray("away_team").getJsonObject(0)
-
-        var homeScored: Buffer[Int] = JsonUtils.arrayToBuffer(homeStats.getJsonArray("scored"))
-        var awayScored: Buffer[Int] = JsonUtils.arrayToBuffer(awayStats.getJsonArray("scored"))
-
-        var homeConceded: Buffer[Int] = JsonUtils.arrayToBuffer(homeStats.getJsonArray("conceded"))
-        var awayConceded: Buffer[Int] = JsonUtils.arrayToBuffer(awayStats.getJsonArray("conceded"))
+            homeScored = (homeScored + expectedValue(homeScoredActual)) / 2
+            awayScored = (awayScored + expectedValue(awayScoredActual)) / 2
+            homeConceded = (homeConceded + expectedValue(homeConcededActual)) / 2
+            awayConceded = (awayConceded + expectedValue(awayConcededActual)) / 2
+        }
 
         Array(
             getAvgTournamentTotal(stats),
-            expectedValue(homeScored),
-            expectedValue(homeConceded),
-            expectedValue(awayScored),
-            expectedValue(awayConceded))
+            homeScored,
+            homeConceded,
+            awayScored,
+            awayConceded)
     }
 
     /**

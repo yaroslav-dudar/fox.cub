@@ -11,19 +11,19 @@ object helpers {
     /**
      * Calculate Discrete random variable
     */
-    def discreteVariance(data: Seq[Int]): Double = {
+    def discreteVariance(data: Seq[Double]): Double = {
         val X = data.distinct
         X.map(x => {
             val p = data.count(_ == x) / data.length.toDouble
-            p * math.pow(x - expectedValue(data), 2)
+            p * math.pow(x - expectedValue[Double](data), 2)
         }).sum
     }
 
     /**
      * Calculate the Expectation of Discrete varaibale
     */
-    def expectedValue(data: Seq[Int]): Float = {
-        data.sum / data.length.toFloat
+    def expectedValue[A](data: Seq[A])(implicit num: Numeric[A]): Float = {
+        implicitly[Numeric[A]].toFloat(data.sum[A]) / data.length.toFloat
     }
 
     /**
@@ -31,7 +31,7 @@ object helpers {
      * Extreme outliers - Max value and Min value
      * If dataset size < minSize don't remove data
      */
-    def adjustedMean(data: Buffer[Int]): Float = {
+    def adjustedMean(data: Buffer[Double]): Float = {
         if (data.size >= minSize) {
             data -= (data.max, data.min)
         }

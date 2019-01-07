@@ -48,7 +48,8 @@
         "find_team_by": "infogol_id",
         "tournaments_list": {
             "Premier League England": 88,
-            "EFL Championship": 89
+            "EFL Championship": 89,
+            "Bundesliga": 91
         }
     }
 }

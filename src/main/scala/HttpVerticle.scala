@@ -29,7 +29,6 @@ class HttpVerticle extends ScalaVerticle {
                     .listFiles.map(f => MLPNet.loadModel(f.getAbsolutePath))
             })
 
-
             vertx
                 .createHttpServer()
                 .requestHandler(router.accept)

@@ -88,7 +88,7 @@ object CMP {
      * Calculate nu param based on input observations
      * @param observs list of discrete random variables
      */
-    def getShapeParam(observs: Seq[Int]): Double = {
+    def getShapeParam(observs: Seq[Double]): Double = {
         var overdispersionMax = 0.5
         var underdispersionMax = 1.25
         // normal dispersion by default

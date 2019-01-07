@@ -26,6 +26,9 @@ import scala.collection.mutable.ArrayBuffer
 import java.io.File
 import java.nio.file.Paths
 
+/**
+ * MLP neural network model
+*/
 object MLPNet {
 
     val batchSize = 500
