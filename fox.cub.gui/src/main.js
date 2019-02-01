@@ -4,9 +4,11 @@ import router from './router'
 import store from './store'
 
 import VueResource from 'vue-resource';
-
+import HighchartsVue from 'highcharts-vue'
 
 Vue.use(VueResource);
+Vue.use(HighchartsVue);
+
 Vue.config.productionTip = false
 Vue.config.host = "http://localhost:8888";
 
