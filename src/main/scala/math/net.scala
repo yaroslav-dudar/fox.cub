@@ -34,8 +34,14 @@ object MLPNet {
     val batchSize = 500
     val labelIndex = 0
 
+    // list of MLM models loaded in-memory
     var models = scala.collection.mutable.Map[String, MultiLayerNetwork]()
 
+    /**
+     * Build neural network configuration
+     * @param numLabels amount of output classes
+     * @param numInputs amount of input features
+    */
     def buildNetworkConf(numLabels: Int, numInputs: Int): MultiLayerConfiguration = {
         val numHiddenNodes = numLabels * 4
 
@@ -59,6 +65,10 @@ object MLPNet {
         .build()
     }
 
+    /**
+     * Train neural network with given CSV dataset file
+     * @param datasetPath path to training dataset CSV file
+    */
     def trainModel(datasetPath: String,  modelName: String,
         numLabels: Int, numInputs: Int, nEpochs: Int = 30) {
 
@@ -82,6 +92,10 @@ object MLPNet {
         models += (modelName -> model)
     }
 
+    /**
+     * Test neural network with given CSV dataset file
+     * @param datasetPath path to testing dataset CSV file
+    */
     def testModel(datasetPath: String, numLabels: Int, modelName: String) {
         //Load the test/evaluation data:
         val reader = new CSVRecordReader()
@@ -110,16 +124,27 @@ object MLPNet {
         println(eval.stats());
     }
 
+    /**
+     * Get probabilities for a given data sample
+    */
     def predict(features: Array[Float], modelName: String) = {
         var score = models(modelName).output(Nd4j.create(features))
         score.getRow(0).data.asDouble.to[ArrayBuffer]
     }
 
+    /**
+     * Load on-disk model to RAM
+     * @param modelPath path to MLP model file
+    */
     def loadModel(modelPath: String) {
         val modelName = Paths.get(modelPath).getFileName.toString
         models += (modelName -> ModelSerializer.restoreMultiLayerNetwork(modelPath, true))
     }
 
+    /**
+     * Save MLP model on disk
+     * @param modelPath path to MLP model file
+    */
     def saveModel(modelPath: String, modelName: String) {
         ModelSerializer.writeModel(models(modelName), modelPath, true)
     }

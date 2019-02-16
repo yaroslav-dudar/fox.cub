@@ -29,16 +29,55 @@ class SoccerPunterSpider(scrapy.Spider):
     bundesliga2 = ["/Germany/2.-Bundesliga-{0}-{1}".format(year, year+1)
         for year in range(1993, 2018)]
 
+    bundesliga3 = ["/Germany/3.-Liga-{0}-{1}".format(year, year+1)
+        for year in range(2008, 2018)]
+
     efl_league1 = ["/England/League-One-{0}-{1}".format(year, year+1)
         for year in range(1993, 2018)]
 
     laliga = ["/Spain/La-Liga-{0}-{1}".format(year, year+1)
         for year in range(1993, 2018)]
 
+    segunda = ["/Spain/Segunda-División-{0}-{1}".format(year, year+1)
+        for year in range(1996, 2018)]
+
     serie_a = ["/Italy/Serie-A-{0}-{1}".format(year, year+1)
         for year in range(1993, 2018)]
 
-    tournaments = serie_a
+    serie_b = ["/Italy/Serie-B-{0}-{1}".format(year, year+1)
+        for year in range(1993, 2018)]
+
+    france_ligue1 = ["/France/Ligue-1-{0}-{1}".format(year, year+1)
+        for year in range(1994, 2018)]
+
+    belgium_div1 = ["/Belgium/First-Division-A-{0}-{1}".format(year, year+1)
+        for year in range(1995, 2018)]
+
+    eradivisie = ["/Netherlands/Eredivisie-{0}-{1}".format(year, year+1)
+        for year in range(1993, 2018)]
+
+    swiss_super_league = ["/Switzerland/Super-League-{0}-{1}".format(year, year+1)
+        for year in range(1994, 2018)]
+
+    slovakia_super_liga = ["/Slovakia/Super-Liga-{0}-{1}".format(year, year+1)
+        for year in range(2002, 2018)]
+
+    norway_division1 = ["/Norway/1.-Division-{0}".format(year)
+        for year in range(1997, 2018)]
+
+    denmark_division1 = ["/Denmark/1st-Division-{0}-{1}".format(year, year+1)
+        for year in range(1997, 2018)]
+
+    czech_liga = ["/Czech-Republic/Czech-Liga-{0}-{1}".format(year, year+1)
+        for year in range(1994, 2018)]
+
+    portugal_liga = ["/Portugal/Primeira-Liga-{0}-{1}".format(year, year+1)
+        for year in range(1994, 2018)]
+
+    mls = ["/USA/MLS-{0}".format(year)
+        for year in range(2000, 2018)]
+
+    tournaments = mls
     base_url = "https://www.soccerpunter.com/soccer-statistics"
 
     h_timings = defaultdict(list)

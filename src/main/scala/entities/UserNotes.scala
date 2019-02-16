@@ -12,12 +12,19 @@ object UserNote {
     // TODO: implement authentication and remove hardcoded user
     private val DEFAULT_USER = "1"
 
+    /**
+     * Get user note for appropriate object
+    */
     def getNotes(userId: String, refTo: String, refId: String): QueryEvent = {
         val filter = Json.obj(("user", DEFAULT_USER), ("ref_id", refId), ("ref_to", refTo))
         val query = new JsonObject().put("find", Collection).put("filter", filter)
         QueryEvent("find", query)
     }
 
+    /**
+     * Save note to database
+     * @param note data in JSON fromat
+    */
     def save(note: JsonObject): QueryEvent = {
         var createdAt = Json.obj(("$date", getUTCdate()))
 

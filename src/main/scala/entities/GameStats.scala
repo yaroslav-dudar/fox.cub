@@ -14,6 +14,9 @@ import fox.cub.math.CMP
 object GameStats {
     private val Collection = "game_stats"
 
+    /**
+     * Get team performed games with opponents detailed info
+    */
     def get(teamId: String, tournamentId: String): QueryEvent = {
         val aggMatch = Json.obj(
             ("$match", Json.obj(

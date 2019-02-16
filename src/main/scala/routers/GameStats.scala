@@ -62,6 +62,7 @@ object GameStats {
                 if (teamsScoring != null) {
                     var totalDist = MLPNet.predict(teamsScoring, tournamentId.get + ".totals")
                     var scorelineDist = MLPNet.predict(teamsScoring, tournamentId.get + ".score")
+                    var bttsDist = MLPNet.predict(teamsScoring, tournamentId.get + ".btts")
 
                     var bEv = new BettingEvents(scorelineDist, totalDist)
 
@@ -74,7 +75,7 @@ object GameStats {
                         ("over 2.5", bEv._2_5._2),
                         ("under 3.5", bEv._3_5._1),
                         ("over 3.5", bEv._3_5._2),
-                        ("BTTS", bEv.btts),
+                        ("BTTS", bttsDist.last),
                         ("Home Win", home),
                         ("Away Win", away),
                         ("Draw", draw),
