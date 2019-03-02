@@ -25,12 +25,37 @@
             <div class="pure-u-1-3">
                 <team-stats v-bind:stats="home_team_stats"> </team-stats>
                 <highcharts :options="getLast6Data('home')"></highcharts>
-                <highcharts :options="getRollingTrendData('home')"></highcharts>
             </div>
             <div class="pure-u-1-3">
                 <team-stats v-bind:stats="away_team_stats"> </team-stats>
                 <highcharts :options="getLast6Data('away')"></highcharts>
-                <highcharts :options="getRollingTrendData('away')"></highcharts>
+            </div>
+        </div>
+        <br>
+        <div class="pure-g">
+            <div class="pure-u-1-3">
+                Select trend size:
+                <select name="trendSize" v-model="rolling_trend_size" class="form-control">
+                    <option value="6">6 games trend</option>
+                    <option value="10">10 games trend</option>
+                </select>
+                <highcharts :options="getRollingTrendData('home', rolling_trend_size, rolling_trend_type)" ref="home-trend"></highcharts>
+            </div>
+            <div class="pure-u-1-3">
+                Select type of goals:
+                <select name="trendType" v-model="rolling_trend_type" class="form-control">
+                    <option value="xG">Expected goals Ingogol</option>
+                    <option value="goals">Actual goals</option>
+                </select>
+                <highcharts :options="getRollingTrendData('away', rolling_trend_size, rolling_trend_type)" ref="away-trend"></highcharts>
+            </div>
+        </div>
+        <div class="pure-g">
+            <div class="pure-u-1-3">
+                <highcharts :options="getShcheduleComplexity('home', rolling_trend_size)"></highcharts>
+            </div>
+            <div class="pure-u-1-3">
+                <highcharts :options="getShcheduleComplexity('away', rolling_trend_size)"></highcharts>
             </div>
         </div>
         <div class="pure-g pure-u-1">
@@ -61,7 +86,9 @@ export default {
             stats: {},
             odd_list: [],
             home_team_stats: {},
-            away_team_stats: {}
+            away_team_stats: {},
+            rolling_trend_size: 6,
+            rolling_trend_type: 'xG' // allowed [xG, goals]
         }
     },
     components: {
@@ -75,6 +102,7 @@ export default {
         this.away_team = this.$route.query.away_team;
         this.tournament = this.$route.query.tournament;
         this.game_odds = this.$store.state.odds[this.$route.query.odd_index];
+        this.ppg_table = this.$store.state.ppg_table;
         this.getGames();
         this.getStats();
     },
@@ -170,10 +198,10 @@ export default {
             }
         },
 
-        getRollingTrendData(venue) {
+        getRollingTrendData(venue, games_amount = 6, goals_type = "xG") {
             var team_name = venue == "home" ? this.game_odds.home_team[0].name: this.game_odds.away_team[0].name;
             var data = venue == "home" ? this.home_team_games: this.away_team_games;
-            var points = data.map((v, i) => data.slice(0,i+1).slice(-10));
+            var points = data.map((v, i) => data.slice(0,i+1).slice(-games_amount));
 
             return {
                 title: {
@@ -184,13 +212,41 @@ export default {
                     categories: data.map(g => new Date(g.date*1000))
                 },
                 series: [{
-                    name: 'Expected goals for',
-                    data: points.map(batch => batch.reduce((a, b) => +a + +b.xG_for, 0) / batch.length)
+                    name: 'Goals for',
+                    data: points.map(batch => batch.reduce((a, b) => +a + +b[goals_type + "_for"], 0) / batch.length)
                 }, {
-                    name: 'Expected goals against',
-                    data: points.map(batch => batch.reduce((a, b) => +a + +b.xG_against, 0) / batch.length)
+                    name: 'Goals against',
+                    data: points.map(batch => batch.reduce((a, b) => +a + +b[goals_type + "_against"], 0) / batch.length)
                 }]
             }
+        },
+
+        getShcheduleComplexity(venue, games_amount = 6) {
+            var data = venue == "home" ? this.home_team_games: this.away_team_games;
+            var points = data.map((v, i) => data.slice(0,i+1).slice(-games_amount));
+
+            var opponents_schedule = points.map(batch => batch.reduce(
+                (a, b) => +a + +this.getTeamPPG(b.opponent[0]._id.$oid), 0) / batch.length)
+
+            return {
+                title: {
+                    text: "Schedule complexity"
+                },
+                xAxis: {
+                    type: 'datetime',
+                    categories: data.map(g => new Date(g.date*1000))
+                },
+                series: [{
+                    name: 'Opoonents point per game',
+                    data: opponents_schedule
+                }]
+            }
+        },
+
+        getTeamPPG(team_id) {
+            var filtered = this.ppg_table.filter(team => team.team_id == team_id);
+            if (filtered) return filtered[0].ppg;
+            return 0;
         }
     }
 }

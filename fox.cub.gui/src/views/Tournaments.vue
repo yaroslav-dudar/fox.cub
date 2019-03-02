@@ -2,7 +2,7 @@
     <div>
         <h3>Select Tournament</h3>
         <select v-model="tournament" @change="onChange()">
-            <option 
+            <option
                 v-for="t in $store.state.tournaments" :key="t._id.$oid"
                 v-bind:value='t._id.$oid'> {{t.name}}
             </option>
@@ -21,6 +21,7 @@ export default {
     data: function() {
         return {
             tournaments: [],
+            ppg_table: [],
             tournament: '',
             odds: [],
             teams: []
@@ -32,6 +33,7 @@ export default {
 
     created: function() {
         this.tournament = this.$store.state.tournament;
+        this.ppg_table = this.$store.state.ppg_table;
     },
     methods: {
         onChange() {
@@ -41,11 +43,17 @@ export default {
                 .then(function (response) {
                     this.teams = response.body.firstBatch;
                 });
-    
+
             this.$http.get(Vue.config.host + '/api/v1/odds/' + this.tournament)
                 .then(function (response) {
                     this.odds = response.body.firstBatch;
                     this.$store.commit('setOdds', this.odds)
+                });
+
+            this.$http.get(Vue.config.host + '/api/v1/tournament/' + this.tournament)
+                .then(function (response) {
+                    this.ppg_table = response.body.table;
+                    this.$store.commit('setPPGTable', this.ppg_table)
                 });
         }
     }

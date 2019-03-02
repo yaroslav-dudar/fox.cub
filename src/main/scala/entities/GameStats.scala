@@ -198,4 +198,32 @@ object GameStats {
         var touranmentStats = stats.getJsonArray("tournament_avg").getJsonObject(0)
         touranmentStats.getFloat("avgScoredAway") + touranmentStats.getFloat("avgScoredHome")
     }
+
+    def getTeamResults(tournamentId: String): QueryEvent = {
+        val aggMatch = Json.obj(
+            ("$match", Json.obj(
+                ("tournament", tournamentId))
+            ))
+
+        val push = Json.obj(
+            ("$push", Json.obj(
+                ("goals_against", "$goals_against"), ("goals_for", "$goals_for"))
+            ))
+
+        val group = Json.obj(("$group", Json.obj(
+            ("_id", "$team"),
+            ("games", push)
+            )))
+
+        // cursor with the default batch size
+        var cursor = Json.obj()
+        var pipeline = Json.arr(aggMatch, group)
+
+        val query = new JsonObject()
+            .put("aggregate", Collection)
+            .put("pipeline", pipeline)
+            .put("cursor", cursor)
+
+        QueryEvent("aggregate", query)
+    }
 }

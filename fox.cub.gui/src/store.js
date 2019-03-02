@@ -6,6 +6,7 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     tournaments: [],
+    ppg_table: [],
     tournament: '',
     odds: [],
     teams: []
@@ -19,6 +20,9 @@ export default new Vuex.Store({
     },
     setCurrentTournament: function(state, tournament) {
         state.tournament = tournament;
-    }
+    },
+    setPPGTable: function(state, ppg_table) {
+      state.ppg_table = ppg_table;
+  },
   }
 })
