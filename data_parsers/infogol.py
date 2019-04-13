@@ -46,7 +46,7 @@ class InfogolSpider(scrapy.Spider):
         )
         self.db = self.client[self.db_conf['db_name']]
 
-        self.proxy = "131.108.6.118:50435"
+        self.proxy = "194.29.60.48:45416"
 
         self.pull_db_data()
 

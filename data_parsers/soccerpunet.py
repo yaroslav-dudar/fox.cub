@@ -12,6 +12,7 @@ class Match(scrapy.Item):
     HomeGoalsTiming = scrapy.Field()
     AwayGoalsTiming = scrapy.Field()
     Season = scrapy.Field()
+    Group = scrapy.Field()
 
 
 class SoccerPunterSpider(scrapy.Spider):
@@ -77,20 +78,47 @@ class SoccerPunterSpider(scrapy.Spider):
     mls = ["/USA/MLS-{0}".format(year)
         for year in range(2000, 2018)]
 
-    tournaments = mls
+    ec_qualification = [
+        "/Europe/EC-Qualification-2012-Poland-Ukraine/results",
+        "/Europe/EC-Qualification-2016-France",
+        "/Europe/EC-Qualification-2008-Austria-Switzerland",
+        "/Europe/EC-Qualification-2004-Portugal",
+        "/Europe/EC-Qualification-2000-Netherlands-Belgium",
+        "/Europe/EC-Qualification-1996-England",
+        "/Europe/EC-Qualification-1992-Sweden",
+        "/Europe/EC-Qualification-1988-Germany",
+        "/Europe/EC-Qualification-1984-France",
+
+        "/Europe/WC-Qualification-Europe-2018-Russia",
+        "/Europe/WC-Qualification-Europe-2014-Brazil",
+        "/Europe/WC-Qualification-Europe-2010-South-Africa",
+        "/Europe/WC-Qualification-Europe-2006-Germany",
+        "/Europe/WC-Qualification-Europe-2002-Korea-Rep-Japan",
+        "/Europe/WC-Qualification-Europe-1998-France",
+        "/Europe/WC-Qualification-Europe-1994-USA"
+    ]
+
+    tournaments = ec_qualification
     base_url = "https://www.soccerpunter.com/soccer-statistics"
 
     h_timings = defaultdict(list)
     a_timings = defaultdict(list)
 
     GAME_CODE = "G"
+    SORT_BY_GROUP = True
+    GROUPS = {}
 
     proxy = "131.108.6.118:50435"
 
     def start_requests(self):
-        urls = [self.base_url + t + "/results" for t in self.tournaments]
+        urls = [self.base_url + t for t in self.tournaments]
         for url in urls:
-            yield scrapy.Request(url=url, callback=self.parse, meta={'proxy': self.proxy})
+            # parse groups
+            if self.SORT_BY_GROUP:
+                yield scrapy.Request(url=url, callback=self.parse_table, meta={'proxy': self.proxy})
+            else:
+            # parse games
+                yield scrapy.Request(url=url + "/results", callback=self.parse, meta={'proxy': self.proxy})
 
     def parse(self, response):
         games = response.css("table.roundsResultDisplay")
@@ -108,6 +136,9 @@ class SoccerPunterSpider(scrapy.Spider):
             v['HomeGoalsTiming'] = ' '.join(self.h_timings[k])
             v['AwayGoalsTiming'] = ' '.join(self.a_timings[k])
             v['Season'] = season
+
+            if self.SORT_BY_GROUP:
+                self.set_group_index(v, response.meta['groups'])
             yield v
 
 
@@ -145,6 +176,19 @@ class SoccerPunterSpider(scrapy.Spider):
         match['Date'] = game.css("a.dateLink::text").extract_first().strip()
         matches[match_id] = match
 
+    def parse_table(self, response):
+        groups = {}
+        all_tables = response.xpath('//table[contains(@id, "ranking")]')
+        for indx, table in enumerate(all_tables):
+            for team in table.css('tr td.team a.teamLink::text').extract():
+                groups[team.strip()] = indx
+
+        print(groups)
+        yield scrapy.Request(
+            url=response.url + "/results",
+            callback=self.parse,
+            meta={'proxy': self.proxy, 'groups': groups})
+
     def get_goal_timing(self, goal):
         goal = goal.replace("'", "")
         return str(eval(goal)) if '+' in goal else goal
@@ -153,3 +197,9 @@ class SoccerPunterSpider(scrapy.Spider):
         season = response.css("select.sbar_season option[selected]::text").\
             extract_first()
         return season.split('/')[0]
+
+    def set_group_index(self, item, groups):
+        if groups[item['HomeTeam']] == groups[item['AwayTeam']]:
+            item['Group'] = groups[item['HomeTeam']]
+        else:
+            item['Group'] = -1

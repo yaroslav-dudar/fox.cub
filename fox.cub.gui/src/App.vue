@@ -2,6 +2,7 @@
   <div id="app">
     <div id="nav">
       <router-link to="/">Tournaments List</router-link> |
+      <router-link to="/test">Manual Testing</router-link> |
     </div>
     <router-view/>
   </div>

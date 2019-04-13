@@ -51,5 +51,11 @@
             "EFL Championship": 89,
             "Bundesliga": 91
         }
+    },
+    "americansocceranalysis_parser": {
+        "find_team_by": "name",
+        "tournaments_list": {
+            "MLS": "https://www.americansocceranalysis.com/by-game-2019"
+        }
     }
 }

@@ -55,7 +55,7 @@ class Downloader:
         self.db = self.client[self.db_conf['db_name']]
 
         self.html_pages = {}
-        self.proxy = "131.108.6.118:50435"
+        self.proxy = "194.29.60.48:45416"
 
     def request(self, url):
         """ Set proxy host and send request to URL """
