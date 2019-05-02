@@ -37,5 +37,11 @@ class BettingEvents(scoreline: ArrayBuffer[Double],
 
     def awayWin() = scoreline.slice(4,7).sum
 
-    def btts() = 0.0
+    def home_1_5() = scoreline.slice(2,4).sum
+
+    def home_2_5() = scoreline(3)
+
+    def away_1_5 = scoreline.slice(5,7).sum
+
+    def away_2_5 = scoreline(6)
 }

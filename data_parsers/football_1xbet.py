@@ -35,7 +35,10 @@ class Downloader:
         'DRAW_IDX': 2,
         'AWAY_WIN_IDX': 3,
         'TOTAL_OVER_IDX': 9,
-        'TOTAL_UNDER_IDX': 10
+        'TOTAL_UNDER_IDX': 10,
+        'TEMP_IDX': 9,
+        'WEATHER_IDX': 21,
+        'HUMIDITY_IDX': 27
     }
 
     now = datetime.utcnow()
@@ -120,6 +123,11 @@ class Downloader:
                     "total_under": float(total_under) if total_under != "-" else None,
                     "total_over": float(total_over) if total_over != "-" else None,
                     "scraping_date": self.now
+                },
+                "forecast": {
+                    "temp": 0,
+                    "humidity": 0,
+                    "weather": ""
                 }
             })
 
@@ -132,7 +140,7 @@ class Downloader:
         parsed_ev = []
 
         for ev in data['Value']:
-            new_event = {"odds": {}}
+            new_event = {"odds": {}, "forecast": {}}
             if ev.get('DI'):
                 # skip aggregate events
                 continue
@@ -142,17 +150,24 @@ class Downloader:
             event_ts = round(self.html_pages[tournament]['time'] + ev['B'], -1)
             new_event['event_date'] = datetime.utcfromtimestamp(event_ts)
 
-            new_event['odds']['home_win'] = self.get_json_odd(
+            new_event['forecast']['temp'] = self.get_json_field(
+                ev['MIS'], self.json['TEMP_IDX'], 'V', 'K')
+            new_event['forecast']['humidity'] = self.get_json_field(
+                ev['MIS'], self.json['HUMIDITY_IDX'], 'V', 'K')
+            new_event['forecast']['weather'] = self.get_json_field(
+                ev['MIS'], self.json['WEATHER_IDX'], 'V', 'K')
+
+            new_event['odds']['home_win'] = self.get_json_field(
                 ev['E'], self.json['HOME_WIN_IDX'], 'C')
-            new_event['odds']['draw'] = self.get_json_odd(
+            new_event['odds']['draw'] = self.get_json_field(
                 ev['E'], self.json['DRAW_IDX'], 'C')
-            new_event['odds']['away_win'] = self.get_json_odd(
+            new_event['odds']['away_win'] = self.get_json_field(
                 ev['E'], self.json['AWAY_WIN_IDX'], 'C')
-            new_event['odds']['total'] = self.get_json_odd(
+            new_event['odds']['total'] = self.get_json_field(
                 ev['E'], self.json['TOTAL_OVER_IDX'], 'P')
-            new_event['odds']['total_under'] = self.get_json_odd(
+            new_event['odds']['total_under'] = self.get_json_field(
                 ev['E'], self.json['TOTAL_UNDER_IDX'], 'C')
-            new_event['odds']['total_over'] = self.get_json_odd(
+            new_event['odds']['total_over'] = self.get_json_field(
                 ev['E'], self.json['TOTAL_OVER_IDX'], 'C')
             new_event['odds']['scraping_date'] = self.now
 
@@ -160,10 +175,10 @@ class Downloader:
 
         return parsed_ev
 
-    def get_json_odd(self, ev_odds, odd_idx, odd_key):
-        """ Get odd value from array of events """
-        ev = next(filter(lambda e: e['T'] == odd_idx, ev_odds), None)
-        return None if not ev else ev[odd_key]
+    def get_json_field(self, ev_field, field_idx, field_key, idx_name = 'T'):
+        """ Get field value from array of events """
+        ev = next(filter(lambda e: e[idx_name] == field_idx, ev_field), None)
+        return None if not ev else ev[field_key]
 
     def parse(self):
         if self.config['mode'] == 'json':
@@ -205,11 +220,16 @@ class Downloader:
                 "event_date": ev['event_date'],
             }
 
-            push_odds = {"$push": {"odds": ev['odds']}}
+            update_query = {
+                "$push": {"odds": ev['odds']},
+                "$set": {"forecast": ev["forecast"]}}
+
             print(ev['odds'])
+            print(ev['forecast'])
+            print('='*25)
             try:
                 self.db[self.db_conf['collections']['odds']].\
-                    update(filter_query, push_odds, upsert=True)
+                    update(filter_query, update_query, upsert=True)
             except Exception as err:
                 print(err)
 

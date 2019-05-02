@@ -77,7 +77,11 @@ object GameStats {
                         ("over 3.5", bEv._3_5._2),
                         ("BTTS", bttsDist.last),
                         ("Home Win", home),
+                        ("Home Win +1.5", bEv.home_1_5),
+                        ("Home Win +2.5", bEv.home_2_5),
                         ("Away Win", away),
+                        ("Away Win +1.5", bEv.away_1_5),
+                        ("Away Win +2.5", bEv.away_2_5),
                         ("Draw", draw),
                         ("Home Double Chance", home + draw),
                         ("Away Double Chance", away + draw))

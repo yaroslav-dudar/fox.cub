@@ -11,6 +11,7 @@
                 <th>Total Under</th>
                 <th>Total Over</th>
                 <th>Event Date</th>
+                <th>Weather Forecast</th>
                 <th>Detail Stats</th>
             </tr>
         </thead>
@@ -24,6 +25,10 @@
             <td>{{o.odds[o.odds.length-1].total_under}}</td>
             <td>{{o.odds[o.odds.length-1].total_over}}</td>
             <td>{{o.event_date.$date}}</td>
+            <td v-if="'forecast' in o && o.forecast.weather">
+                {{o.forecast.weather}}, Temp: {{o.forecast.temp}}, Humidity {{o.forecast.humidity}}
+            </td>
+            <td v-else>No data</td>
             <td><button
                 v-on:click="redirectToGame(
                     o.home_team[0]._id['$oid'],
