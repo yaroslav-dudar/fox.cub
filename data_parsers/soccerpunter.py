@@ -98,26 +98,27 @@ class SoccerPunterSpider(scrapy.Spider):
         "/Europe/WC-Qualification-Europe-1994-USA"
     ]
 
-    tournaments = ec_qualification
+    tournaments = mls
     base_url = "https://www.soccerpunter.com/soccer-statistics"
 
     h_timings = defaultdict(list)
     a_timings = defaultdict(list)
 
     GAME_CODE = "G"
-    SORT_BY_GROUP = True
+    SORT_BY_GROUP = False
+    IGNORE_NON_REGULAR_SEASON = True
     GROUPS = {}
 
-    proxy = "131.108.6.118:50435"
+    proxy = "191.252.185.161:8090"
 
     def start_requests(self):
         urls = [self.base_url + t for t in self.tournaments]
         for url in urls:
-            # parse groups
             if self.SORT_BY_GROUP:
+                # add group label to each game
                 yield scrapy.Request(url=url, callback=self.parse_table, meta={'proxy': self.proxy})
             else:
-            # parse games
+                # parse games
                 yield scrapy.Request(url=url + "/results", callback=self.parse, meta={'proxy': self.proxy})
 
     def parse(self, response):
@@ -127,6 +128,12 @@ class SoccerPunterSpider(scrapy.Spider):
         matches = {}
 
         for g in games.css("tr[data-match]:not([data-code])"):
+            if self.IGNORE_NON_REGULAR_SEASON\
+                and not self.SORT_BY_GROUP\
+                and not self.is_regular_season_game(g):
+                # ignore non regular season games
+                continue
+
             self.parse_game_details(g, matches)
 
         for g in games.css("tr[data-match][data-code]"):
@@ -144,7 +151,11 @@ class SoccerPunterSpider(scrapy.Spider):
 
     def parse_events(self, game, matches):
         match_id = game.css("::attr(data-match)").extract_first()
-        match = matches[match_id]
+        try:
+            match = matches[match_id]
+        except KeyError:
+            # ignore game
+            return
 
         ev_type = game.css("::attr(data-code)").extract_first()
         if ev_type == self.GAME_CODE:
@@ -203,3 +214,7 @@ class SoccerPunterSpider(scrapy.Spider):
             item['Group'] = groups[item['HomeTeam']]
         else:
             item['Group'] = -1
+
+    def is_regular_season_game(self, game):
+        return game.xpath("preceding::tr[@class='titleSpace']/td/h2/text()")[-1]\
+            .extract().strip() == "Regular Season"
