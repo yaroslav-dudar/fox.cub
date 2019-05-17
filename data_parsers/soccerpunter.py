@@ -98,7 +98,16 @@ class SoccerPunterSpider(scrapy.Spider):
         "/Europe/WC-Qualification-Europe-1994-USA"
     ]
 
-    tournaments = mls
+    fa_cup = ["/England/FA-Cup-{0}-{1}".format(year, year+1)
+        for year in range(2004, 2019)]
+
+    dfb_pokal = ["/Germany/DFB-Pokal-{0}-{1}".format(year, year+1)
+        for year in range(2004, 2019)]
+
+    copa_del_rey = ["/Spain/Copa-del-Rey-{0}-{1}".format(year, year+1)
+        for year in range(2004, 2019)]
+
+    tournaments = copa_del_rey
     base_url = "https://www.soccerpunter.com/soccer-statistics"
 
     h_timings = defaultdict(list)
@@ -106,7 +115,7 @@ class SoccerPunterSpider(scrapy.Spider):
 
     GAME_CODE = "G"
     SORT_BY_GROUP = False
-    IGNORE_NON_REGULAR_SEASON = True
+    IGNORE_NON_REGULAR_SEASON = False
     GROUPS = {}
 
     proxy = "191.252.185.161:8090"
