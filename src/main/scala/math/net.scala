@@ -31,7 +31,6 @@ import java.nio.file.Paths
 */
 object MLPNet {
 
-    val batchSize = 500
     val labelIndex = 0
 
     // list of MLM models loaded in-memory
@@ -70,7 +69,8 @@ object MLPNet {
      * @param datasetPath path to training dataset CSV file
     */
     def trainModel(datasetPath: String,  modelName: String,
-        numLabels: Int, numInputs: Int, nEpochs: Int = 30) {
+        numLabels: Int, numInputs: Int, nEpochs: Int = 30,
+        batchSize: Int = 100) {
 
          // Load the training data
         val reader = new CSVRecordReader();
@@ -96,7 +96,9 @@ object MLPNet {
      * Test neural network with given CSV dataset file
      * @param datasetPath path to testing dataset CSV file
     */
-    def testModel(datasetPath: String, numLabels: Int, modelName: String) {
+    def testModel(datasetPath: String, numLabels: Int,
+        modelName: String, batchSize: Int = 100) {
+
         //Load the test/evaluation data:
         val reader = new CSVRecordReader()
         reader.initialize(new FileSplit(new File(datasetPath)))

@@ -150,6 +150,9 @@ class Downloader:
             event_ts = round(self.html_pages[tournament]['time'] + ev['B'], -1)
             new_event['event_date'] = datetime.utcfromtimestamp(event_ts)
 
+            if 'MIS' not in ev:
+                ev['MIS'] = []
+
             new_event['forecast']['temp'] = self.get_json_field(
                 ev['MIS'], self.json['TEMP_IDX'], 'V', 'K')
             new_event['forecast']['humidity'] = self.get_json_field(

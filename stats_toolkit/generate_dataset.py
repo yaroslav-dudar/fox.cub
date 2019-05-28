@@ -1,20 +1,23 @@
+"""Provide tools to generating csv dataset for Deeplearning4j."""
+
 import csv
 import sys
+import traceback
+
+from enum import Enum
+
 from datetime import datetime
 
 from utils import *
 
-diff_list = []
+class Group(Enum):
+
+    Disable = 0
+    Group = 1
+
 
 def game_scoreline(home_goals, away_goals):
     diff = home_goals - away_goals
-
-    if diff > 2:
-        diff_list.append(3)
-    elif diff < -2:
-        diff_list.append(-3)
-    else:
-        diff_list.append(diff)
 
     if diff > 2: return 3
     if diff < -2: return 6
@@ -22,14 +25,18 @@ def game_scoreline(home_goals, away_goals):
     if diff == -2: return 5
     return diff
 
+
 def game_btts(home_goals, away_goals):
     return 1 if home_goals and away_goals else 0
+
 
 def game_totals(home_goals, away_goals):
     return home_goals + away_goals
 
+
 def individual_totals(goals):
     return goals
+
 
 def filter_by_month(min_month, max_month):
     def func(game):
@@ -37,6 +44,7 @@ def filter_by_month(min_month, max_month):
         return game_date.month <= max_month and game_date.month >= min_month
 
     return func
+
 
 def get_team_stats(stats_data_list, team):
     for idx, stats in enumerate(stats_data_list[:1]):
@@ -50,7 +58,8 @@ def get_team_stats(stats_data_list, team):
             try:
                 season_totals = get_totals(stats)
             except Exception as e:
-                raise SystemExit(e)
+                traceback.print_exc()
+                raise SystemExit("Something went wrong!")
 
             return [
                 season_totals['avgScoredHome'] + season_totals['avgScoredAway'],
@@ -59,21 +68,80 @@ def get_team_stats(stats_data_list, team):
 
     return None
 
-def prepare_dataset(input_dataset, stats_dataset, year_from, year_to):
+
+def dataset_v1(home_team, away_team):
+    """
+        League avg goals,
+        Home team attack,
+        Home team defence,
+        Away Team attack,
+        Away team defence
+    """
+
+    return [
+        home_team[0],
+        sum(home_team[1])/len(home_team[1]),
+        sum(home_team[2])/len(home_team[2]),
+        sum(away_team[1])/len(away_team[1]),
+        sum(away_team[2])/len(away_team[2])
+    ]
+
+
+def dataset_v2(home_team, away_team):
+    """
+        Home team League avg goals,
+        Away team League avg goals,
+        Home team division [0 - higher 1 - lower],
+        Away team division [0 - higher 1 - lower],
+        Home team attack,
+        Home team defence,
+        Away Team attack,
+        Away team defence
+    """
+
+    return [
+        home_team[0], away_team[0],
+        home_team[3], away_team[3],
+        sum(home_team[1])/len(home_team[1]),
+        sum(home_team[2])/len(home_team[2]),
+        sum(away_team[1])/len(away_team[1]),
+        sum(away_team[2])/len(away_team[2])
+    ]
+
+
+def prepare_data_group(games, stats, output_method):
+    data_group = []
+
+    for i, g in enumerate(games):
+        home_team = get_team_stats(stats, g['HomeTeam'])
+        away_team = get_team_stats(stats, g['AwayTeam'])
+
+        if not home_team or not away_team: continue
+
+        data_group.append([
+            output_method(int(g['FTHG']), int(g['FTAG']))] +\
+            dataset_v1(home_team, away_team)
+        )
+
+    return data_group
+
+def prepare_dataset(input_dataset, stats_dataset,
+    seasons, group_by):
+
     """Generate dataset for Fox.Cub statistical model
 
     Args:
         input_dataset: games to analyse and put in output dataset
         stats_dataset: dataset used to get teams statistics.
             In some cases input_dataset and stats_dataset may be equal
-        year_from: input_dataset start date
-        year_to: input_dataset finish date
+        seasons: list of seasons we need to put to the output dataset
+        group_by: define how to group teams inside a season
     """
 
     dataset = []
     print("Preparing dataset ...")
 
-    for season in range(year_from, year_to):
+    for season in seasons:
         scored, conceded = {}, {}
 
         input_games = filter_by_season(input_dataset, str(season))
@@ -86,24 +154,25 @@ def prepare_dataset(input_dataset, stats_dataset, year_from, year_to):
         sorted_games = sorted(input_games, key=lambda g: datetime.strptime(g['Date'], '%d/%m/%Y'))
         #sorted_games = list(filter(filter_by_month(1, 7) , sorted_games))
 
-        for i, g in enumerate(sorted_games):
-
-            home_team = get_team_stats(stats_data, g['HomeTeam'])
-            away_team = get_team_stats(stats_data, g['AwayTeam'])
-
-            if not home_team or not away_team: continue
-
-            dataset.append([
-                game_totals(int(g['FTHG']), int(g['FTAG']))] +\
-                [
-                    home_team[0], #away_team[0],
-                    #home_team[3], away_team[3],
-                    sum(home_team[1])/len(home_team[1]),
-                    sum(home_team[2])/len(home_team[2]),
-                    sum(away_team[1])/len(away_team[1]),
-                    sum(away_team[2])/len(away_team[2])
-                ]
+        if group_by == Group.Disable:
+            dataset.extend(
+                prepare_data_group(sorted_games, stats_data, game_totals)
             )
+        elif group_by == Group.Group:
+            groups = get_groups(input_dataset)
+
+            for group in groups:
+                if group == -1: continue
+
+                data_group = filter_by_group(input_games, group)
+                stats_group = [filter_by_group(s, group) for s in stats_data]
+
+                group_games = sorted(data_group, key=lambda g: datetime.strptime(g['Date'], '%d/%m/%Y'))
+
+                dataset.extend(
+                    prepare_data_group(group_games, stats_data, game_btts)
+                )
+
     return dataset
 
 
@@ -112,17 +181,23 @@ epl = [
     'segunda.json', 'belgium_div1.json', 'portugal_liga.json',
     'bundesliga.json'
 ]
-efl = [
-    'efl.json'
-]
+
+efl_score = ['championship.json']
 
 mls_totals = ['bundesliga.json', 'mls.json']
 
-mls_score = ['mls.json']
+mls_score = [{'input': 'mls.json', 'stats': ['mls.json']}]
 
-mls_btts = ['mls_regular.json', 'bundesliga.json']
+mls_btts = [
+    {'input': 'mls_regular.json', 'stats': ['mls_regular.json']},
+]
 
-bundesliga = ['bundesliga.json', 'bundesliga2.json', 'swiss.json', 'epl.json', 'mls.json']
+mls_totals = [
+    {'input': 'mls_regular.json', 'stats': ['mls_regular.json']},
+    {'input': 'epl.json', 'stats': ['epl.json']}
+]
+
+bundesliga = ['bundesliga.json', 'bundesliga2.json', 'swiss_super_league.json', 'epl.json', 'mls.json']
 
 club_playoffs = [
     {'input': './nation_cups/scotland_fa_cup.json', 'stats': ['scotland_premiership.json']},
@@ -139,19 +214,31 @@ club_playoffs = [
     #{'input': './nation_cups/austria_cup.json', 'stats': ['austria_bundesliga.json']},
 ]
 
+international = [
+    {'input': './international/europe_qualific.json', 'stats': ['./international/europe_qualific.json']},
+    {'input': './international/africa_qualific.json', 'stats': ['./international/africa_qualific.json']},
+    {'input': './international/asia_qualific.json', 'stats': ['./international/asia_qualific.json']},
+    {'input': './international/sa_qualific.json', 'stats': ['./international/sa_qualific.json']},
+]
+
 if __name__ == '__main__':
     output_dataset = []
+
+    GROUP_BY = None # None or Group
 
     if len(sys.argv) == 1:
         raise Exception("Please, put data folder!")
 
     data_folder = sys.argv[1]
 
-    for d in club_playoffs:
+    for d in mls_btts:
         input_data = readfile("{0}/{1}".format(data_folder, d['input']))
         stats_data = [readfile("{0}/{1}".format(data_folder, s)) for s in d['stats']]
+        seasons = [season for season in get_seasons(input_data)]
+        if 'epl' in d['input']:
+            seasons = range(2005, 2019)
 
-        output_dataset.extend(prepare_dataset(input_data, stats_data, 2000, 2019))
+        output_dataset.extend(prepare_dataset(input_data, stats_data, seasons, Group.Disable))
 
     output_file = 'output.csv'
 

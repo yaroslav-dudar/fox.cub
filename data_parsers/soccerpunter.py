@@ -173,9 +173,12 @@ class SoccerPunterSpider(scrapy.Spider):
     asia_qualification = [
         "/Asia/Asian-Cup-Qualification-2019-UAE",
         "/Asia/Asian-Cup-Qualification-2015-Australia",
-        "/Asia/Asian-Cup-Qualification-2011-Qatar",
-        "/Asia/Asian-Cup-Qualification-2007-Indonesia---Malaysia---Thailand---Vietnam",
-        "/Asia/Asian-Cup-Qualification-2004-China"
+
+        "/Asia/WC-Qualification-Asia-2018-Russia",
+        "/Asia/WC-Qualification-Asia-2014-Brazil",
+        "/Asia/WC-Qualification-Asia-2010-South-Africa",
+        "/Asia/WC-Qualification-Asia-2006-Germany",
+        "/Asia/WC-Qualification-Asia-2002-Korea-Rep-Japan"
     ]
 
     asia_cup = [
@@ -239,14 +242,14 @@ class SoccerPunterSpider(scrapy.Spider):
     league_cup = ["/England/League-Cup-{0}-{1}".format(year, year+1)
         for year in range(2004, 2019)]
 
-    tournaments = championship
+    tournaments = asia_qualification
     base_url = "https://www.soccerpunter.com/soccer-statistics"
 
     h_timings = defaultdict(list)
     a_timings = defaultdict(list)
 
     GAME_CODE = "G"
-    SORT_BY_GROUP = False
+    SORT_BY_GROUP = True
     IGNORE_NON_REGULAR_SEASON = False
     GROUPS = {}
 
@@ -351,9 +354,13 @@ class SoccerPunterSpider(scrapy.Spider):
         return season.split('/')[0]
 
     def set_group_index(self, item, groups):
-        if groups[item['HomeTeam']] == groups[item['AwayTeam']]:
-            item['Group'] = groups[item['HomeTeam']]
-        else:
+        try:
+            if groups[item['HomeTeam']] == groups[item['AwayTeam']]:
+                item['Group'] = groups[item['HomeTeam']]
+            else:
+                item['Group'] = -1
+        except KeyError:
+            # team not in any group
             item['Group'] = -1
 
     def is_regular_season_game(self, game):
