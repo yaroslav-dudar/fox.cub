@@ -206,6 +206,30 @@ class SoccerPunterSpider(scrapy.Spider):
         "/N-C-America/CONCACAF-Gold-Cup-1991-USA"
     ]
 
+    world_cup = [
+        "/World/World-Cup-2018-Russia",
+        "/World/World-Cup-2014-Brazil",
+        "/World/World-Cup-2010-South-Africa",
+        "/World/World-Cup-2006-Germany",
+        "/World/World-Cup-2002-Korea-Rep-Japan",
+        "/World/World-Cup-1998-France",
+        "/World/World-Cup-1994-USA",
+        "/World/World-Cup-1990-Italy",
+        "/World/World-Cup-1986-Mexico",
+        "/World/World-Cup-1982-Spain"
+    ]
+
+    world_cup_u20 = [
+        "/World/U20-World-Cup-2019-Poland",
+        "/World/U20-World-Cup-2017-Korea-Republic",
+        "/World/U20-World-Cup-2015-New-Zealand",
+        "/World/U20-World-Cup-2013-Turkey",
+        "/World/U20-World-Cup-2011-Colombia",
+        "/World/U20-World-Cup-2009-Egypt",
+        "/World/U20-World-Cup-2007-Canada",
+        "/World/U20-World-Cup-2005-Netherlands",
+    ]
+
     fa_cup = ["/England/FA-Cup-{0}-{1}".format(year, year+1)
         for year in range(2004, 2019)]
 
@@ -242,7 +266,7 @@ class SoccerPunterSpider(scrapy.Spider):
     league_cup = ["/England/League-Cup-{0}-{1}".format(year, year+1)
         for year in range(2004, 2019)]
 
-    tournaments = asia_qualification
+    tournaments = world_cup_u20
     base_url = "https://www.soccerpunter.com/soccer-statistics"
 
     h_timings = defaultdict(list)
@@ -253,7 +277,7 @@ class SoccerPunterSpider(scrapy.Spider):
     IGNORE_NON_REGULAR_SEASON = False
     GROUPS = {}
 
-    proxy = "191.252.185.161:8090"
+    proxy = "110.164.89.72:8080"
 
     def start_requests(self):
         urls = [self.base_url + t for t in self.tournaments]
