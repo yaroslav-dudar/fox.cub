@@ -5,7 +5,6 @@ import sys
 import traceback
 
 from enum import Enum
-
 from datetime import datetime
 
 from utils import *
@@ -170,7 +169,7 @@ def prepare_dataset(input_dataset, stats_dataset,
                 group_games = sorted(data_group, key=lambda g: datetime.strptime(g['Date'], '%d/%m/%Y'))
 
                 dataset.extend(
-                    prepare_data_group(group_games, stats_data, game_btts)
+                    prepare_data_group(group_games, stats_data, game_scoreline)
                 )
 
     return dataset
@@ -214,11 +213,20 @@ club_playoffs = [
     #{'input': './nation_cups/austria_cup.json', 'stats': ['austria_bundesliga.json']},
 ]
 
-international = [
+international_qualification = [
     {'input': './international/europe_qualific.json', 'stats': ['./international/europe_qualific.json']},
     {'input': './international/africa_qualific.json', 'stats': ['./international/africa_qualific.json']},
     {'input': './international/asia_qualific.json', 'stats': ['./international/asia_qualific.json']},
     {'input': './international/sa_qualific.json', 'stats': ['./international/sa_qualific.json']},
+]
+
+international_final_stage = [
+    {'input': './international/africa_cup.json', 'stats': ['./international/africa_cup.json']},
+    {'input': './international/asia_cup.json', 'stats': ['./international/asia_cup.json']},
+    {'input': './international/copa_america.json', 'stats': ['./international/copa_america.json']},
+    {'input': './international/eu_championship.json', 'stats': ['./international/eu_championship.json']},
+    {'input': './international/world_cup.json', 'stats': ['./international/world_cup.json']},
+    {'input': './international/gold_cup.json', 'stats': ['./international/gold_cup.json']},
 ]
 
 if __name__ == '__main__':
@@ -231,12 +239,10 @@ if __name__ == '__main__':
 
     data_folder = sys.argv[1]
 
-    for d in mls_btts:
-        input_data = readfile("{0}/{1}".format(data_folder, d['input']))
-        stats_data = [readfile("{0}/{1}".format(data_folder, s)) for s in d['stats']]
+    for d in international_final_stage:
+        input_data = readfile(join_path(data_folder, d['input']))
+        stats_data = [readfile(join_path(data_folder, s)) for s in d['stats']]
         seasons = [season for season in get_seasons(input_data)]
-        if 'epl' in d['input']:
-            seasons = range(2005, 2019)
 
         output_dataset.extend(prepare_dataset(input_data, stats_data, seasons, Group.Disable))
 

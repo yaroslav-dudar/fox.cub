@@ -3,6 +3,8 @@
 from utils import *
 from enum import Enum
 
+import sys
+
 class Tournament(Enum):
 
     EPL = "5b8a36a335b9d3a022e66887"
@@ -87,7 +89,7 @@ def test_data_batch(test_dataset, stats_dataset, tournament):
 
     skip_games = len(test_dataset) * 0.0
     sorted_games = sorted(test_dataset, key=lambda g: datetime.strptime(g['Date'], '%d/%m/%Y'))
-    process_games = sorted_games[40:]
+    process_games = sorted_games[:]
     games = list(filter(lambda g:
         (g['HomeTeam'] in teams_2 and g['AwayTeam'] in teams_1) or
         (g['HomeTeam'] in teams_1 and g['AwayTeam'] in teams_2),  process_games))
@@ -162,7 +164,13 @@ def test(test_dataset, stats_dataset, tournament, group_by=Group.Disable):
     print("Fox.cub results Away Win +2.5:", sum([res['Away Win +2.5'] for res in test_model_results]) / len(test_model_results))
 
 if __name__ == '__main__':
-    test_dataset = readfile("/home/ydudar/dev/fox.cub/data_parsers/data/international/world_cup.json")
-    stats_dataset = readfile("/home/ydudar/dev/fox.cub/data_parsers/data/international/world_cup.json")
+
+    if len(sys.argv) == 1:
+        raise Exception("Please, put data folder!")
+
+    data_folder = sys.argv[1]
+
+    test_dataset = readfile(join_path(data_folder, "/international/world_cup.json"))
+    stats_dataset = readfile(join_path(data_folder, "/international/world_cup.json"))
 
     test(stats_dataset, stats_dataset, Tournament.International_Final.value, Group.Disable)
