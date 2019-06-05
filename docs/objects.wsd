@@ -16,6 +16,8 @@ object User
 
 object GameOdds
 
+object TournamentModel
+
 GameStats o-- Team
 GameStats o-- TournamentStage
 
@@ -23,6 +25,7 @@ Team o-- SportType
 Team o-- Tournament
 
 Tournament o-- SportType
+Tournament o-- TournamentModel
 
 TournamentStage o-- Tournament
 

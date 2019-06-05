@@ -24,7 +24,8 @@
             "odds": "game_odds",
             "tournament": "tournament",
             "team": "team",
-            "game": "game_stats"
+            "game": "game_stats",
+            "stats_model": "tournament_model"
         }
     },
     "1xbet_parser": {

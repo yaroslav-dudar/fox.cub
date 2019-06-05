@@ -15,6 +15,17 @@ object Tournament {
         QueryEvent("find", query)
     }
 
+    def getModel(result: JsonObject) = {
+        result.getString("tournament_model")
+    }
+
+    def getId(result: JsonObject) = {
+        result.getJsonObject("_id").getString("$oid")
+    }
+
+    /**
+     * Calculate tournament standings
+    */
     def getTournamentTable(results: JsonObject) = {
         val data  = results.getJsonArray("firstBatch")
         val teams = ListBuffer[JsonObject]()

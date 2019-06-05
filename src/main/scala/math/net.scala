@@ -25,6 +25,7 @@ import org.datavec.api.split.FileSplit
 import scala.collection.mutable.ArrayBuffer
 import java.io.File
 import java.nio.file.Paths
+import java.io.ByteArrayInputStream
 
 /**
  * MLP neural network model
@@ -141,6 +142,17 @@ object MLPNet {
     def loadModel(modelPath: String) {
         val modelName = Paths.get(modelPath).getFileName.toString
         models += (modelName -> ModelSerializer.restoreMultiLayerNetwork(modelPath, true))
+    }
+
+    /**
+     * Restore MultiLayerNetwork model from bytes
+     * @param modelName model naming
+     * @param modelDump model in binary format
+     * @throws java.util.zip.ZipException model format is wrong
+    */
+    def loadModel(modelName: String, modelDump: Array[Byte]) {
+        val inputStream = new ByteArrayInputStream(modelDump)
+        models += (modelName -> ModelSerializer.restoreMultiLayerNetwork(inputStream, true))
     }
 
     /**
