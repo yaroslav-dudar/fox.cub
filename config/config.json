@@ -32,9 +32,7 @@
         "find_team_by": "football_1xbet_name",
         "mode": "json",
         "tournaments_list": {
-            "EFL Championship": "https://1xbet.com/LineFeed/Get1x2_VZip?sports=1&champs=105759&count=50&lng=en&tf=2200000&tz=2&mode=4&country=2&partner=25&getEmpty=true",
-            "Bundesliga": "https://1xbet.com/LineFeed/Get1x2_VZip?sports=1&champs=96463&count=50&lng=en&tf=2200000&tz=2&mode=4&country=2&partner=25&getEmpty=true",
-            "MLS": "https://1xbet.com/LineFeed/Get1x2_VZip?sports=1&champs=828065&count=50&lng=en&tf=2200000&tz=2&mode=4&country=2&partner=25&getEmpty=true"
+            "MLS 2019": "https://1xbet.com/LineFeed/Get1x2_VZip?sports=1&champs=828065&count=50&lng=en&tf=2200000&tz=2&mode=4&country=2&partner=25&getEmpty=true"
         }
     },
     "data_co_uk_parser": {
@@ -62,7 +60,7 @@
     "fivethirtyeight_parser": {
         "find_team_by": "fivethirtyeight_name",
         "tournaments_list": {
-            "MLS": "Major League Soccer"
+            "MLS 2019": "Major League Soccer"
         }
     }
 }

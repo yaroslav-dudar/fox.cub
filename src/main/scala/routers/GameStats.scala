@@ -61,9 +61,9 @@ object GameStats {
 
                 if (teamsScoring != null) {
                     val modelId = model.TournamentModel.getTournamentModel(tournamentId.get).get
-                    var totalDist = MLPNet.predict(teamsScoring, modelId + ".totals")
-                    var scorelineDist = MLPNet.predict(teamsScoring, modelId + ".scoreline")
-                    var bttsDist = MLPNet.predict(teamsScoring, modelId + ".btts")
+                    var totalDist = MLPNet.predict(teamsScoring, model.TournamentModel.getTotalsModel(modelId))
+                    var scorelineDist = MLPNet.predict(teamsScoring, model.TournamentModel.getScorelineModel(modelId))
+                    var bttsDist = MLPNet.predict(teamsScoring, model.TournamentModel.getBttsModel(modelId))
 
                     var bEv = new BettingEvents(scorelineDist, totalDist)
 

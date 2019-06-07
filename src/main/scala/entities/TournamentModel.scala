@@ -36,8 +36,14 @@ object TournamentModel {
         val totalModel = modelJson.getJsonObject("totals").getString("$binary")
         val scorelineModel = modelJson.getJsonObject("scoreline").getString("$binary")
 
-        MLPNet.loadModel(modelId + ".btts", Base64.getDecoder().decode(bttsModel))
-        MLPNet.loadModel(modelId + ".totals", Base64.getDecoder().decode(totalModel))
-        MLPNet.loadModel(modelId + ".scoreline", Base64.getDecoder().decode(scorelineModel))
+        MLPNet.loadModel(getBttsModel(modelId), Base64.getDecoder().decode(bttsModel))
+        MLPNet.loadModel(getTotalsModel(modelId), Base64.getDecoder().decode(totalModel))
+        MLPNet.loadModel(getScorelineModel(modelId), Base64.getDecoder().decode(scorelineModel))
     }
+
+    def getBttsModel(modelId: String) = modelId + ".btts"
+
+    def getScorelineModel(modelId: String) = modelId + ".scoreline"
+
+    def getTotalsModel(modelId: String) = modelId + ".totals"
 }
