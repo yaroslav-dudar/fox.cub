@@ -134,8 +134,7 @@ def get_team_scores(data, team, include_home=True, include_away=True):
     conceded = [float(g["FTHG"]) for g in away_games] + [float(g["FTAG"]) for g in home_games]
     return { "scored_xg": scored, "conceded_xg": conceded }
 
-def test_fox_cub(games_to_test, season_data, tournament_id, countAllSeason = False):
-    fox_cub = FoxCub(tournament_id)
+def test_fox_cub(games_to_test, season_data, client, countAllSeason = False):
     pool = gevent.pool.Pool(20)
 
     for game in games_to_test:
@@ -147,12 +146,11 @@ def test_fox_cub(games_to_test, season_data, tournament_id, countAllSeason = Fal
         season_avg = get_totals(games_before)
         home_team = get_team_scores(games_before, game['HomeTeam'])
         away_team = get_team_scores(games_before, game['AwayTeam'])
-        pool.spawn(fox_cub.get_stats, home_team, away_team, season_avg)
+        pool.spawn(client.get_stats, home_team, away_team, season_avg)
 
     res = pool.join()
     #fox_cub.close()
 
-    return fox_cub.results
 
 def get_team_results(team, data):
     games = get_team_scores(data, team)

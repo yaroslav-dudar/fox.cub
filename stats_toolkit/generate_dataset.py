@@ -3,6 +3,7 @@
 import csv
 import sys
 import traceback
+import random
 
 from enum import Enum
 from datetime import datetime
@@ -68,6 +69,16 @@ def get_team_stats(stats_data_list, team):
     return None
 
 
+def reshuffle_teams(game, home_team, away_team):
+    """ Alert home team to away and away to home """
+
+    if bool(random.getrandbits(1)):
+        home_team, away_team = away_team, home_team
+        game['FTHG'], game['FTAG'] = game['FTAG'], game['FTHG']
+
+    return home_team, away_team, game
+
+
 def dataset_v1(home_team, away_team):
     """
         League avg goals,
@@ -108,12 +119,16 @@ def dataset_v2(home_team, away_team):
     ]
 
 
-def prepare_data_group(games, stats, output_method):
+def prepare_data_group(games, stats, output_method, is_neutral=False):
     data_group = []
 
     for i, g in enumerate(games):
         home_team = get_team_stats(stats, g['HomeTeam'])
         away_team = get_team_stats(stats, g['AwayTeam'])
+
+        if is_neutral:
+            g, home_team, away_team = reshuffle_teams(
+                g, home_team, away_team, game)
 
         if not home_team or not away_team: continue
 
@@ -155,7 +170,7 @@ def prepare_dataset(input_dataset, stats_dataset,
 
         if group_by == Group.Disable:
             dataset.extend(
-                prepare_data_group(sorted_games, stats_data, game_totals)
+                prepare_data_group(sorted_games, stats_data, game_scoreline)
             )
         elif group_by == Group.Group:
             groups = get_groups(input_dataset)

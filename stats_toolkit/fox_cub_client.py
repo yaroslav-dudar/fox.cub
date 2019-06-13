@@ -23,7 +23,11 @@ class FoxCub:
         }
 
         response = self.http.post(self.test_model_url.request_uri, body=json.dumps(data))
-        self.results.append(self.read_json(response))
+        data = self.read_json(response)
+        data['HomeTeam'] = home_team
+        data['AwayTeam'] = away_team
+
+        self.results.append(data)
 
     def read_json(self, response):
         data = response.read(self.CHUNK_SIZE).decode("utf-8")
@@ -31,3 +35,6 @@ class FoxCub:
 
     def close(self):
         self.http.close()
+
+    def clear_results(self):
+        self.results = []

@@ -23,8 +23,9 @@ class Group(Enum):
 
 class TestModel:
 
-    totals, results = [], []
-    test_model_results, real_results = [], []
+    totals_2_5, totals_3_5 = [], []
+    actual_results_team1, actual_results_team2 = [], []
+    model_results = []
     scored_1, conceded_1 = [], []
     scored_2, conceded_2 = [], []
 
@@ -37,20 +38,20 @@ class TestModel:
 
         # teams1
         scoring_teams_1 = filter(
-            lambda t: scoring_table[t]/get_team_games(stats_data, t) < 1.5,
+            lambda t: 1.1 < scoring_table[t]/get_team_games(stats_data, t) < 2.0,
             scoring_table.keys())
 
         defending_teams_1 = filter(
-            lambda t: cons_table[t]/get_team_games(stats_data, t) < 1.5,
+            lambda t: 0.5 < cons_table[t]/get_team_games(stats_data, t) < 1.6,
             cons_table.keys())
 
         # teams2
         scoring_teams_2 = filter(
-            lambda t: scoring_table[t]/get_team_games(stats_data, t) < 1.5,
+            lambda t: 0.0 < scoring_table[t]/get_team_games(stats_data, t) < 1.2,
             scoring_table.keys())
 
         defending_teams_2 = filter(
-            lambda t: cons_table[t]/get_team_games(stats_data, t) < 1.5,
+            lambda t: 1.2 < cons_table[t]/get_team_games(stats_data, t) < 3.3,
             cons_table.keys())
 
         teams_1 = set(scoring_teams_1) & set(defending_teams_1)
@@ -82,8 +83,8 @@ class TestModel:
         scoring_table = get_season_table(stats_dataset, metric='scored')
         cons_table = get_season_table(stats_dataset, metric='conceded')
 
-        #teams_1, teams_2 = self.get_test_teams_by_scoring(stats_dataset)
-        teams_1, teams_2 = self.get_test_teams_by_points(stats_dataset, 0, 24, 0, 24)
+        teams_1, teams_2 = self.get_test_teams_by_scoring(stats_dataset)
+        #teams_1, teams_2 = self.get_test_teams_by_points(stats_dataset, 0, 24, 0, 24)
 
         for t in teams_1:
             # save team1 stats
@@ -97,20 +98,23 @@ class TestModel:
 
         skip_games = len(test_dataset) * 0.0
         sorted_games = sorted(test_dataset, key=lambda g: datetime.strptime(g['Date'], '%d/%m/%Y'))
-        process_games = sorted_games[36:]
+        process_games = sorted_games[:]
 
         games = list(filter(lambda g:
             (g['HomeTeam'] in teams_2 and g['AwayTeam'] in teams_1) or
             (g['HomeTeam'] in teams_1 and g['AwayTeam'] in teams_2),  process_games))
 
-        self.test_model_results.extend(
-            test_fox_cub(games, stats_dataset, self.tournament, True))
+        test_fox_cub(games, stats_dataset, self.fox_cub_client, True)
 
-        for g in games:
-            self.totals.append(is_total_under(g, total=2.5))
-            self.results.append(float(g['FTHG']) - float(g['FTAG']))
+        for i, g in enumerate(games):
+            self.totals_2_5.append(is_total_under(g, total=2.5))
+            self.totals_3_5.append(is_total_under(g, total=3.5))
             self.btts.append(float(g['FTHG']) > 0 and float(g['FTAG']) > 0)
-            self.real_results.append(g)
+
+            self.process_results(g, self.fox_cub_client.results[i], teams_1)
+            self.model_results.append(self.fox_cub_client.results[i])
+
+        self.fox_cub_client.clear_results()
 
 
     def test(self, test_dataset, stats_dataset, tournament, group_by=Group.Disable):
@@ -126,7 +130,7 @@ class TestModel:
         """
 
         # setup current tournament
-        self.tournament = tournament
+        self.fox_cub_client = FoxCub(tournament)
 
         for season in get_seasons(test_dataset):
             data_season = filter_by_season(test_dataset, str(season))
@@ -151,42 +155,79 @@ class TestModel:
 
 
     def print_test_results(self):
-        print("Tested games:", len(self.results))
+        print("Tested games:", len(self.actual_results_team1))
         print("Scored avg team1:", sum(self.scored_1)/len(self.scored_1))
         print("Conceded avg team1:", sum(self.conceded_1)/len(self.conceded_1))
         print("Scored avg team2:", sum(self.scored_2)/len(self.scored_2))
         print("Conceded avg team2:", sum(self.conceded_2)/len(self.conceded_2))
         print('='*25)
-        print("Real results Home Win:", len(list(filter(lambda r: r > 0, self.results)))/len(self.results))
-        print("Real results Away Win:", len(list(filter(lambda r: r < 0, self.results)))/len(self.results))
-        print("Real results Draw:", self.results.count(0)/len(self.results))
-        print("Real results Total Under 2.5:", self.totals.count(True)/len(self.totals))
+        print("Real results Team1 Win:", self.get_actual_results(self.actual_results_team1, 0))
+        print("Real results Team2 Win:", self.get_actual_results(self.actual_results_team2, 0))
+        print("Real results Draw:", self.actual_results_team2.count(0)/len(self.actual_results_team2))
+        print("Real results Total Under 2.5:", self.totals_2_5.count(True)/len(self.totals_2_5))
+        print("Real results Total Under 3.5:", self.totals_3_5.count(True)/len(self.totals_3_5))
         print("Real results BTTS:", self.btts.count(True)/len(self.btts))
         print('='*25)
-        print("Fox.cub results Home Win:", sum([res['Home Win'] for res in self.test_model_results]) / len(self.test_model_results))
-        print("Fox.cub results Away Win:", sum([res['Away Win'] for res in self.test_model_results]) / len(self.test_model_results))
-        print("Fox.cub results Draw:", sum([res['Draw'] for res in self.test_model_results]) / len(self.test_model_results))
-        print("Fox.cub results Total Under 2.5:", sum([res['under 2.5'] for res in self.test_model_results]) / len(self.test_model_results))
-        print("Fox.cub results BTTS:", sum([res['BTTS'] for res in self.test_model_results]) / len(self.test_model_results))
+        print("Fox.cub results Team1 Win:", self.get_fox_cub_scoreline('Win', 'Team1'))
+        print("Fox.cub results Team2 Win:", self.get_fox_cub_scoreline('Win', 'Team2'))
+        print("Fox.cub results Draw:", self.get_fox_cub_results('Draw'))
+        print("Fox.cub results Total Under 2.5:", self.get_fox_cub_results('under 2.5'))
+        print("Fox.cub results Total Under 3.5:", self.get_fox_cub_results('under 3.5'))
+        print("Fox.cub results BTTS:", self.get_fox_cub_results('BTTS'))
         print('='*25)
-        print("Real results Home Win +1.5:", len(list(filter(lambda r: r > 1, self.results)))/len(self.results))
-        print("Real results Home Win +2.5:", len(list(filter(lambda r: r > 2, self.results)))/len(self.results))
-        print("Real results Away Win +1.5:", len(list(filter(lambda r: r < -1, self.results)))/len(self.results))
-        print("Real results Away Win +2.5:", len(list(filter(lambda r: r < -2, self.results)))/len(self.results))
+        print("Real results Team1 Win +1.5:", self.get_actual_results(self.actual_results_team1, 1))
+        print("Real results Team1 Win +2.5:", self.get_actual_results(self.actual_results_team1, 2))
+        print("Real results Team2 Win +1.5:", self.get_actual_results(self.actual_results_team2, 1))
+        print("Real results Team2 Win +2.5:", self.get_actual_results(self.actual_results_team2, 2))
 
-        print("Fox.cub results Home Win +1.5:", sum([res['Home Win +1.5'] for res in self.test_model_results]) / len(self.test_model_results))
-        print("Fox.cub results Home Win +2.5:", sum([res['Home Win +2.5'] for res in self.test_model_results]) / len(self.test_model_results))
-        print("Fox.cub results Away Win +1.5:", sum([res['Away Win +1.5'] for res in self.test_model_results]) / len(self.test_model_results))
-        print("Fox.cub results Away Win +2.5:", sum([res['Away Win +2.5'] for res in self.test_model_results]) / len(self.test_model_results))
+        print("Fox.cub results Team1 Win +1.5:", self.get_fox_cub_scoreline('Win +1.5', 'Team1'))
+        print("Fox.cub results Team1 Win +2.5:", self.get_fox_cub_scoreline('Win +2.5', 'Team1'))
+        print("Fox.cub results Team2 Win +1.5:", self.get_fox_cub_scoreline('Win +1.5', 'Team2'))
+        print("Fox.cub results Team2 Win +2.5:", self.get_fox_cub_scoreline('Win +2.5', 'Team2'))
 
 
     def cleanup_results(self):
-        self.totals, self.results = [], []
-        self.test_model_results, self.real_results = [], []
+        self.totals_2_5, self.totals_3_5 = [], []
+        self.actual_results_team1, self.actual_results_team2 = [], []
+        self.model_results = []
         self.scored_1, self.conceded_1 = [], []
         self.scored_2, self.conceded_2 = [], []
-
         self.btts = []
+
+
+    def get_fox_cub_results(self, attr):
+        """ Get total score of a given attribute """
+        return sum([res[attr] for res in self.model_results]) / len(self.model_results)
+
+
+    def get_fox_cub_scoreline(self, score_type, team):
+        """ Get total score to win with a given handicap """
+        def get_attr(result):
+            return result[result[team] + " " + score_type]
+
+        score = sum([get_attr(res) for res in self.model_results])
+        return score / len(self.model_results)
+
+
+    def get_actual_results(self, actual_results, handicap):
+        """ Get win percentage with a given handicap """
+        return len(list(filter(lambda r: r > handicap, actual_results))) / len(actual_results)
+
+
+    def process_results(self, game, fox_cub_res, teams_1):
+        """ Determine Team1 and Team2 """
+        if game['HomeTeam'] in teams_1:
+            self.actual_results_team1.append(float(game['FTHG']) - float(game['FTAG']))
+            self.actual_results_team2.append(float(game['FTAG']) - float(game['FTHG']))
+
+            fox_cub_res['Team1'] = "Home"
+            fox_cub_res['Team2'] = "Away"
+        else:
+            self.actual_results_team2.append(float(game['FTHG']) - float(game['FTAG']))
+            self.actual_results_team1.append(float(game['FTAG']) - float(game['FTHG']))
+
+            fox_cub_res['Team1'] = "Away"
+            fox_cub_res['Team2'] = "Home"
 
 
 if __name__ == '__main__':
@@ -196,8 +237,8 @@ if __name__ == '__main__':
 
     data_folder = sys.argv[1]
 
-    test_dataset = readfile(join_path(data_folder, "/international/world_cup_u20.json"))
-    stats_dataset = readfile(join_path(data_folder, "/international/world_cup_u20.json"))
+    test_dataset = readfile(join_path(data_folder, "/international/world_cup.json"))
+    stats_dataset = readfile(join_path(data_folder, "/international/world_cup.json"))
 
     model_tester = TestModel()
     model_tester.test(stats_dataset, stats_dataset,
