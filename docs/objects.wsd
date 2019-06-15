@@ -14,18 +14,19 @@ object SportType
 
 object User
 
-object GameOdds
+object Odds
+object Fixtures
 
 object TournamentModel
 
-GameStats o-- Team
+GameStats "1" o-- "2" Team
 GameStats o-- TournamentStage
 
 Team o-- SportType
-Team o-- Tournament
+Team "1" o-- "many" Tournament
 
 Tournament o-- SportType
-Tournament o-- TournamentModel
+Tournament *-- TournamentModel
 
 TournamentStage o-- Tournament
 
@@ -35,9 +36,10 @@ PlayerStats o-- TournamentStage
 Player o-- SportType
 Player o-- Tournament
 
-GameOdds o-- Tournament
-GameOdds o-- TournamentStage
-GameOdds o-- Team
+Fixtures "1" o-- "1" Tournament
+Fixtures o-- TournamentStage
+Fixtures o-- Team
+Fixtures "1" *-- "many" Odds: contains
 
 TeamNotes o-- Team
 TeamNotes o-- User
