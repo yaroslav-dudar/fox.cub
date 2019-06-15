@@ -7,9 +7,6 @@ object TeamNotes
 object Tournament
 object TournamentStage
 
-object Player
-object PlayerStats
-
 object SportType
 
 object User
@@ -26,15 +23,8 @@ Team o-- SportType
 Team "1" o-- "many" Tournament
 
 Tournament o-- SportType
-Tournament *-- TournamentModel
-
+Tournament "1" *-- "1" TournamentModel: contains
 TournamentStage o-- Tournament
-
-PlayerStats o-- Player
-PlayerStats o-- TournamentStage
-
-Player o-- SportType
-Player o-- Tournament
 
 Fixtures "1" o-- "1" Tournament
 Fixtures o-- TournamentStage
@@ -43,4 +33,5 @@ Fixtures "1" *-- "many" Odds: contains
 
 TeamNotes o-- Team
 TeamNotes o-- User
+
 @enduml
