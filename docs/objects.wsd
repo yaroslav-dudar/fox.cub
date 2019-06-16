@@ -28,7 +28,7 @@ TournamentStage o-- Tournament
 
 Fixtures "1" o-- "1" Tournament
 Fixtures o-- TournamentStage
-Fixtures o-- Team
+Fixtures "1" o-- "2" Team
 Fixtures "1" *-- "many" Odds: contains
 
 TeamNotes o-- Team

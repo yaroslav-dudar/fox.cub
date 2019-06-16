@@ -38,20 +38,20 @@ class TestModel:
 
         # teams1
         scoring_teams_1 = filter(
-            lambda t: 1.1 < scoring_table[t]/get_team_games(stats_data, t) < 2.0,
+            lambda t: 0.9 < scoring_table[t]/get_team_games(stats_data, t) < 1.8,
             scoring_table.keys())
 
         defending_teams_1 = filter(
-            lambda t: 0.5 < cons_table[t]/get_team_games(stats_data, t) < 1.6,
+            lambda t: 0.9 < cons_table[t]/get_team_games(stats_data, t) < 1.6,
             cons_table.keys())
 
         # teams2
         scoring_teams_2 = filter(
-            lambda t: 0.0 < scoring_table[t]/get_team_games(stats_data, t) < 1.2,
+            lambda t: 0.4 < scoring_table[t]/get_team_games(stats_data, t) < 1.3,
             scoring_table.keys())
 
         defending_teams_2 = filter(
-            lambda t: 1.2 < cons_table[t]/get_team_games(stats_data, t) < 3.3,
+            lambda t: 0.8 < cons_table[t]/get_team_games(stats_data, t) < 1.8,
             cons_table.keys())
 
         teams_1 = set(scoring_teams_1) & set(defending_teams_1)
@@ -215,17 +215,18 @@ class TestModel:
 
 
     def process_results(self, game, fox_cub_res, teams_1):
-        """ Determine Team1 and Team2 """
+        """ Determine Team1 and Team2 for actual and model results"""
         if game['HomeTeam'] in teams_1:
             self.actual_results_team1.append(float(game['FTHG']) - float(game['FTAG']))
             self.actual_results_team2.append(float(game['FTAG']) - float(game['FTHG']))
-
-            fox_cub_res['Team1'] = "Home"
-            fox_cub_res['Team2'] = "Away"
         else:
             self.actual_results_team2.append(float(game['FTHG']) - float(game['FTAG']))
             self.actual_results_team1.append(float(game['FTAG']) - float(game['FTHG']))
 
+        if fox_cub_res['HomeTeam'] in teams_1:
+            fox_cub_res['Team1'] = "Home"
+            fox_cub_res['Team2'] = "Away"
+        else:
             fox_cub_res['Team1'] = "Away"
             fox_cub_res['Team2'] = "Home"
 
@@ -237,8 +238,8 @@ if __name__ == '__main__':
 
     data_folder = sys.argv[1]
 
-    test_dataset = readfile(join_path(data_folder, "/international/world_cup.json"))
-    stats_dataset = readfile(join_path(data_folder, "/international/world_cup.json"))
+    test_dataset = readfile(join_path(data_folder, "/international/copa_america.json"))
+    stats_dataset = readfile(join_path(data_folder, "/international/copa_america.json"))
 
     model_tester = TestModel()
     model_tester.test(stats_dataset, stats_dataset,

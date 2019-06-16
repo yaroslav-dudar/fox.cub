@@ -12,13 +12,15 @@ class FoxCub:
     def __init__(self, tournament_id):
         self.test_model_url = URL('/api/v1/test/stats?tournament_id=%s' % tournament_id)
 
-    def get_stats(self, home_team, away_team, tournament):
+    def get_stats(self, home_results,
+        away_results, tournament_avg,
+        home_team, away_team):
 
         data = {
             "firstBatch": [{
-                "tournament_avg": [tournament],
-                "home_team": [home_team],
-                "away_team": [away_team]
+                "tournament_avg": [tournament_avg],
+                "home_team": [home_results],
+                "away_team": [away_results]
             }]
         }
 

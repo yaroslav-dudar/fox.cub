@@ -146,7 +146,9 @@ def test_fox_cub(games_to_test, season_data, client, countAllSeason = False):
         season_avg = get_totals(games_before)
         home_team = get_team_scores(games_before, game['HomeTeam'])
         away_team = get_team_scores(games_before, game['AwayTeam'])
-        pool.spawn(client.get_stats, home_team, away_team, season_avg)
+        pool.spawn(
+            client.get_stats, home_team, away_team,
+            season_avg, game['HomeTeam'], game['AwayTeam'])
 
     res = pool.join()
     #fox_cub.close()
