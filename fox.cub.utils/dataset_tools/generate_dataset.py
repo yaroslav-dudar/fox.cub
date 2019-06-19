@@ -214,18 +214,18 @@ mls_totals = [
 bundesliga = ['bundesliga.json', 'bundesliga2.json', 'swiss_super_league.json', 'epl.json', 'mls.json']
 
 club_playoffs = [
-    {'input': './nation_cups/scotland_fa_cup.json', 'stats': ['scotland_premiership.json']},
-    {'input': './nation_cups/fa_cup.json', 'stats': ['epl.json', 'championship.json', 'efl_league1.json']},
-    {'input': './nation_cups/league_cup.json', 'stats': ['epl.json', 'championship.json', 'efl_league1.json']},
-    {'input': './nation_cups/dfb_pokal.json', 'stats': ['bundesliga.json', 'bundesliga2.json', 'bundesliga3.json']},
-    {'input': './nation_cups/coupe_de_france.json', 'stats': ['france_ligue1.json', 'france_ligue2.json']},
-    {'input': './nation_cups/copa_de_ligue.json', 'stats': ['france_ligue1.json', 'france_ligue2.json']},
-    {'input': './nation_cups/copa_del_rey.json', 'stats': ['laliga.json', 'segunda.json']},
-    {'input': './nation_cups/copa_italia.json', 'stats': ['serie_a.json', 'serie_b.json']},
-    #{'input': './nation_cups/knvb_baker.json', 'stats': ['eradivisie.json', 'eereste_divicie.json']},
-    {'input': './nation_cups/taga_de_portugal.json', 'stats': ['portugal_liga.json']},
-    #{'input': './nation_cups/swiss_pokal.json', 'stats': ['swiss_super_league.json', 'swiss_chalange_league.json']},
-    #{'input': './nation_cups/austria_cup.json', 'stats': ['austria_bundesliga.json']},
+    {'input': './cups/scotland_fa_cup.json', 'stats': ['scotland_premiership.json']},
+    {'input': './cups/fa_cup.json', 'stats': ['epl.json', 'championship.json', 'efl_league1.json']},
+    {'input': './cups/league_cup.json', 'stats': ['epl.json', 'championship.json', 'efl_league1.json']},
+    {'input': './cups/dfb_pokal.json', 'stats': ['bundesliga.json', 'bundesliga2.json', 'bundesliga3.json']},
+    {'input': './cups/coupe_de_france.json', 'stats': ['france_ligue1.json', 'france_ligue2.json']},
+    {'input': './cups/copa_de_ligue.json', 'stats': ['france_ligue1.json', 'france_ligue2.json']},
+    {'input': './cups/copa_del_rey.json', 'stats': ['laliga.json', 'segunda.json']},
+    {'input': './cups/copa_italia.json', 'stats': ['serie_a.json', 'serie_b.json']},
+    #{'input': './cups/knvb_baker.json', 'stats': ['eradivisie.json', 'eereste_divicie.json']},
+    {'input': './cups/taga_de_portugal.json', 'stats': ['portugal_liga.json']},
+    #{'input': './cups/swiss_pokal.json', 'stats': ['swiss_super_league.json', 'swiss_chalange_league.json']},
+    #{'input': './cups/austria_cup.json', 'stats': ['austria_bundesliga.json']},
 ]
 
 international_qualification = [

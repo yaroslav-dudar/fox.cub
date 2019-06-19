@@ -3,7 +3,7 @@ import os
 
 class Config:
     settings = {}
-    configpath = "config/config.json"
+    configpath = "../config/config.json"
 
     def __init__(self):
         folder = os.path.dirname(os.path.realpath(__file__))

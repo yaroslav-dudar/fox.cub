@@ -9,3 +9,9 @@ ensime-langserver.log
 .ensime_cache/*
 
 *.log
+*.pyc
+
+fox.cub.utils/research/*
+fox.cub.utils/results/*
+fox.cub.utils/**/*.csv
+fox.cub.utils/**/*.json

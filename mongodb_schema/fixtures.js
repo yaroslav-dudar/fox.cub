@@ -1,33 +1,37 @@
 db = db.getSiblingDB('fox_cub');
 
-db.createCollection("game_odds", {
+db.createCollection("fixtures", {
     validator: {
         $jsonSchema: {
             bsonType: "object",
-            required: [ "home_team", "away_team", "odds", "tournament", "event_date" ],
+            required: [ "home_name", "away_name", "date", "tournament_name", "tournament_id", "home_id", "away_id" ],
             properties: {
-                home_team: {
+                home_name: {
                     bsonType: "string",
                     description: "must be a string and is required"
                 },
-                away_team: {
+                away_name: {
                     bsonType: "string",
                     description: "must be a string and is required"
                 },
-                odds: {
-                    bsonType: "array",
-                    description: "must be a array and is required"
-                },
-                event_date: {
+                date: {
                     bsonType: "date",
                     description: "must be a date and is required"
                 },
-                tournament: {
+                tournament_name: {
                     bsonType: "string",
                     description: "must be a string and is required"
+                },
+                tournament_id: {
+                    anyOf: [{ bsonType: "string" }, { bsonType: "null" }]
+                },
+                home_id: {
+                    anyOf: [{ bsonType: "string" }, { bsonType: "null" }]
+                },
+                away_id: {
+                    anyOf: [{ bsonType: "string" }, { bsonType: "null" }]
                 },
             }
         }
     }
 })
- 

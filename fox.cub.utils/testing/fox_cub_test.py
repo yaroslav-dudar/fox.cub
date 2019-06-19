@@ -1,5 +1,11 @@
 """Provide tools to test Fox.Cub MLP artificial neural network."""
 
+import os
+import sys
+#currentdir = os.path.dirname(os.path.realpath(__file__))
+#parentdir = os.path.dirname(currentdir)
+#sys.path.append(parentdir)
+
 from utils import *
 from enum import Enum
 
@@ -38,20 +44,20 @@ class TestModel:
 
         # teams1
         scoring_teams_1 = filter(
-            lambda t: 0.9 < scoring_table[t]/get_team_games(stats_data, t) < 1.8,
+            lambda t: 0 < scoring_table[t]/get_team_games(stats_data, t) < 2.5,
             scoring_table.keys())
 
         defending_teams_1 = filter(
-            lambda t: 0.9 < cons_table[t]/get_team_games(stats_data, t) < 1.6,
+            lambda t: 0 < cons_table[t]/get_team_games(stats_data, t) < 2.4,
             cons_table.keys())
 
         # teams2
         scoring_teams_2 = filter(
-            lambda t: 0.4 < scoring_table[t]/get_team_games(stats_data, t) < 1.3,
+            lambda t: 0 < scoring_table[t]/get_team_games(stats_data, t) < 2.9,
             scoring_table.keys())
 
         defending_teams_2 = filter(
-            lambda t: 0.8 < cons_table[t]/get_team_games(stats_data, t) < 1.8,
+            lambda t: 0 < cons_table[t]/get_team_games(stats_data, t) < 2.6,
             cons_table.keys())
 
         teams_1 = set(scoring_teams_1) & set(defending_teams_1)
@@ -132,7 +138,7 @@ class TestModel:
         # setup current tournament
         self.fox_cub_client = FoxCub(tournament)
 
-        for season in get_seasons(test_dataset):
+        for season in get_seasons(test_dataset)[-3:]:
             data_season = filter_by_season(test_dataset, str(season))
             stats_data = filter_by_season(stats_dataset, str(season))
 
@@ -238,11 +244,11 @@ if __name__ == '__main__':
 
     data_folder = sys.argv[1]
 
-    test_dataset = readfile(join_path(data_folder, "/international/copa_america.json"))
-    stats_dataset = readfile(join_path(data_folder, "/international/copa_america.json"))
+    test_dataset = readfile(join_path(data_folder, "/cups/open_cup.json"))
+    stats_dataset = readfile(join_path(data_folder, "/leagues/mls.json"))
 
     model_tester = TestModel()
-    model_tester.test(stats_dataset, stats_dataset,
-        Tournament.International_Final.value, Group.Disable)
+    model_tester.test(test_dataset, stats_dataset,
+        Tournament.MLS.value, Group.Disable)
     model_tester.print_test_results()
     model_tester.cleanup_results()
