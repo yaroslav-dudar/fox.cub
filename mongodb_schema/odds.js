@@ -7,8 +7,8 @@ db.createCollection("odds", {
             required: [ "fixture_id", "date", "spreads", "moneyline", "totals"],
             properties: {
                 fixture_id: {
-                    bsonType: "string",
-                    description: "must be a string and is required"
+                    bsonType: "int",
+                    description: "must be a int and is required"
                 },
                 date: {
                     bsonType: "date",

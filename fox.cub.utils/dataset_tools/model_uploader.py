@@ -1,10 +1,7 @@
 """Help to upload statistical models to MongoDB."""
 
-import pymongo
-
-from bson.objectid import ObjectId
-
 from config import Config
+from models import MongoClient, StatsModel
 
 import sys
 from enum import Enum
@@ -34,21 +31,11 @@ if __name__ == '__main__':
     if not ModelType.has_value(model_type):
         raise Exception("Model type not supported. Available types: [btts, scoreline, totals]")
 
-    db_conf = Config()['database']
-
-    client = pymongo.MongoClient(
-        db_conf['host'],
-        db_conf['port']
-    )
-    db = client[db_conf['db_name']]
+    client = MongoClient(Config()['database'])
+    stats_model = StatsModel()
 
     with open(model_file, mode='rb') as file:
         model_content = file.read()
 
-    db[db_conf['collections']['stats_model']].update(
-        {'_id': ObjectId(model_id)},
-        {"$set": {model_type: model_content}},
-        upsert=False
-    )
-
-    client.close()
+    stats_model.update(model_id, model_type, model_content)
+    client.conn.close()

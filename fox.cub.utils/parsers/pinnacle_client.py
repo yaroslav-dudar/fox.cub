@@ -11,7 +11,8 @@ import gevent.pool
 import pymongo
 
 from config import Config
-from models import Fixtures
+from models import Fixtures, Odds, MongoClient
+
 
 def _create_tcp_socket(self, family, socktype, protocol):
     """ Use ssl.SSLContext instead of gevent.ssl context"""
@@ -43,13 +44,14 @@ class PinnacleApi:
     SPORT_ID = '29'
     LEAGUES = '1872, 2639'
 
-    def __init__(self, username, password, db_client):
+    def __init__(self, username, password):
         self.username = username
         self.password = password
 
         self.auth_headers = { 'Authorization' : 'Basic %s' %  self.get_base_auth() }
 
-        self.fixture_obj = Fixtures(db_client)
+        self.fixture = Fixtures()
+        self.odds = Odds()
 
 
     def get_base_auth(self):
@@ -62,14 +64,19 @@ class PinnacleApi:
         data = self.read_json(response)
 
         fixtures_list = []
-        for league in data['league']:
-            for ev in league['events']:
-                document = self.fixture_obj.get_document(
-                    ev['home'], ev['away'],
-                    self.parse_date(ev['starts']),
-                    league['name'])
+        try:
+            for league in data['league']:
+                for ev in league['events']:
+                    document = self.fixture.get_document(
+                        ev['id'], ev['home'], ev['away'],
+                        self.parse_date(ev['starts']),
+                        league['name'])
 
-                fixtures_list.append(document)
+                    fixtures_list.append(document)
+        except KeyError:
+            raise Exception(
+                "Error occured during processing fixtures. Pinnacle response: {}".format(data))
+
         return fixtures_list
 
 
@@ -77,11 +84,35 @@ class PinnacleApi:
         req = URL(self.odds_v1.format(sport_id, leagues_ids, oddsFormat))
         response = self.http.get(req.request_uri, headers=self.auth_headers)
         data = self.read_json(response)
-        return data
+
+        odds_list = []
+        try:
+            for league in data['leagues']:
+                for ev in league['events']:
+                    full_game = ev['periods'][0]
+                    document = self.odds.get_document(
+                        ev['id'], datetime.utcnow(),
+                        full_game['spreads'],
+                        full_game['moneyline'],
+                        full_game['totals'])
+
+                    odds_list.append(document)
+        except KeyError:
+            raise Exception(
+                "Error occured during processing odds. Pinnacle response: {}".format(data))
+
+        return odds_list
 
 
     def read_json(self, response):
-        data = response.read(self.CHUNK_SIZE).decode("utf-8")
+        data = ''
+        while True:
+            chunk = response.read(self.CHUNK_SIZE).decode("utf-8")
+            if chunk == '':
+                break
+
+            data += chunk
+
         return json.loads(data)
 
 
@@ -108,16 +139,19 @@ if __name__ == '__main__':
 
 
     # create database connection
-    db_conf = Config()['database']
-    client = pymongo.MongoClient(db_conf['host'], db_conf['port'])
-    db_client = client[db_conf['db_name']]
+    client = MongoClient(Config()['database'])
 
-    pinnacle = PinnacleApi(user_id, user_pwd, db_client)
+    pinnacle = PinnacleApi(user_id, user_pwd)
     pool = gevent.pool.Pool(20)
-    g = pool.spawn(pinnacle.get_fixture, pinnacle.SPORT_ID, pinnacle.LEAGUES)
+    fixtures = pool.spawn(pinnacle.get_fixture, pinnacle.SPORT_ID, pinnacle.LEAGUES)
+    odds = pool.spawn(pinnacle.get_odds, pinnacle.SPORT_ID, pinnacle.LEAGUES)
+
     pool.join()
 
-    for fixture in g.value:
-        pinnacle.fixture_obj.add(fixture)
+    for fixture in fixtures.value:
+        pinnacle.fixture.add(fixture)
 
-    client.close()
+    pinnacle.odds.insert_many(odds.value)
+
+    client.conn.close()
+    pinnacle.close()
