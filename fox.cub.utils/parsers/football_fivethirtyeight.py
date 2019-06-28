@@ -1,5 +1,6 @@
 import csv
 import os
+import ssl
 import urllib.request
 
 import pymongo
@@ -13,7 +14,6 @@ class FivethirtyeightParser:
     leagues = []
 
     DATE_FORMAT = "%Y-%m-%d"
-    DATA_FOLDER = "data"
     DATA_SOURCE = "https://projects.fivethirtyeight.com/soccer-api/club/spi_matches.csv"
 
     def __init__(self):
@@ -30,7 +30,9 @@ class FivethirtyeightParser:
 
         self.games = list(self.db[self.db_conf['collections']['game']].find())
         self.teams = list(self.db[self.db_conf['collections']['team']].find())
-        print(self.teams)
+
+        self.ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.ssl_ctx.load_verify_locations(cafile='/etc/ssl/certs/ca-certificates.crt')
 
 
     def download(self):
@@ -40,12 +42,14 @@ class FivethirtyeightParser:
         """
 
         self.download_to = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), self.DATA_FOLDER
+            os.path.dirname(os.path.realpath(__file__)), "..", "data", "tmp"
         )
         self.file_path = os.path.join(self.download_to, 'spi_matches.csv')
 
         print("Download file: {0}. Save to: {1}".format(self.DATA_SOURCE, self.file_path))
-        urllib.request.urlretrieve(self.DATA_SOURCE, self.file_path)
+        with urllib.request.urlopen(self.DATA_SOURCE, context=self.ssl_ctx) as u, \
+            open(self.file_path, 'wb') as f:
+                f.write(u.read())
 
     def upload(self, tournament):
         """ Parse input file and upload data to DB. """

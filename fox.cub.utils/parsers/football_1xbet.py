@@ -4,6 +4,7 @@
 
 import time
 import json
+import ssl
 
 import urllib.request
 from datetime import datetime
@@ -58,7 +59,10 @@ class Downloader:
         self.db = self.client[self.db_conf['db_name']]
 
         self.html_pages = {}
-        self.proxy = "191.252.185.161:8090"
+        self.proxy = "182.52.74.89:41334"
+
+        self.ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.ssl_ctx.load_verify_locations(cafile='/etc/ssl/certs/ca-certificates.crt')
 
     def request(self, url):
         """ Set proxy host and send request to URL """
@@ -70,7 +74,7 @@ class Downloader:
         req.set_proxy(self.proxy, 'https')
         req.set_proxy(self.proxy, 'http')
 
-        resp = urllib.request.urlopen(req)
+        resp = urllib.request.urlopen(req, context=self.ssl_ctx)
         return resp.read().decode('utf-8')
 
     def download(self):

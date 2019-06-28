@@ -86,3 +86,31 @@ class StatsModel:
             {"$set": {model_type: model_content}},
             upsert=False
         )
+
+
+class Tournaments:
+
+    def __init__(self):
+        self.collection = MongoClient.db["tournament"]
+
+    def get(self, t_name, t_attr='name'):
+        tournament_id = self.collection.find_one({t_attr: t_name})
+        return tournament_id
+
+
+class Teams:
+
+    def __init__(self):
+        self.collection = MongoClient.db["team"]
+
+    def get_id(self, t_name, t_attr, t_list=None):
+        if not t_list:
+            team = self.collection.find_one({t_attr: t_name})
+            return team
+        else:
+            t_filt = filter(lambda t: t[t_attr] == t_name , t_list)
+            team = next(t_filt, None)
+            return None if not team else str(team['_id'])
+
+    def find(self, t_id):
+        return list(self.collection.find({"tournaments": t_id}))

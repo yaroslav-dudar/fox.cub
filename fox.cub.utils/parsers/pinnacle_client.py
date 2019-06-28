@@ -11,7 +11,7 @@ import gevent.pool
 import pymongo
 
 from config import Config
-from models import Fixtures, Odds, MongoClient
+from models import Fixtures, Odds, Tournaments, Teams, MongoClient
 
 
 def _create_tcp_socket(self, family, socktype, protocol):
@@ -30,6 +30,13 @@ def _create_tcp_socket(self, family, socktype, protocol):
 SSLConnectionPool._create_tcp_socket = _create_tcp_socket
 
 
+class League:
+
+    def __init__(self, t_id, teams):
+        self.t_id = t_id
+        self.teams = teams
+
+
 class PinnacleApi:
 
     CHUNK_SIZE = 1024 * 16 # 16KB
@@ -42,7 +49,7 @@ class PinnacleApi:
 
     # Pinnacle football id
     SPORT_ID = '29'
-    LEAGUES = '1872, 2639'
+    LEAGUES = '1872, 1718, 2663'
 
     def __init__(self, username, password):
         self.username = username
@@ -52,6 +59,11 @@ class PinnacleApi:
 
         self.fixture = Fixtures()
         self.odds = Odds()
+        self.tournaments = Tournaments()
+        self.teams = Teams()
+
+        self.leagues_list = {}
+        self.init_data()
 
 
     def get_base_auth(self):
@@ -67,10 +79,13 @@ class PinnacleApi:
         try:
             for league in data['league']:
                 for ev in league['events']:
+                    home_id, away_id, tournament_id = self.get_fixture_ids(league['id'], ev)
+
                     document = self.fixture.get_document(
                         ev['id'], ev['home'], ev['away'],
                         self.parse_date(ev['starts']),
-                        league['name'])
+                        league['name'], home_id, away_id,
+                        tournament_id)
 
                     fixtures_list.append(document)
         except KeyError:
@@ -89,12 +104,15 @@ class PinnacleApi:
         try:
             for league in data['leagues']:
                 for ev in league['events']:
-                    full_game = ev['periods'][0]
+                    full_game_odds = ev['periods'][0]
+                    spreads, moneyline, totals = self.parse_odds(full_game_odds)
+
+                    # ignore special odds
+                    if not all([spreads, moneyline, totals]): continue
+
                     document = self.odds.get_document(
                         ev['id'], datetime.utcnow(),
-                        full_game['spreads'],
-                        full_game['moneyline'],
-                        full_game['totals'])
+                        spreads, moneyline, totals)
 
                     odds_list.append(document)
         except KeyError:
@@ -127,6 +145,44 @@ class PinnacleApi:
 
     def close(self):
         self.http.close()
+
+
+    def init_data(self):
+        # upload tournaments and teams from DB
+        for l in self.LEAGUES.split(','):
+            l_id = int(l.strip())
+            tournament = self.tournaments.get(l_id, "pinnacle_id")
+
+            if not tournament:
+                self.leagues_list[l_id] = None
+            else:
+                t_id = str(tournament['_id'])
+                self.leagues_list[l_id] = League(t_id, self.teams.find(t_id))
+
+
+    def get_fixture_ids(self, league_id, fixture):
+        """ Fetch Fox.Cub DB ids (home, away, tournament) for a given fixture
+        Args:
+            league_id (str): Pinnacle League Id
+            fixture (dict): Pinnacle Fixture
+        """
+        home_id, away_id, tournament_id = None, None, None
+        tournament = self.leagues_list[league_id]
+
+        if tournament:
+            tournament_id = tournament.t_id
+            home_id = self.teams.get_id(fixture['home'], 'name', tournament.teams)
+            away_id = self.teams.get_id(fixture['away'], 'name', tournament.teams)
+
+        return home_id, away_id, tournament_id
+
+
+    def parse_odds(self, game_odds):
+        spreads = game_odds.get('spreads')
+        moneyline = game_odds.get('moneyline')
+        totals = game_odds.get('totals')
+
+        return spreads, moneyline, totals
 
 
 if __name__ == '__main__':
