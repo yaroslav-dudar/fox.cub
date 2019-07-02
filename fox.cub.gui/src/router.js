@@ -5,6 +5,7 @@ import Tournaments from './views/Tournaments.vue'
 import Game from './views/Game.vue'
 import Team from './views/Team.vue'
 import ManualTest from './views/ManualTest.vue'
+import HowTo from './views/HowTo.vue'
 
 Vue.use(Router)
 
@@ -31,6 +32,11 @@ export default new Router({
       path: '/test',
       name: 'manual_test',
       component: ManualTest
+    },
+    {
+      path: '/howto',
+      name: 'how_to',
+      component: HowTo
     }
   ]
 })

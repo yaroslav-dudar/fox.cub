@@ -3,6 +3,7 @@
     <div id="nav">
       <router-link to="/">Tournaments List</router-link> |
       <router-link to="/test">Manual Testing</router-link> |
+      <router-link to="/howto">How To Manual</router-link> |
     </div>
     <router-view/>
   </div>

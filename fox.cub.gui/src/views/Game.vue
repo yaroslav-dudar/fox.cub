@@ -2,8 +2,8 @@
     <div>
         <div class="pure-g pure-u-1 center">
         <h1>
-        <a v-on:click="redirectToTeam(home_team)">{{game_odds.home_team[0].name}}</a> vs
-        <a v-on:click="redirectToTeam(away_team)">{{game_odds.away_team[0].name}}</a>
+        <a v-on:click="redirectToTeam(home_team)">{{fixture.home_name}}</a> vs
+        <a v-on:click="redirectToTeam(away_team)">{{fixture.away_name}}</a>
         </h1>
         </div>
         <div class="pure-g">
@@ -17,7 +17,7 @@
             </div>
             <div class="pure-u-1-3">
                 <h3>Game Odds History:</h3>
-                <game-odds v-bind:odds_history="game_odds.odds"></game-odds>
+                <game-odds v-bind:odds_history="odds"></game-odds>
             </div>
         </div>
         <br>
@@ -81,10 +81,11 @@ export default {
             home_team: '',
             away_team: '',
             tournament: '',
+            fixture: '',
             home_team_games: [],
             away_team_games: [],
             stats: {},
-            odd_list: [],
+            odds: [],
             home_team_stats: {},
             away_team_stats: {},
             rolling_trend_size: 6,
@@ -101,10 +102,15 @@ export default {
         this.home_team = this.$route.query.home_team;
         this.away_team = this.$route.query.away_team;
         this.tournament = this.$route.query.tournament;
-        this.game_odds = this.$store.state.odds[this.$route.query.odd_index];
+
+        let fixture_id = this.$route.query.fixture;
+        this.fixture = this.$store.state.fixtures.find(
+            f => f._id == fixture_id);
+
         this.ppg_table = this.$store.state.ppg_table;
         this.getGames();
         this.getStats();
+        this.getOdds();
     },
 
     methods: {
@@ -122,6 +128,12 @@ export default {
             this.$http.get(Vue.config.host + '/api/v1/stats/' + this.tournament, {params: query})
                 .then(function (response) {
                     this.stats = response.body;
+                });
+        },
+        getOdds() {
+            this.$http.get(Vue.config.host + '/api/v2/odds/' + this.fixture._id)
+                .then(function (response) {
+                    this.odds = response.body.firstBatch;
                 });
 
             this.getGames();
@@ -173,7 +185,7 @@ export default {
         },
 
         getLast6Data(venue) {
-            var team_name = venue == "home" ? this.game_odds.home_team[0].name: this.game_odds.away_team[0].name;
+            var team_name = venue == "home" ? this.fixture.home_name: this.fixture.away_name;
             var data = venue == "home" ? this.home_team_games: this.away_team_games;
             // print only last 6 games
             data = data.slice(1).slice(-6);
@@ -199,7 +211,7 @@ export default {
         },
 
         getRollingTrendData(venue, games_amount = 6, goals_type = "xG") {
-            var team_name = venue == "home" ? this.game_odds.home_team[0].name: this.game_odds.away_team[0].name;
+            var team_name = venue == "home" ? this.fixture.home_name: this.fixture.away_name;
             var data = venue == "home" ? this.home_team_games: this.away_team_games;
             var points = data.map((v, i) => data.slice(0,i+1).slice(-games_amount));
 

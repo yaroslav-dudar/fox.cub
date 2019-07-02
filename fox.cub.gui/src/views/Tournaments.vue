@@ -8,13 +8,16 @@
             </option>
         </select>
         <h3>Tournament Odds:</h3>
-        <tournament-odds v-bind:odds="$store.state.odds"></tournament-odds>
+        <fixtures
+            v-bind:odds="$store.state.odds"
+            v-bind:fixtures="$store.state.fixtures">
+        </fixtures>
     </div>
 </template>
 
 <script>
 import Vue from 'vue'
-import TournamentOdds from '@/components/TournamentOdds.vue'
+import Fixtures from '@/components/Fixtures.vue'
 
 export default {
     name: 'Tournaments',
@@ -24,11 +27,12 @@ export default {
             ppg_table: [],
             tournament: '',
             odds: [],
+            fixtures: [],
             teams: []
         }
     },
     components: {
-        TournamentOdds
+        Fixtures
     },
 
     created: function() {
@@ -36,6 +40,9 @@ export default {
         this.ppg_table = this.$store.state.ppg_table;
     },
     methods: {
+        /**
+         * @desc pre-load tournament data
+        */
         onChange() {
             this.$store.commit('setCurrentTournament', this.tournament)
 
@@ -54,6 +61,12 @@ export default {
                 .then(function (response) {
                     this.ppg_table = response.body.table;
                     this.$store.commit('setPPGTable', this.ppg_table)
+                });
+
+            this.$http.get(Vue.config.host + '/api/v1/fixtures?tournament_id=' + this.tournament)
+                .then(function (response) {
+                    this.fixtures = response.body.firstBatch;
+                    this.$store.commit('setFixtures', this.fixtures)
                 });
         }
     }

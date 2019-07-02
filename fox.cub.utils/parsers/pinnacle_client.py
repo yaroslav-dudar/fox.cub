@@ -1,3 +1,5 @@
+"""Fetch sport fixtures and their odds using Pinaccle API."""
+
 import json
 import ssl
 import sys
@@ -79,6 +81,8 @@ class PinnacleApi:
         try:
             for league in data['league']:
                 for ev in league['events']:
+                    if not self.is_main_fixture(ev): continue
+
                     home_id, away_id, tournament_id = self.get_fixture_ids(league['id'], ev)
 
                     document = self.fixture.get_document(
@@ -130,7 +134,7 @@ class PinnacleApi:
                 break
 
             data += chunk
-
+        print(data)
         return json.loads(data)
 
 
@@ -171,8 +175,8 @@ class PinnacleApi:
 
         if tournament:
             tournament_id = tournament.t_id
-            home_id = self.teams.get_id(fixture['home'], 'name', tournament.teams)
-            away_id = self.teams.get_id(fixture['away'], 'name', tournament.teams)
+            home_id = self.teams.get_id(fixture['home'], 'pinnacle_name', tournament.teams)
+            away_id = self.teams.get_id(fixture['away'], 'pinnacle_name', tournament.teams)
 
         return home_id, away_id, tournament_id
 
@@ -185,6 +189,10 @@ class PinnacleApi:
         return spreads, moneyline, totals
 
 
+    def is_main_fixture(self, fixture):
+        return True if not fixture.get('parentId') else False
+
+
 if __name__ == '__main__':
 
     if len(sys.argv) < 3:
@@ -192,7 +200,6 @@ if __name__ == '__main__':
 
     user_id = sys.argv[1]
     user_pwd = sys.argv[2]
-
 
     # create database connection
     client = MongoClient(Config()['database'])

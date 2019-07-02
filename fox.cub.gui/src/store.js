@@ -8,6 +8,7 @@ export default new Vuex.Store({
     tournaments: [],
     ppg_table: [],
     tournament: '',
+    fixtures: [],
     odds: [],
     teams: []
   },
@@ -23,6 +24,9 @@ export default new Vuex.Store({
     },
     setPPGTable: function(state, ppg_table) {
       state.ppg_table = ppg_table;
+    },
+    setFixtures: function(state, fixtures) {
+      state.fixtures = fixtures;
   },
   }
 })

@@ -13,13 +13,13 @@
             </tr>
         </thead>
         <tr v-for="(o, index) in odds_history" :key="index">
-            <td>{{o.home_win}}</td>
-            <td>{{o.draw}}</td>
-            <td>{{o.away_win}}</td>
-            <td>{{o.total}}</td>
-            <td>{{o.total_under}}</td>
-            <td>{{o.total_over}}</td>
-            <td>{{o.scraping_date.$date}}</td>
+            <td>{{o.moneyline.home}}</td>
+            <td>{{o.moneyline.draw}}</td>
+            <td>{{o.moneyline.away}}</td>
+            <td>{{o.totals[0].points}}</td>
+            <td>{{o.totals[0].under}}</td>
+            <td>{{o.totals[0].over}}</td>
+            <td>{{o.date.$date}}</td>
         </tr>
     </table>
     <highcharts :options="getChartData()"></highcharts>
@@ -42,26 +42,26 @@ export default {
                 },
                 xAxis: {
                     type: 'datetime',
-                    categories: this.odds_history.map(g => g.scraping_date.$date)
+                    categories: this.odds_history.map(g => g.date.$date)
                 },
                 series: [{
                     name: 'Home Win',
-                    data: this.odds_history.map(g => [g.home_win])
+                    data: this.odds_history.map(g => [g.moneyline.home])
                 }, {
                     name: 'Draw',
-                    data: this.odds_history.map(g => g.draw)
+                    data: this.odds_history.map(g => g.moneyline.draw)
                 }, {
                     name: 'Away Win',
-                    data: this.odds_history.map(g => g.away_win)
+                    data: this.odds_history.map(g => g.moneyline.away)
                 }, {
                     name: 'Total',
-                    data: this.odds_history.map(g => g.total)
+                    data: this.odds_history.map(g => g.totals[0].points)
                 }, {
                     name: 'Total Under',
-                    data: this.odds_history.map(g => g.total_under)
+                    data: this.odds_history.map(g => g.totals[0].under)
                 }, {
                     name: 'Total Over',
-                    data: this.odds_history.map(g => g.total_over)
+                    data: this.odds_history.map(g => g.totals[0].over)
                 }]
             }
         }

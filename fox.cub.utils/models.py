@@ -53,13 +53,8 @@ class Fixtures:
     def add(self, document):
         """ Insert fixture record if it not existed before """
         self.collection.update(
-            {
-                "date": document["date"],
-                "home_name": document["home_name"],
-                "away_name": document["away_name"]
-            },
-            { "$setOnInsert": document },
-            upsert=True
+            { "_id": document["_id"] },
+            document, upsert=True
         )
 
 

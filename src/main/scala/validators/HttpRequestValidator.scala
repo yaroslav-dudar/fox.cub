@@ -19,7 +19,7 @@ class RegexValidator(pattern: String) extends BaseTypeValidator {
             var v = fieldValue.get.toString
             if (!v.matches(pattern)) {
                 throw new HttpRequestValidatorException(
-                    s"Parameter $fieldName regex not match")
+                    s"Parameter $fieldName regex not match to pattern: $pattern")
             }
         }
     }
@@ -39,7 +39,7 @@ class EnumValidator[T](acceptableValues: Seq[T]) extends BaseTypeValidator {
 class MongoIdValidator() extends RegexValidator("^[a-f\\d]{24}$") {}
 
 final case class HttpRequestValidatorException(
-    private val message: String = "", 
+    private val message: String = "",
     private val cause: Throwable = None.orNull) extends Exception(message, cause)
 
 class RuleValidator(field: Option[Object], fieldName: String,
