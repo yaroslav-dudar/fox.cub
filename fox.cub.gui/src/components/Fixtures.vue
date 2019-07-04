@@ -32,7 +32,7 @@
 import router from '@/router'
 
 export default {
-    props: ['odds', 'fixtures'],
+    props: ['fixtures'],
     methods: {
         redirectToGame(home_team, away_team,
             tournament, fixture) {

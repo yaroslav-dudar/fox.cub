@@ -3,31 +3,41 @@
         <h3>Select Tournament</h3>
         <select v-model="tournament" @change="onChange()">
             <option
-                v-for="t in $store.state.tournaments" :key="t._id.$oid"
+                v-for="t in tournaments" :key="t._id.$oid"
                 v-bind:value='t._id.$oid'> {{t.name}}
             </option>
         </select>
         <h3>Tournament Odds:</h3>
         <fixtures
-            v-bind:odds="$store.state.odds"
-            v-bind:fixtures="$store.state.fixtures">
+            v-bind:fixtures="fixtures">
         </fixtures>
     </div>
 </template>
 
 <script>
 import Vue from 'vue'
+import { mapGetters } from "vuex";
+
 import Fixtures from '@/components/Fixtures.vue'
+import {
+    SELECT_TOURNAMENT,
+    FETCH_FIXTURES,
+    FETCH_PPG_TABLE
+} from '@/store/actions.type'
 
 export default {
     name: 'Tournaments',
+
+    computed: {
+        ...mapGetters([
+            "tournaments", "ppg_table",
+            "selected_tournament", "fixtures"
+        ])
+    },
+
     data: function() {
         return {
-            tournaments: [],
-            ppg_table: [],
             tournament: '',
-            odds: [],
-            fixtures: [],
             teams: []
         }
     },
@@ -35,38 +45,19 @@ export default {
         Fixtures
     },
 
-    created: function() {
-        this.tournament = this.$store.state.tournament;
-        this.ppg_table = this.$store.state.ppg_table;
-    },
     methods: {
         /**
          * @desc pre-load tournament data
         */
         onChange() {
-            this.$store.commit('setCurrentTournament', this.tournament)
+            this.$store.dispatch(SELECT_TOURNAMENT, this.tournament);
 
-            this.$http.get(Vue.config.host + '/api/v1/team/' + this.tournament)
+            this.$store.dispatch(FETCH_FIXTURES, this.selected_tournament);
+            this.$store.dispatch(FETCH_PPG_TABLE, this.selected_tournament);
+
+            this.$http.get(Vue.config.host + '/api/v1/team/' + this.selected_tournament)
                 .then(function (response) {
                     this.teams = response.body.firstBatch;
-                });
-
-            this.$http.get(Vue.config.host + '/api/v1/odds/' + this.tournament)
-                .then(function (response) {
-                    this.odds = response.body.firstBatch;
-                    this.$store.commit('setOdds', this.odds)
-                });
-
-            this.$http.get(Vue.config.host + '/api/v1/tournament/' + this.tournament)
-                .then(function (response) {
-                    this.ppg_table = response.body.table;
-                    this.$store.commit('setPPGTable', this.ppg_table)
-                });
-
-            this.$http.get(Vue.config.host + '/api/v1/fixtures?tournament_id=' + this.tournament)
-                .then(function (response) {
-                    this.fixtures = response.body.firstBatch;
-                    this.$store.commit('setFixtures', this.fixtures)
                 });
         }
     }

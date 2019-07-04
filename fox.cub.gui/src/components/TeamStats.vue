@@ -8,8 +8,10 @@
                 </tr>
             </thead>
             <tr>
-                <td>{{stats.actual.scored.toFixed(3)}}</td>
-                <td>{{stats.actual.conceded.toFixed(3)}}</td>
+                <td v-if="stats.actual">{{stats.actual.scored.toFixed(3)}}</td>
+                <td v-else> No data </td>
+                <td v-if="stats.actual">{{stats.actual.conceded.toFixed(3)}}</td>
+                <td v-else> No data </td>
             </tr>
         </table>
         <table class="pure-table" style="width: 80%">
@@ -20,8 +22,10 @@
                 </tr>
             </thead>
             <tr>
-                <td>{{stats.xg.scored.toFixed(3)}}</td>
-                <td>{{stats.xg.conceded.toFixed(3)}}</td>
+                <td v-if="stats.xg">{{stats.xg.scored.toFixed(3)}}</td>
+                <td v-else> No data </td>
+                <td v-if="stats.xg">{{stats.xg.conceded.toFixed(3)}}</td>
+                <td v-else> No data </td>
             </tr>
         </table>
     </div>

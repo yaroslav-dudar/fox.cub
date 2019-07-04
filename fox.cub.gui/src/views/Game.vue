@@ -9,11 +9,11 @@
         <div class="pure-g">
             <div class="pure-u-1-3">
                 <h3>Home Team Results:</h3>
-                <team-results v-bind:games="home_team_games"></team-results>
+                <team-results v-bind:games="home_games"></team-results>
             </div>
             <div class="pure-u-1-3">
                 <h3>Away Team Results:</h3>
-                <team-results v-bind:games="away_team_games"></team-results>
+                <team-results v-bind:games="away_games"></team-results>
             </div>
             <div class="pure-u-1-3">
                 <h3>Game Odds History:</h3>
@@ -68,24 +68,34 @@
 
 <script>
 import Vue from 'vue'
+import { mapGetters } from "vuex";
 import router from '@/router'
 import {Chart} from 'highcharts-vue'
 
 import GameOdds from '@/components/GameOdds.vue'
 import TeamResults from '@/components/TeamResults.vue'
 import TeamStats from '@/components/TeamStats.vue'
+import {
+    FETCH_GAMES,
+    FETCH_ODDS,
+    FETCH_STATS
+} from '@/store/actions.type'
+
 
 export default {
+    computed: {
+        ...mapGetters([
+            "home_games", "away_games", "odds",
+            "ppg_table", "fixtures", "stats"
+        ])
+    },
+
     data: function() {
         return {
             home_team: '',
             away_team: '',
             tournament: '',
-            fixture: '',
-            home_team_games: [],
-            away_team_games: [],
-            stats: {},
-            odds: [],
+            fixture: {},
             home_team_stats: {},
             away_team_stats: {},
             rolling_trend_size: 6,
@@ -104,72 +114,45 @@ export default {
         this.tournament = this.$route.query.tournament;
 
         let fixture_id = this.$route.query.fixture;
-        this.fixture = this.$store.state.fixtures.find(
-            f => f._id == fixture_id);
 
-        this.ppg_table = this.$store.state.ppg_table;
-        this.getGames();
-        this.getStats();
-        this.getOdds();
+        this.fixture = this.fixtures.find(f => f._id == fixture_id);
+
+        this.$store.dispatch(FETCH_GAMES,
+            {
+                team_id: this.home_team,
+                tournament_id: this.tournament,
+                venue: 'home'
+            }).then(() => {
+                this.home_team_stats = this.getTeamPerformance("home")
+            });
+
+        this.$store.dispatch(FETCH_GAMES,
+            {
+                team_id: this.away_team,
+                tournament_id: this.tournament,
+                venue: 'away'
+            }).then(() => {
+                this.away_team_stats = this.getTeamPerformance("away")
+            });
+
+        this.$store.dispatch(FETCH_ODDS, fixture_id);
+        this.$store.dispatch(FETCH_STATS, {
+            home_team_id: this.home_team,
+            away_team_id: this.away_team,
+            tournament_id: this.tournament
+        });
     },
 
     methods: {
-        getStats() {
-            if (!this.home_team || !this.away_team) {
-                alert("Select rivals!");
-                return;
-            }
-
-            var query = {
-                home_team_id: this.home_team,
-                away_team_id: this.away_team
-            };
-
-            this.$http.get(Vue.config.host + '/api/v1/stats/' + this.tournament, {params: query})
-                .then(function (response) {
-                    this.stats = response.body;
-                });
-        },
-        getOdds() {
-            this.$http.get(Vue.config.host + '/api/v2/odds/' + this.fixture._id)
-                .then(function (response) {
-                    this.odds = response.body.firstBatch;
-                });
-
-            this.getGames();
-        },
-        getGames() {
-            var home_team_q = {
-                "team_id": this.home_team,
-                "tournament_id": this.tournament
-            };
-
-            var away_team_q = {
-                "team_id": this.away_team,
-                "tournament_id": this.tournament
-            };
-
-            this.$http.get(Vue.config.host + '/api/v1/game', {params: home_team_q})
-                .then(function (response) {
-                    this.home_team_games = response.body.firstBatch;
-                    this.home_team_stats = this.getTeamPerformance("home");
-                });
-
-            this.$http.get(Vue.config.host + '/api/v1/game', {params: away_team_q})
-                .then(function (response) {
-                    this.away_team_games = response.body.firstBatch;
-                    this.away_team_stats = this.getTeamPerformance("away");
-                });
-        },
         redirectToTeam(team_id) {
             router.push({path: '/team', query: { team: team_id }})
         },
 
         getTeamPerformance(venue) {
             if (venue == "home") {
-                var data = this.home_team_games;
+                var data = this.home_games;
             } else if (venue == "away") {
-                data = this.away_team_games;
+                data = this.away_games;
             }
 
             var xg = {
@@ -186,7 +169,7 @@ export default {
 
         getLast6Data(venue) {
             var team_name = venue == "home" ? this.fixture.home_name: this.fixture.away_name;
-            var data = venue == "home" ? this.home_team_games: this.away_team_games;
+            var data = venue == "home" ? this.home_games: this.away_games;
             // print only last 6 games
             data = data.slice(1).slice(-6);
 
@@ -212,7 +195,7 @@ export default {
 
         getRollingTrendData(venue, games_amount = 6, goals_type = "xG") {
             var team_name = venue == "home" ? this.fixture.home_name: this.fixture.away_name;
-            var data = venue == "home" ? this.home_team_games: this.away_team_games;
+            var data = venue == "home" ? this.home_games: this.away_games;
             var points = data.map((v, i) => data.slice(0,i+1).slice(-games_amount));
 
             return {
@@ -234,7 +217,7 @@ export default {
         },
 
         getShcheduleComplexity(venue, games_amount = 6) {
-            var data = venue == "home" ? this.home_team_games: this.away_team_games;
+            var data = venue == "home" ? this.home_games: this.away_games;
             var points = data.map((v, i) => data.slice(0,i+1).slice(-games_amount));
 
             var opponents_schedule = points.map(batch => batch.reduce(

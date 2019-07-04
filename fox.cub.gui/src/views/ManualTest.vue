@@ -6,7 +6,7 @@
                     <label for="tournament">Tournament</label>
                     <select v-model="tournament" id="tournament" required>
                         <option
-                            v-for="t in $store.state.tournaments" :key="t._id.$oid"
+                            v-for="t in tournaments" :key="t._id.$oid"
                             v-bind:value='t._id.$oid'> {{t.name}}
                         </option>
                     </select>
@@ -65,6 +65,7 @@
 
 <script>
 import Vue from 'vue'
+import { mapGetters } from "vuex";
 
 export default {
     name: 'ManualTest',
@@ -81,7 +82,13 @@ export default {
     },
 
     created: function() {
-        this.tournament = this.$store.state.tournament;
+        this.tournament = this.selected_tournament;
+    },
+
+    computed: {
+        ...mapGetters([
+            "tournaments", "selected_tournament"
+        ])
     },
     methods: {
         getStats() {

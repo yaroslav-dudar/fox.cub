@@ -1,7 +1,9 @@
 import Vue from 'vue'
 import App from './App.vue'
 import router from './router'
-import store from './store'
+import store from './store/index'
+
+import { FETCH_TOURNAMENTS } from "./store/actions.type";
 
 import VueResource from 'vue-resource';
 import HighchartsVue from 'highcharts-vue'
@@ -25,8 +27,6 @@ new Vue({
     }
   },
   created: function () {
-    this.getTournaments().then(function(data) {
-        this.$store.commit('setTournaments', data);
-    })
+    store.dispatch(FETCH_TOURNAMENTS);
   }
 }).$mount('#app')
