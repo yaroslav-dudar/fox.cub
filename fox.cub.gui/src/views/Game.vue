@@ -62,12 +62,10 @@
             <h3>Calculated probabilities:</h3>
             <pre v-html="stats"></pre>
         </div>
-
     </div>
 </template>
 
 <script>
-import Vue from 'vue'
 import { mapGetters } from "vuex";
 import router from '@/router'
 import {Chart} from 'highcharts-vue'
@@ -122,8 +120,6 @@ export default {
                 team_id: this.home_team,
                 tournament_id: this.tournament,
                 venue: 'home'
-            }).then(() => {
-                this.home_team_stats = this.getTeamPerformance("home")
             });
 
         this.$store.dispatch(FETCH_GAMES,
@@ -131,8 +127,6 @@ export default {
                 team_id: this.away_team,
                 tournament_id: this.tournament,
                 venue: 'away'
-            }).then(() => {
-                this.away_team_stats = this.getTeamPerformance("away")
             });
 
         this.$store.dispatch(FETCH_ODDS, fixture_id);
@@ -143,6 +137,16 @@ export default {
         });
     },
 
+    watch: {
+        home_games() {
+            // is triggered whenever the store state changes
+            this.home_team_stats = this.getTeamPerformance("home");
+        },
+        away_games() {
+            // is triggered whenever the store state changes
+            this.away_team_stats = this.getTeamPerformance("away");
+        }
+    },
     methods: {
         redirectToTeam(team_id) {
             router.push({path: '/team', query: { team: team_id }})
@@ -168,8 +172,14 @@ export default {
         },
 
         getLast6Data(venue) {
-            var team_name = venue == "home" ? this.fixture.home_name: this.fixture.away_name;
-            var data = venue == "home" ? this.home_games: this.away_games;
+            var team_name = venue == "home" ?
+                this.fixture.home_name :
+                this.fixture.away_name;
+
+            var data = venue == "home" ?
+                this.home_games :
+                this.away_games;
+
             // print only last 6 games
             data = data.slice(1).slice(-6);
 
@@ -194,8 +204,14 @@ export default {
         },
 
         getRollingTrendData(venue, games_amount = 6, goals_type = "xG") {
-            var team_name = venue == "home" ? this.fixture.home_name: this.fixture.away_name;
-            var data = venue == "home" ? this.home_games: this.away_games;
+            var team_name = venue == "home" ?
+                this.fixture.home_name :
+                this.fixture.away_name;
+
+            var data = venue == "home" ?
+                this.home_games :
+                this.away_games;
+
             var points = data.map((v, i) => data.slice(0,i+1).slice(-games_amount));
 
             return {
@@ -208,17 +224,20 @@ export default {
                 },
                 series: [{
                     name: 'Goals for',
-                    data: points.map(batch => batch.reduce((a, b) => +a + +b[goals_type + "_for"], 0) / batch.length)
+                    data: points.map(batch => batch.reduce(
+                        (a, b) => +a + +b[goals_type + "_for"], 0) / batch.length)
                 }, {
                     name: 'Goals against',
-                    data: points.map(batch => batch.reduce((a, b) => +a + +b[goals_type + "_against"], 0) / batch.length)
+                    data: points.map(batch => batch.reduce(
+                        (a, b) => +a + +b[goals_type + "_against"], 0) / batch.length)
                 }]
             }
         },
 
         getShcheduleComplexity(venue, games_amount = 6) {
-            var data = venue == "home" ? this.home_games: this.away_games;
-            var points = data.map((v, i) => data.slice(0,i+1).slice(-games_amount));
+            var data = venue == "home" ? this.home_games : this.away_games;
+            var points = data.map(
+                (v, i) => data.slice(0,i+1).slice(-games_amount));
 
             var opponents_schedule = points.map(batch => batch.reduce(
                 (a, b) => +a + +this.getTeamPPG(b.opponent[0]._id.$oid), 0) / batch.length)

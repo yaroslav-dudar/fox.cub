@@ -9,3 +9,4 @@ export const FETCH_ODDS = "fetchOdds";
 export const FETCH_GAMES = "fetchGames";
 
 export const FETCH_STATS = "fetchStats";
+export const FETCH_MANUAL_STATS = "fetchManualStats";

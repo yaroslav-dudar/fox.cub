@@ -64,11 +64,15 @@
 </template>
 
 <script>
-import Vue from 'vue'
 import { mapGetters } from "vuex";
+
+import {
+    FETCH_MANUAL_STATS
+} from '@/store/actions.type'
 
 export default {
     name: 'ManualTest',
+
     data: function() {
         return {
             tournament: '',
@@ -87,36 +91,19 @@ export default {
 
     computed: {
         ...mapGetters([
-            "tournaments", "selected_tournament"
+            "tournaments", "selected_tournament", "stats"
         ])
     },
     methods: {
         getStats() {
-            var query = {tournament_id: this.tournament};
-
-            this.$http.post(Vue.config.host + '/api/v1/test/stats', this.getStatsRequest(), {params: query})
-                .then(function (response) {
-                    this.stats = response.body;
-                });
-        },
-
-        getStatsRequest() {
-            return {
-                firstBatch: [{
-                    tournament_avg: [{
-                        avgScoredHome: parseFloat(this.tournament_avg_score/2),
-                        avgScoredAway: parseFloat(this.tournament_avg_score/2)
-                    }],
-                    home_team: [{
-                        scored_xg: [parseFloat(this.home_attack)],
-                        conceded_xg: [parseFloat(this.home_defend)]
-                    }],
-                    away_team: [{
-                        scored_xg: [parseFloat(this.away_attack)],
-                        conceded_xg: [parseFloat(this.away_defend)]
-                    }]
-                }]
-            }
+            this.$store.dispatch(FETCH_MANUAL_STATS, {
+                home_attack: this.home_attack,
+                home_defend: this.home_defend,
+                away_attack: this.away_attack,
+                away_defend: this.away_defend,
+                tournament_avg_score: this.tournament_avg_score,
+                tournament_id: this.tournament
+            });
         }
     }
 }
