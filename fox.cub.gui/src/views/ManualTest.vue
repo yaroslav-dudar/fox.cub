@@ -80,8 +80,7 @@ export default {
             home_attack: 0.0,
             home_defend: 0.0,
             away_attack: 0.0,
-            away_defend: 0.0,
-            stats: {}
+            away_defend: 0.0
         }
     },
 

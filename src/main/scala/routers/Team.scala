@@ -8,7 +8,7 @@ import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import fox.cub.internals.ResultEvent
-import fox.cub.utils.HttpUtils.jsonResponse
+import fox.cub.utils.HttpUtils.{jsonResponse, errorResponse}
 import fox.cub.db.DbProps
 import fox.cub.model
 
@@ -31,7 +31,7 @@ object Team {
             }
             case Failure(cause) => {
                 logger.error(cause.toString)
-                context.fail(500)
+                errorResponse(context.response, cause.toString, 500)
             }
         }
     }
@@ -49,7 +49,7 @@ object Team {
             }
             case Failure(cause) => {
                 logger.error(cause.toString)
-                context.fail(500)
+                errorResponse(context.response, cause.toString, 500)
             }
         }
     }
@@ -68,7 +68,7 @@ object Team {
             }
             case Failure(cause) => {
                 logger.error(cause.toString)
-                context.fail(500)
+                errorResponse(context.response, cause.toString, 500)
             }
         }
     }

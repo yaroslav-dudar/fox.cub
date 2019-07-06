@@ -15,7 +15,6 @@ import fox.cub.internals.{ResultEvent, ResultEventCodec}
 import scala.collection.mutable.SortedSet
 
 import fox.cub.router.{
-    GameOdds => RouterGameOdds,
     GameStats => RouterGameStats,
     Team => RouterTeam,
     Tournament => RouterTournament,
@@ -58,10 +57,6 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
         .handler(RouterGameStats.getGameStatsValidator.handle)
         .handler(RouterGameStats.getGameStats)
 
-    router.get("/api/v1/odds/:tournament_id")
-        .handler(RouterGameOdds.getOddsValidator.handle)
-        .handler(RouterGameOdds.getOdds)
-
     router.post("/api/v1/note")
         .handler(RouterUserNotes.addNoteValidator.handle)
         .handler(RouterUserNotes.addNote)
@@ -72,7 +67,9 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
 
     router.post("/api/v1/test/stats").handler(RouterTestModel.getGameStats)
 
-    router.get("/api/v1/fixtures").handler(RouterFixtures.getFixtures)
+    router.get("/api/v1/fixtures")
+        .handler(RouterFixtures.getFixtures)
+
     router.get("/api/v2/odds/:fixture_id")
         .handler(RouterOdds.getOddsValidator.handle)
         .handler(RouterOdds.getOdds)

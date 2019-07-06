@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.math
 
 import fox.cub.internals.ResultEvent
-import fox.cub.utils.HttpUtils.jsonResponse
+import fox.cub.utils.HttpUtils.{jsonResponse, errorResponse}
 import fox.cub.db.DbProps
 import fox.cub.model
 import fox.cub.math.CMP
@@ -36,9 +36,7 @@ object TestModel {
         } catch {
             case err: Throwable => {
                 logger.error(err.toString)
-                val json = Json.obj(("error", err.toString))
-                jsonResponse(response, json)
-                context.fail(404)
+                errorResponse(context.response, err.toString, 500)
             }
         }
 

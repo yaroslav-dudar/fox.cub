@@ -9,7 +9,7 @@ import scala.util.{Failure, Success}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import fox.cub.internals.ResultEvent
-import fox.cub.utils.HttpUtils.jsonResponse
+import fox.cub.utils.HttpUtils.{jsonResponse, errorResponse}
 import fox.cub.db.DbProps
 import fox.cub.model
 import fox.cub.math.CMP
@@ -53,9 +53,7 @@ object GameStats {
                 } catch {
                     case err: Throwable => {
                         logger.error(err.getStackTraceString)
-                        val json = Json.obj(("error", err.toString))
-                        jsonResponse(response, json)
-                        context.fail(404)
+                        errorResponse(context.response, err.toString, 404)
                     }
                 }
 
@@ -95,7 +93,7 @@ object GameStats {
             case Failure(cause) => {
                 logger.error(cause.toString)
                 logger.error(cause.getStackTraceString)
-                context.fail(500)
+                errorResponse(context.response, cause.toString, 500)
             }
         }
     }

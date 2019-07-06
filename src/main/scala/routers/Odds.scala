@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import fox.cub.internals.ResultEvent
 import fox.cub.http.validator.{HttpRequestValidator, RegexValidator}
-import fox.cub.utils.HttpUtils.jsonResponse
+import fox.cub.utils.HttpUtils.{jsonResponse, errorResponse}
 import fox.cub.db.DbProps
 import fox.cub.model
 
@@ -31,7 +31,7 @@ object Odds {
             }
             case Failure(cause) => {
                 logger.error(cause.getStackTraceString)
-                context.fail(500)
+                errorResponse(context.response, cause.toString, 500)
             }
         }
     }
