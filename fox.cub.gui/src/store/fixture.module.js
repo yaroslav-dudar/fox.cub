@@ -18,7 +18,7 @@ export const state = { ...initialState };
 
 export const actions = {
     async [FETCH_FIXTURES](context, tournament_id) {
-        let getFixtureUrl = `${Vue.config.host}/api/v1/fixtures?tournament_id=${tournament_id}`;
+        let getFixtureUrl = `${Vue.config.host}/api/v1/fixtures/${tournament_id}`;
 
         Vue.http.get(getFixtureUrl).then(function (response) {
             context.commit(SET_FIXTURES, response.body.firstBatch);

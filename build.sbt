@@ -28,3 +28,25 @@ resolvers ++= Seq(
 
 fork := true
 javaOptions := Seq("-Dvertx-config-path=./config/config.json")
+
+mainClass in assembly := Some("fox.cub.FoxCub")
+// name of the resulting jar file
+assemblyOutputPath in assembly := file("./FoxCub.jar")
+
+assemblyMergeStrategy in assembly := {
+    case PathList(ps @ _*) if ps.mkString("/") contains "libjniopencv_"     => MergeStrategy.discard
+    case PathList(ps @ _*) if ps.mkString("/") contains "libopencv_"     => MergeStrategy.discard
+    case PathList(ps @ _*) if ps.mkString("/") contains "macosx-x86_64"     => MergeStrategy.discard
+    case PathList(ps @ _*) if ps.mkString("/") contains "windows-x86"     => MergeStrategy.discard
+    case PathList(ps @ _*) if ps.mkString("/") contains "macosx-x86_64"     => MergeStrategy.discard
+    case PathList(ps @ _*) if ps.mkString("/") contains "ios-x86_64"     => MergeStrategy.discard
+    case PathList(ps @ _*) if ps.mkString("/") contains "ios-arm64"     => MergeStrategy.discard
+
+    case PathList("META-INF", "io.netty.versions.properties")     => MergeStrategy.last
+    case PathList(ps @ _*) if ps.last endsWith "Nd4jBase64.class" => MergeStrategy.last
+    case PathList(ps @_ *) if ps.last endsWith "codegen.json"     => MergeStrategy.last
+    case PathList(ps @ _*) if ps.last endsWith "jnijavacpp.o"     => MergeStrategy.last
+    case x =>
+        val oldStrategy = (assemblyMergeStrategy in assembly).value
+        oldStrategy(x)
+}

@@ -13,8 +13,10 @@ def readfile(filepath):
         return json.load(f)
 
 def get_seasons(data):
-    seasons = set([game['Season'] for game in data])
-    return list(seasons)
+    """ Get list of seasons in ascending order"""
+    seasons = list(set([game['Season'] for game in data]))
+    seasons.sort()
+    return seasons
 
 def get_groups(data):
     groups = set([game['Group'] for game in data])
