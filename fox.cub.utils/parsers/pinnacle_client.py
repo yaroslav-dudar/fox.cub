@@ -3,6 +3,8 @@
 import json
 import ssl
 import sys
+import functools
+
 from base64 import b64encode
 from datetime import datetime
 
@@ -44,20 +46,13 @@ class PinnacleApi:
     CHUNK_SIZE = 1024 * 16 # 16KB
     http = HTTPClient.from_url('https://api.pinnacle.com',
                                concurrency=10)
-    results = []
 
     odds_v1 = '/v1/odds?sportId={0}&leagueIds={1}&oddsFormat={2}'
     fixtures_v1 = '/v1/fixtures?sportId={0}&leagueIds={1}'
 
-    # Pinnacle football id
-    SPORT_ID = '29'
-    LEAGUES = '1872, 1718, 2663'
-
     def __init__(self, username, password):
         self.username = username
         self.password = password
-
-        self.auth_headers = { 'Authorization' : 'Basic %s' %  self.get_base_auth() }
 
         self.fixture = Fixtures()
         self.odds = Odds()
@@ -68,8 +63,30 @@ class PinnacleApi:
         self.init_data()
 
 
-    def get_base_auth(self):
-        return b64encode("{0}:{1}".format(self.username, self.password).encode()).decode("ascii")
+    @property
+    def LEAGUES(self):
+        return '1872, 1718, 2663'
+
+
+    @property
+    def SPORT_ID(self):
+        return '29'
+
+
+    @property
+    def auth_headers(self) -> dict:
+        return {
+            'Authorization' : 'Basic %s' %
+            self.get_base_auth(self.username, self.password)
+        }
+
+
+    @functools.lru_cache(maxsize=32)
+    def get_base_auth(self, username, password) -> str:
+        return b64encode("{0}:{1}".format(
+                         username,
+                         password
+                         ).encode()).decode("ascii")
 
 
     def get_fixture(self, sport_id, leagues_ids, since=None):
@@ -79,22 +96,23 @@ class PinnacleApi:
 
         fixtures_list = []
         try:
-            for league in data['league']:
-                for ev in league['events']:
-                    if not self.is_main_fixture(ev): continue
+            for (league, ev) in self.get_fixture_pairs(data):
+                if not self.is_main_fixture(ev): continue
 
-                    home_id, away_id, tournament_id = self.get_fixture_ids(league['id'], ev)
+                home_id, away_id, tournament_id = self.\
+                    get_fixture_ids(league['id'], ev)
 
-                    document = self.fixture.get_document(
-                        ev['id'], ev['home'], ev['away'],
-                        self.parse_date(ev['starts']),
-                        league['name'], home_id, away_id,
-                        tournament_id)
+                document = self.fixture.get_document(
+                    ev['id'], ev['home'], ev['away'],
+                    self.parse_date(ev['starts']),
+                    league['name'], home_id, away_id,
+                    tournament_id)
 
-                    fixtures_list.append(document)
+                fixtures_list.append(document)
         except KeyError:
             raise Exception(
-                "Error occured during processing fixtures. Pinnacle response: {}".format(data))
+                "Error occured during processing fixtures." +
+                " Pinnacle response: {}".format(data))
 
         return fixtures_list
 
@@ -106,27 +124,28 @@ class PinnacleApi:
 
         odds_list = []
         try:
-            for league in data['leagues']:
-                for ev in league['events']:
-                    full_game_odds = ev['periods'][0]
-                    spreads, moneyline, totals = self.parse_odds(full_game_odds)
+            for (_, ev) in self.get_fixture_pairs(data, "leagues"):
+                full_game_odds = ev['periods'][0]
+                spreads, moneyline, totals = self.\
+                    parse_odds(full_game_odds)
 
-                    # ignore special odds
-                    if not all([spreads, moneyline, totals]): continue
+                # ignore special odds
+                if not all([spreads, moneyline, totals]): continue
 
-                    document = self.odds.get_document(
-                        ev['id'], datetime.utcnow(),
-                        spreads, moneyline, totals)
+                document = self.odds.get_document(
+                    ev['id'], datetime.utcnow(),
+                    spreads, moneyline, totals)
 
-                    odds_list.append(document)
+                odds_list.append(document)
         except KeyError:
             raise Exception(
-                "Error occured during processing odds. Pinnacle response: {}".format(data))
+                "Error occured during processing odds." +
+                " Pinnacle response: {}".format(data))
 
         return odds_list
 
 
-    def read_json(self, response):
+    def read_json(self, response) -> dict:
         data = ''
         while True:
             chunk = response.read(self.CHUNK_SIZE).decode("utf-8")
@@ -138,7 +157,8 @@ class PinnacleApi:
         return json.loads(data)
 
 
-    def parse_date(self, str_date):
+    @functools.lru_cache(maxsize=128)
+    def parse_date(self, str_date) -> datetime:
         """ Transform date string to datetime object
         Args:
             str_date (str): Event date in format {year-day-monthTHours:Minutes:Seconds}
@@ -164,7 +184,7 @@ class PinnacleApi:
                 self.leagues_list[l_id] = League(t_id, self.teams.find(t_id))
 
 
-    def get_fixture_ids(self, league_id, fixture):
+    def get_fixture_ids(self, league_id, fixture: dict):
         """ Fetch Fox.Cub DB ids (home, away, tournament) for a given fixture
         Args:
             league_id (str): Pinnacle League Id
@@ -175,13 +195,19 @@ class PinnacleApi:
 
         if tournament:
             tournament_id = tournament.t_id
-            home_id = self.teams.get_id(fixture['home'], 'pinnacle_name', tournament.teams)
-            away_id = self.teams.get_id(fixture['away'], 'pinnacle_name', tournament.teams)
+            home_id = self.teams.get_id(
+                fixture['home'],
+                'pinnacle_name',
+                tournament.teams)
+            away_id = self.teams.get_id(
+                fixture['away'],
+                'pinnacle_name',
+                tournament.teams)
 
         return home_id, away_id, tournament_id
 
 
-    def parse_odds(self, game_odds):
+    def parse_odds(self, game_odds: dict):
         spreads = game_odds.get('spreads')
         moneyline = game_odds.get('moneyline')
         totals = game_odds.get('totals')
@@ -189,8 +215,18 @@ class PinnacleApi:
         return spreads, moneyline, totals
 
 
-    def is_main_fixture(self, fixture):
+    def is_main_fixture(self, fixture: dict):
         return True if not fixture.get('parentId') else False
+
+
+    def get_fixture_pairs(self, data: dict, league_attr: str = "league"):
+        """ Returns generator with league, event pairs.
+        Args:
+            data (dict): Pinnacle API response
+        """
+
+        return ((le, ev) for le in data[league_attr]
+                for ev in le['events'])
 
 
 if __name__ == '__main__':
