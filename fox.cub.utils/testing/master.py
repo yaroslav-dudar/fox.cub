@@ -13,7 +13,7 @@ from concurrent.futures import ProcessPoolExecutor, ALL_COMPLETED, wait
 from utils import *
 from enum import Enum
 from testing.slave import SlaveFoxCubTest
-
+from testing.helpers import TestSessionResult
 import sys
 
 DEFAULT_WORKERS = 4
@@ -36,17 +36,13 @@ class Group(Enum):
 
 class MasterFoxCubTest:
 
-    totals_2_5, totals_3_5 = [], []
-    actual_results_team1, actual_results_team2 = [], []
-    model_results = []
-    scored_1, conceded_1 = [], []
-    scored_2, conceded_2 = [], []
-    btts = []
 
     def __init__(self, workers):
         self.executor = ProcessPoolExecutor(max_workers=workers)
         # list of worker futures
         self.futures = []
+
+        self.results = TestSessionResult()
 
 
     def test(self, test_dataset, stats_dataset, tournament, group_by=Group.Disable):
@@ -88,33 +84,23 @@ class MasterFoxCubTest:
 
         wait(self.futures, return_when=ALL_COMPLETED)
         for f in self.futures:
-            f_res = f.result()
-            self.totals_2_5.extend(f_res['totals_2_5'])
-            self.totals_3_5.extend(f_res['totals_3_5'])
-            self.btts.extend(f_res['btts'])
-            self.actual_results_team1.extend(f_res['actual_results_team1'])
-            self.actual_results_team2.extend(f_res['actual_results_team2'])
-            self.model_results.extend(f_res['model_results'])
-
-            self.scored_1.extend(f_res['scored_1'])
-            self.scored_2.extend(f_res['scored_2'])
-            self.conceded_1.extend(f_res['conceded_1'])
-            self.conceded_2.extend(f_res['conceded_2'])
+            res = f.result()
+            self.results += res
 
 
     def print_test_results(self):
-        print("Tested games:", len(self.actual_results_team1))
-        print("Scored avg team1:", sum(self.scored_1)/len(self.scored_1))
-        print("Conceded avg team1:", sum(self.conceded_1)/len(self.conceded_1))
-        print("Scored avg team2:", sum(self.scored_2)/len(self.scored_2))
-        print("Conceded avg team2:", sum(self.conceded_2)/len(self.conceded_2))
+        print("Tested games:", len(self.results.actual_results_team1))
+        print("Scored avg team1:", sum(self.results.scored_1)/len(self.results.scored_1))
+        print("Conceded avg team1:", sum(self.results.conceded_1)/len(self.results.conceded_1))
+        print("Scored avg team2:", sum(self.results.scored_2)/len(self.results.scored_2))
+        print("Conceded avg team2:", sum(self.results.conceded_2)/len(self.results.conceded_2))
         print('='*25)
-        print("Real results Team1 Win:", self.get_actual_results(self.actual_results_team1, 0))
-        print("Real results Team2 Win:", self.get_actual_results(self.actual_results_team2, 0))
-        print("Real results Draw:", self.actual_results_team2.count(0)/len(self.actual_results_team2))
-        print("Real results Total Under 2.5:", self.totals_2_5.count(True)/len(self.totals_2_5))
-        print("Real results Total Under 3.5:", self.totals_3_5.count(True)/len(self.totals_3_5))
-        print("Real results BTTS:", self.btts.count(True)/len(self.btts))
+        print("Real results Team1 Win:", self.get_actual_results(self.results.actual_results_team1, 0))
+        print("Real results Team2 Win:", self.get_actual_results(self.results.actual_results_team2, 0))
+        print("Real results Draw:", self.results.actual_results_team2.count(0)/len(self.results.actual_results_team2))
+        print("Real results Total Under 2.5:", self.results.totals_2_5.count(True)/len(self.results.totals_2_5))
+        print("Real results Total Under 3.5:", self.results.totals_3_5.count(True)/len(self.results.totals_3_5))
+        print("Real results BTTS:", self.results.btts.count(True)/len(self.results.btts))
         print('='*25)
         print("Fox.cub results Team1 Win:", self.get_fox_cub_scoreline('Win', 'Team1'))
         print("Fox.cub results Team2 Win:", self.get_fox_cub_scoreline('Win', 'Team2'))
@@ -123,10 +109,10 @@ class MasterFoxCubTest:
         print("Fox.cub results Total Under 3.5:", self.get_fox_cub_results('under 3.5'))
         print("Fox.cub results BTTS:", self.get_fox_cub_results('BTTS'))
         print('='*25)
-        print("Real results Team1 Win +1.5:", self.get_actual_results(self.actual_results_team1, 1))
-        print("Real results Team1 Win +2.5:", self.get_actual_results(self.actual_results_team1, 2))
-        print("Real results Team2 Win +1.5:", self.get_actual_results(self.actual_results_team2, 1))
-        print("Real results Team2 Win +2.5:", self.get_actual_results(self.actual_results_team2, 2))
+        print("Real results Team1 Win +1.5:", self.get_actual_results(self.results.actual_results_team1, 1))
+        print("Real results Team1 Win +2.5:", self.get_actual_results(self.results.actual_results_team1, 2))
+        print("Real results Team2 Win +1.5:", self.get_actual_results(self.results.actual_results_team2, 1))
+        print("Real results Team2 Win +2.5:", self.get_actual_results(self.results.actual_results_team2, 2))
 
         print("Fox.cub results Team1 Win +1.5:", self.get_fox_cub_scoreline('Win +1.5', 'Team1'))
         print("Fox.cub results Team1 Win +2.5:", self.get_fox_cub_scoreline('Win +2.5', 'Team1'))
@@ -134,18 +120,9 @@ class MasterFoxCubTest:
         print("Fox.cub results Team2 Win +2.5:", self.get_fox_cub_scoreline('Win +2.5', 'Team2'))
 
 
-    def cleanup_results(self):
-        self.totals_2_5, self.totals_3_5 = [], []
-        self.actual_results_team1, self.actual_results_team2 = [], []
-        self.model_results = []
-        self.scored_1, self.conceded_1 = [], []
-        self.scored_2, self.conceded_2 = [], []
-        self.btts = []
-
-
     def get_fox_cub_results(self, attr):
         """ Get total score of a given attribute """
-        return sum([res[attr] for res in self.model_results]) / len(self.model_results)
+        return sum([res[attr] for res in self.results.model_results]) / len(self.results.model_results)
 
 
     def get_fox_cub_scoreline(self, score_type, team):
@@ -153,8 +130,8 @@ class MasterFoxCubTest:
         def get_attr(result):
             return result[result[team] + " " + score_type]
 
-        score = sum([get_attr(res) for res in self.model_results])
-        return score / len(self.model_results)
+        score = sum([get_attr(res) for res in self.results.model_results])
+        return score / len(self.results.model_results)
 
 
     def get_actual_results(self, actual_results, handicap):
@@ -178,5 +155,5 @@ if __name__ == '__main__':
     tester.test(test_dataset, stats_dataset,
         Tournament.MLS.value, Group.Disable)
     tester.print_test_results()
-    tester.cleanup_results()
+    tester.results.cleanup()
     print("Execution time: {}".format(time.time() - start_at))

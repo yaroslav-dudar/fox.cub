@@ -109,19 +109,7 @@ class SlaveFoxCubTest:
             namespace.model_results.append(self.fox_cub_client.results[session_id][i])
 
         self.fox_cub_client.clear_results(session_id)
-
-        return {
-            'totals_2_5': namespace.totals_2_5,
-            'totals_3_5': namespace.totals_3_5,
-            'btts': namespace.btts,
-            'actual_results_team1': namespace.actual_results_team1,
-            'actual_results_team2': namespace.actual_results_team2,
-            'model_results': namespace.model_results,
-            'scored_1': namespace.scored_1,
-            'scored_2': namespace.scored_2,
-            'conceded_1': namespace.conceded_1,
-            'conceded_2': namespace.conceded_2
-        }
+        return namespace
 
 
     @staticmethod
@@ -140,16 +128,3 @@ class SlaveFoxCubTest:
         else:
             fox_cub_res['Team1'] = "Away"
             fox_cub_res['Team2'] = "Home"
-
-
-    def _namespace():
-        return {
-
-        }
-        totals_2_5, totals_3_5 = [], []
-        actual_results_team1, actual_results_team2 = [], []
-        model_results = []
-        scored_1, conceded_1 = [], []
-        scored_2, conceded_2 = [], []
-
-        btts = []

@@ -1,6 +1,6 @@
 """Pymongo wrapper with object models and operations with them."""
 
-import hashlib
+import atexit
 
 import pymongo
 from bson.objectid import ObjectId
@@ -24,6 +24,8 @@ class MongoClient:
             db_config['port']
         )
         MongoClient.db = MongoClient.conn[db_config['db_name']]
+        # clean-up DB resources
+        atexit.register(MongoClient.conn.close)
 
 
 class Odds:
