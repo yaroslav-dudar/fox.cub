@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 
 from geventhttpclient import HTTPClient
 from geventhttpclient.url import URL
@@ -7,14 +8,14 @@ class FoxCub:
 
     CHUNK_SIZE = 1024 * 16 # 16KB
     http = HTTPClient.from_url("http://localhost:8888", concurrency=10)
-    results = []
+    results = defaultdict(list)
 
     def __init__(self, tournament_id):
         self.test_model_url = URL('/api/v1/test/stats?tournament_id=%s' % tournament_id)
 
     def get_stats(self, home_results,
         away_results, tournament_avg,
-        home_team, away_team):
+        home_team, away_team, test_session_id):
 
         data = {
             "firstBatch": [{
@@ -29,7 +30,7 @@ class FoxCub:
         data['HomeTeam'] = home_team
         data['AwayTeam'] = away_team
 
-        self.results.append(data)
+        self.results[test_session_id].append(data)
 
     def read_json(self, response):
         data = response.read(self.CHUNK_SIZE).decode("utf-8")
@@ -38,5 +39,5 @@ class FoxCub:
     def close(self):
         self.http.close()
 
-    def clear_results(self):
-        self.results = []
+    def clear_results(self, test_session_id):
+        del self.results[test_session_id]

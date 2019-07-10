@@ -1,15 +1,22 @@
-"""Provide tools to test Fox.Cub MLP artificial neural network."""
+# -*- coding: utf-8 -*-
+"""Master process responsible for spawning testing slave processes.
+
+This module receive testing data. Divide it to pieces and delegate work to slaves.
+Collect results from slaves and output overall testing results to stdout
+"""
 
 import os
 import sys
-#currentdir = os.path.dirname(os.path.realpath(__file__))
-#parentdir = os.path.dirname(currentdir)
-#sys.path.append(parentdir)
+import time
+from concurrent.futures import ProcessPoolExecutor, ALL_COMPLETED, wait
 
 from utils import *
 from enum import Enum
+from testing.slave import SlaveFoxCubTest
 
 import sys
+
+DEFAULT_WORKERS = 4
 
 class Tournament(Enum):
 
@@ -27,100 +34,19 @@ class Group(Enum):
     Group = 1
 
 
-class TestModel:
+class MasterFoxCubTest:
 
     totals_2_5, totals_3_5 = [], []
     actual_results_team1, actual_results_team2 = [], []
     model_results = []
     scored_1, conceded_1 = [], []
     scored_2, conceded_2 = [], []
-
     btts = []
 
-    def get_test_teams_by_scoring(self, stats_data):
-        # TODO: pass attack, defend stats via func params
-        scoring_table = get_season_table(stats_data, metric='scored')
-        cons_table = get_season_table(stats_data, metric='conceded')
-
-        # teams1
-        scoring_teams_1 = filter(
-            lambda t: 0 < scoring_table[t]/get_team_games(stats_data, t) < 2.5,
-            scoring_table.keys())
-
-        defending_teams_1 = filter(
-            lambda t: 0 < cons_table[t]/get_team_games(stats_data, t) < 2.4,
-            cons_table.keys())
-
-        # teams2
-        scoring_teams_2 = filter(
-            lambda t: 0 < scoring_table[t]/get_team_games(stats_data, t) < 2.9,
-            scoring_table.keys())
-
-        defending_teams_2 = filter(
-            lambda t: 0 < cons_table[t]/get_team_games(stats_data, t) < 2.6,
-            cons_table.keys())
-
-        teams_1 = set(scoring_teams_1) & set(defending_teams_1)
-        teams_2 = set(scoring_teams_2) & set(defending_teams_2)
-
-        return teams_1, teams_2
-
-
-    def get_test_teams_by_points(self, stats_data,
-        team1_pos_min, team1_pos_max,
-        team2_pos_min, team2_pos_max):
-
-        points_table = get_season_table(stats_data, metric='points')
-        teams_1 = list(points_table)[team1_pos_min:team1_pos_max]
-        teams_2 = list(points_table)[team2_pos_min:team2_pos_max]
-
-        return teams_1, teams_2
-
-
-    def test_data_batch(self, test_dataset, stats_dataset):
-        """ Send batch of games to Fox.Cub
-
-        Args:
-            test_dataset: batch of games
-            stats_dataset: dataset used to get teams statistics.
-                In some cases test_dataset and stats_dataset may be equal
-        """
-
-        scoring_table = get_season_table(stats_dataset, metric='scored')
-        cons_table = get_season_table(stats_dataset, metric='conceded')
-
-        teams_1, teams_2 = self.get_test_teams_by_scoring(stats_dataset)
-        #teams_1, teams_2 = self.get_test_teams_by_points(stats_dataset, 0, 24, 0, 24)
-
-        for t in teams_1:
-            # save team1 stats
-            self.scored_1.append(scoring_table[t] / get_team_games(stats_dataset, t))
-            self.conceded_1.append(cons_table[t] / get_team_games(stats_dataset, t))
-
-        for t in teams_2:
-            # save team2 stats
-            self.scored_2.append(scoring_table[t] / get_team_games(stats_dataset, t))
-            self.conceded_2.append(cons_table[t] / get_team_games(stats_dataset, t))
-
-        skip_games = len(test_dataset) * 0.0
-        sorted_games = sorted(test_dataset, key=lambda g: datetime.strptime(g['Date'], '%d/%m/%Y'))
-        process_games = sorted_games[:]
-
-        games = list(filter(lambda g:
-            (g['HomeTeam'] in teams_2 and g['AwayTeam'] in teams_1) or
-            (g['HomeTeam'] in teams_1 and g['AwayTeam'] in teams_2),  process_games))
-
-        test_fox_cub(games, stats_dataset, self.fox_cub_client, True)
-
-        for i, g in enumerate(games):
-            self.totals_2_5.append(is_total_under(g, total=2.5))
-            self.totals_3_5.append(is_total_under(g, total=3.5))
-            self.btts.append(float(g['FTHG']) > 0 and float(g['FTAG']) > 0)
-
-            self.process_results(g, self.fox_cub_client.results[i], teams_1)
-            self.model_results.append(self.fox_cub_client.results[i])
-
-        self.fox_cub_client.clear_results()
+    def __init__(self, workers):
+        self.executor = ProcessPoolExecutor(max_workers=workers)
+        # list of worker futures
+        self.futures = []
 
 
     def test(self, test_dataset, stats_dataset, tournament, group_by=Group.Disable):
@@ -135,15 +61,15 @@ class TestModel:
             group_by: define how to group teams inside a season
         """
 
-        # setup current tournament
-        self.fox_cub_client = FoxCub(tournament)
+        slave = SlaveFoxCubTest(tournament)
 
-        for season in get_seasons(test_dataset)[-3:]:
+        for season in get_seasons(test_dataset):
             data_season = filter_by_season(test_dataset, str(season))
             stats_data = filter_by_season(stats_dataset, str(season))
 
             if group_by == Group.Disable:
-                self.test_data_batch(data_season, stats_data)
+                f = self.executor.submit(slave.test_data_batch, data_season, stats_data)
+                self.futures.append(f)
 
             elif group_by == Group.Group:
                 groups = get_groups(test_dataset)
@@ -157,7 +83,23 @@ class TestModel:
                     scoring_table = get_season_table(stats_group, metric='scored')
                     cons_table = get_season_table(stats_group, metric='conceded')
 
-                    self.test_data_batch(data_group, stats_group)
+                    f = self.executor.submit(slave.test_data_batch, data_group, stats_group)
+                    self.futures.append(f)
+
+        wait(self.futures, return_when=ALL_COMPLETED)
+        for f in self.futures:
+            f_res = f.result()
+            self.totals_2_5.extend(f_res['totals_2_5'])
+            self.totals_3_5.extend(f_res['totals_3_5'])
+            self.btts.extend(f_res['btts'])
+            self.actual_results_team1.extend(f_res['actual_results_team1'])
+            self.actual_results_team2.extend(f_res['actual_results_team2'])
+            self.model_results.extend(f_res['model_results'])
+
+            self.scored_1.extend(f_res['scored_1'])
+            self.scored_2.extend(f_res['scored_2'])
+            self.conceded_1.extend(f_res['conceded_1'])
+            self.conceded_2.extend(f_res['conceded_2'])
 
 
     def print_test_results(self):
@@ -220,35 +162,21 @@ class TestModel:
         return len(list(filter(lambda r: r > handicap, actual_results))) / len(actual_results)
 
 
-    def process_results(self, game, fox_cub_res, teams_1):
-        """ Determine Team1 and Team2 for actual and model results"""
-        if game['HomeTeam'] in teams_1:
-            self.actual_results_team1.append(float(game['FTHG']) - float(game['FTAG']))
-            self.actual_results_team2.append(float(game['FTAG']) - float(game['FTHG']))
-        else:
-            self.actual_results_team2.append(float(game['FTHG']) - float(game['FTAG']))
-            self.actual_results_team1.append(float(game['FTAG']) - float(game['FTHG']))
-
-        if fox_cub_res['HomeTeam'] in teams_1:
-            fox_cub_res['Team1'] = "Home"
-            fox_cub_res['Team2'] = "Away"
-        else:
-            fox_cub_res['Team1'] = "Away"
-            fox_cub_res['Team2'] = "Home"
-
-
 if __name__ == '__main__':
 
     if len(sys.argv) == 1:
         raise Exception("Please, put data folder!")
 
     data_folder = sys.argv[1]
+    workers = int(sys.argv[2]) if len(sys.argv) > 2 else DEFAULT_WORKERS
 
-    test_dataset = readfile(join_path(data_folder, "/cups/open_cup.json"))
-    stats_dataset = readfile(join_path(data_folder, "/leagues/mls.json"))
+    test_dataset = readfile(join_path(data_folder, "leagues/mls.json"))
+    stats_dataset = readfile(join_path(data_folder, "leagues/mls.json"))
 
-    model_tester = TestModel()
-    model_tester.test(test_dataset, stats_dataset,
+    start_at = time.time()
+    tester = MasterFoxCubTest(workers)
+    tester.test(test_dataset, stats_dataset,
         Tournament.MLS.value, Group.Disable)
-    model_tester.print_test_results()
-    model_tester.cleanup_results()
+    tester.print_test_results()
+    tester.cleanup_results()
+    print("Execution time: {}".format(time.time() - start_at))

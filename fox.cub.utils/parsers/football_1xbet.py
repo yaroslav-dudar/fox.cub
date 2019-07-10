@@ -5,6 +5,7 @@
 import time
 import json
 import ssl
+import warnings
 
 import urllib.request
 from datetime import datetime
@@ -14,6 +15,11 @@ import pymongo
 import lxml.html
 
 from config import Config
+
+warnings.warn(
+    "1xbet parser is deprecated, use Pinnacle parser",
+    DeprecationWarning
+)
 
 class Downloader:
 

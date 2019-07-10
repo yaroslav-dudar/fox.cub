@@ -1,9 +1,11 @@
 from datetime import datetime
+from collections import OrderedDict
 
 import json
 import os
 import time
-from collections import OrderedDict
+import uuid
+import functools
 
 from fox_cub_client import FoxCub
 import gevent.pool
@@ -95,7 +97,7 @@ def get_games_for(data, teams):
 
 def filter_games(games, before):
     before = datetime.strptime(before, '%d/%m/%Y')
-    return list(filter(
+    return tuple(filter(
         lambda g: datetime.strptime(g['Date'], '%d/%m/%Y') < before,
         games
         )
@@ -137,23 +139,25 @@ def get_team_scores(data, team, include_home=True, include_away=True):
     return { "scored_xg": scored, "conceded_xg": conceded }
 
 def test_fox_cub(games_to_test, season_data, client, countAllSeason = False):
-    pool = gevent.pool.Pool(20)
+    pool = gevent.pool.Pool(1024)
+    session_id = str(uuid.uuid4())
+
+    if countAllSeason:
+        games_before = tuple(season_data)
+        season_avg = get_totals(games_before)
 
     for game in games_to_test:
         if not countAllSeason:
             games_before = filter_games(season_data, game['Date'])
-        else:
-            games_before = season_data
+            season_avg = get_totals(games_before)
 
-        season_avg = get_totals(games_before)
         home_team = get_team_scores(games_before, game['HomeTeam'])
         away_team = get_team_scores(games_before, game['AwayTeam'])
-        pool.spawn(
-            client.get_stats, home_team, away_team,
-            season_avg, game['HomeTeam'], game['AwayTeam'])
+        pool.spawn(client.get_stats, home_team, away_team, season_avg,
+                   game['HomeTeam'], game['AwayTeam'], session_id)
 
-    res = pool.join()
-    #fox_cub.close()
+    pool.join()
+    return session_id
 
 
 def get_team_results(team, data):
