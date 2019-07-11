@@ -1,4 +1,5 @@
 import json
+import warnings
 from collections import defaultdict
 
 from geventhttpclient import HTTPClient
@@ -40,4 +41,8 @@ class FoxCub:
         self.http.close()
 
     def clear_results(self, test_session_id):
-        del self.results[test_session_id]
+        try:
+            del self.results[test_session_id]
+        except KeyError:
+            msg = "Testing session:%s is empty" % test_session_id
+            warnings.warn(msg)

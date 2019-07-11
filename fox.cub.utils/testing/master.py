@@ -8,6 +8,7 @@ Collect results from slaves and output overall testing results to stdout
 import os
 import sys
 import time
+from statistics import mean
 from concurrent.futures import ProcessPoolExecutor, ALL_COMPLETED, wait
 
 from utils import *
@@ -64,7 +65,8 @@ class MasterFoxCubTest:
             stats_data = filter_by_season(stats_dataset, str(season))
 
             if group_by == Group.Disable:
-                f = self.executor.submit(slave.test_data_batch, data_season, stats_data)
+                f = self.executor.submit(slave.test_data_batch,
+                                         data_season, stats_data)
                 self.futures.append(f)
 
             elif group_by == Group.Group:
@@ -76,31 +78,33 @@ class MasterFoxCubTest:
                     data_group = filter_by_group(data_season, group)
                     stats_group = filter_by_group(stats_data, group)
 
-                    scoring_table = get_season_table(stats_group, metric='scored')
-                    cons_table = get_season_table(stats_group, metric='conceded')
+                    scoring_table = get_season_table(stats_group,
+                                                     metric='scored')
+                    cons_table = get_season_table(stats_group,
+                                                  metric='conceded')
 
-                    f = self.executor.submit(slave.test_data_batch, data_group, stats_group)
+                    f = self.executor.submit(slave.test_data_batch,
+                                             data_group, stats_group)
                     self.futures.append(f)
 
         wait(self.futures, return_when=ALL_COMPLETED)
         for f in self.futures:
-            res = f.result()
-            self.results += res
+            self.results += f.result()
 
 
     def print_test_results(self):
         print("Tested games:", len(self.results.actual_results_team1))
-        print("Scored avg team1:", sum(self.results.scored_1)/len(self.results.scored_1))
-        print("Conceded avg team1:", sum(self.results.conceded_1)/len(self.results.conceded_1))
-        print("Scored avg team2:", sum(self.results.scored_2)/len(self.results.scored_2))
-        print("Conceded avg team2:", sum(self.results.conceded_2)/len(self.results.conceded_2))
+        print("Scored avg team1:", mean(self.results.scored_1))
+        print("Conceded avg team1:", mean(self.results.conceded_1))
+        print("Scored avg team2:", mean(self.results.scored_2))
+        print("Conceded avg team2:", mean(self.results.conceded_2))
         print('='*25)
         print("Real results Team1 Win:", self.get_actual_results(self.results.actual_results_team1, 0))
         print("Real results Team2 Win:", self.get_actual_results(self.results.actual_results_team2, 0))
-        print("Real results Draw:", self.results.actual_results_team2.count(0)/len(self.results.actual_results_team2))
-        print("Real results Total Under 2.5:", self.results.totals_2_5.count(True)/len(self.results.totals_2_5))
-        print("Real results Total Under 3.5:", self.results.totals_3_5.count(True)/len(self.results.totals_3_5))
-        print("Real results BTTS:", self.results.btts.count(True)/len(self.results.btts))
+        print("Real results Draw:", self.get_percentage(self.results.actual_results_team2, 0))
+        print("Real results Total Under 2.5:", self.get_percentage(self.results.totals_2_5, True))
+        print("Real results Total Under 3.5:", self.get_percentage(self.results.totals_3_5, True))
+        print("Real results BTTS:", self.get_percentage(self.results.btts, True))
         print('='*25)
         print("Fox.cub results Team1 Win:", self.get_fox_cub_scoreline('Win', 'Team1'))
         print("Fox.cub results Team2 Win:", self.get_fox_cub_scoreline('Win', 'Team2'))
@@ -137,6 +141,10 @@ class MasterFoxCubTest:
     def get_actual_results(self, actual_results, handicap):
         """ Get win percentage with a given handicap """
         return len(list(filter(lambda r: r > handicap, actual_results))) / len(actual_results)
+
+    def get_percentage(self, collection, value):
+        """ Calculate percentage of a given value in collection """
+        return collection.count(value) / len(collection)
 
 
 if __name__ == '__main__':
