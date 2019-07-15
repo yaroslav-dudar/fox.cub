@@ -241,6 +241,19 @@ class SoccerPunterSpider(scrapy.Spider):
         "/Europe/UEFA-U21-Championship-2006-Portugal"
     ]
 
+    uefa_u19 = [
+        "/Europe/UEFA-U19-Championship-2019-Armenia",
+        "/Europe/UEFA-U19-Championship-2018-Finland",
+        "/Europe/UEFA-U19-Championship-2017-Georgia",
+        "/Europe/UEFA-U19-Championship-2016-Germany",
+        "/Europe/UEFA-U19-Championship-2015-Greece",
+        "/Europe/UEFA-U19-Championship-2014-Hungary",
+        "/Europe/UEFA-U19-Championship-2013-Lithuania",
+        "/Europe/UEFA-U19-Championship-2012-Estonia",
+        "/Europe/UEFA-U19-Championship-2011-Romania",
+        "/Europe/UEFA-U19-Championship-2010-France",
+    ]
+
     fa_cup = ["/England/FA-Cup-{0}-{1}".format(year, year+1)
         for year in range(2004, 2019)]
 
@@ -280,7 +293,7 @@ class SoccerPunterSpider(scrapy.Spider):
     open_cup = ["/USA/US-Open-Cup-{0}".format(year)
         for year in range(2007, 2019)]
 
-    tournaments = world_cup
+    tournaments = uefa_u19
     base_url = "https://www.soccerpunter.com/soccer-statistics"
 
     h_timings = defaultdict(list)
@@ -291,7 +304,7 @@ class SoccerPunterSpider(scrapy.Spider):
     IGNORE_NON_REGULAR_SEASON = False
     GROUPS = {}
 
-    proxy = "104.129.202.125:8800"
+    proxy = "213.56.76.121:3128"
 
     def start_requests(self):
         urls = [self.base_url + t for t in self.tournaments]

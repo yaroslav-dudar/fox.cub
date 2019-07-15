@@ -13,15 +13,14 @@ from testing.helpers import (
 
 class SlaveFoxCubTest:
 
-    def __init__(self, tournament, pattern : BasePattern = None):
+    def __init__(self, tournament, games, pattern):
         # setup http client
         self.fox_cub_client = FoxCub(tournament)
+        # amount of games to test from the end
+        self.games_to_test = games
         # search teams by pattern, find games only with this teams
         # and ignore the rest games in testing dataset
-        if pattern:
-            self.team_pattern = pattern
-        else:
-            self.team_pattern = StrongWithWeakPattern
+        self.team_pattern = pattern
 
 
     def get_test_teams_by_points(self, stats_data, team1_pos_min,
@@ -47,7 +46,7 @@ class SlaveFoxCubTest:
 
         results = TestSessionResult(teams_1, teams_2)
         results.set_scoring_results(stats_dataset)
-        games = pattern.get_games(test_dataset)
+        games = pattern.get_games(self.games_to_test, test_dataset)
 
         session_id = test_fox_cub(games,
                                   stats_dataset,

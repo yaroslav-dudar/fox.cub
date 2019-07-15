@@ -8,16 +8,15 @@ Collect results from slaves and output overall testing results to stdout
 import os
 import sys
 import time
+import argparse
 from statistics import mean
 from concurrent.futures import ProcessPoolExecutor, ALL_COMPLETED, wait
 
 from utils import *
 from enum import Enum
 from testing.slave import SlaveFoxCubTest
-from testing.helpers import TestSessionResult
-import sys
+from testing.helpers import TestSessionResult, pattern_factory
 
-DEFAULT_WORKERS = 4
 
 class Tournament(Enum):
 
@@ -36,17 +35,31 @@ class Group(Enum):
 
 
 class MasterFoxCubTest:
-
-
-    def __init__(self, workers):
-        self.executor = ProcessPoolExecutor(max_workers=workers)
+    def __init__(self):
+        self.parse_args() # call it first
+        self.executor = ProcessPoolExecutor(max_workers=self.args.slaves)
         # list of worker futures
         self.futures = []
-
         self.results = TestSessionResult()
+        self.pattern = pattern_factory(self.args.pattern)
+        print(self.pattern)
 
 
-    def test(self, test_dataset, stats_dataset, tournament, group_by=Group.Disable):
+    def parse_args(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-slaves', default=4, type=int,
+                            help='Amount of slaves to use in a test.')
+        parser.add_argument('-pattern', default='AllPattern', type=str,
+                            help='Teams searching pattern.')
+        parser.add_argument('-games', default=5000, type=int,
+                            help='Amount of games to test for each season')
+        parser.add_argument('-dataFolder', required=True, type=str,
+                            help='Path to the testing data folder')
+        self.args = parser.parse_args()
+
+
+    def test(self, test_dataset, stats_dataset,
+        tournament, group_by=Group.Disable):
         """ Make API calls to Fox.Cub statistical model
         and compare model results with real results.
         Using to test Fox.Cub model
@@ -58,7 +71,7 @@ class MasterFoxCubTest:
             group_by: define how to group teams inside a season
         """
 
-        slave = SlaveFoxCubTest(tournament)
+        slave = SlaveFoxCubTest(tournament, self.args.games, self.pattern)
 
         for season in get_seasons(test_dataset):
             data_season = filter_by_season(test_dataset, str(season))
@@ -148,20 +161,14 @@ class MasterFoxCubTest:
 
 
 if __name__ == '__main__':
-
-    if len(sys.argv) == 1:
-        raise Exception("Please, put data folder!")
-
-    data_folder = sys.argv[1]
-    workers = int(sys.argv[2]) if len(sys.argv) > 2 else DEFAULT_WORKERS
-
-    test_dataset = readfile(join_path(data_folder, "leagues/mls.json"))
-    stats_dataset = readfile(join_path(data_folder, "leagues/mls.json"))
+    tester = MasterFoxCubTest()
+    test_dataset = readfile(join_path(tester.args.dataFolder, "leagues/mls.json"))
+    stats_dataset = readfile(join_path(tester.args.dataFolder, "leagues/mls.json"))
 
     start_at = time.time()
-    tester = MasterFoxCubTest(workers)
+
     tester.test(test_dataset, stats_dataset,
-        Tournament.MLS.value, Group.Disable)
+        Tournament.International_Final.value, Group.Disable)
     tester.print_test_results()
     tester.results.cleanup()
     print("Execution time: {}".format(time.time() - start_at))
