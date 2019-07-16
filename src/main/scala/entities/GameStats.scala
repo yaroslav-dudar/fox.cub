@@ -67,7 +67,11 @@ object GameStats {
             ("avgScoredHome", Json.obj(("$avg", "$xG_for"))),
             ("avgScoredAway", Json.obj(("$avg", "$xG_against")))
         ))
-        var overallMatch = Json.obj(("$match", Json.obj(("tournament", touranmentId), ("venue", "home"))))
+        var overallMatch = Json.obj(
+            ("$match", Json.obj(
+                ("tournament", touranmentId),
+                ("venue", "home"))
+            ))
 
         var avgTournament = Json.arr(
             overallMatch,
@@ -141,10 +145,10 @@ object GameStats {
         val homeStats = stats.getJsonArray("home_team").getJsonObject(0)
         val awayStats = stats.getJsonArray("away_team").getJsonObject(0)
 
-        var homeScoredXG: Buffer[Double] = JsonUtils.arrayToBuffer(homeStats.getJsonArray("scored_xg"))
-        var awayScoredXG: Buffer[Double] = JsonUtils.arrayToBuffer(awayStats.getJsonArray("scored_xg"))
-        var homeConcededXG: Buffer[Double] = JsonUtils.arrayToBuffer(homeStats.getJsonArray("conceded_xg"))
-        var awayConcededXG: Buffer[Double] = JsonUtils.arrayToBuffer(awayStats.getJsonArray("conceded_xg"))
+        var homeScoredXG = JsonUtils.getArrayOfNumbers(homeStats.getJsonArray("scored_xg"))
+        var awayScoredXG = JsonUtils.getArrayOfNumbers(awayStats.getJsonArray("scored_xg"))
+        var homeConcededXG = JsonUtils.getArrayOfNumbers(homeStats.getJsonArray("conceded_xg"))
+        var awayConcededXG = JsonUtils.getArrayOfNumbers(awayStats.getJsonArray("conceded_xg"))
 
         homeScored = expectedValue(homeScoredXG)
         awayScored = expectedValue(awayScoredXG)
@@ -152,10 +156,14 @@ object GameStats {
         awayConceded = expectedValue(awayConcededXG)
 
         if (considerActualGoals) {
-            var homeScoredActual: Buffer[Int] = JsonUtils.arrayToBuffer(homeStats.getJsonArray("scored"))
-            var awayScoredActual: Buffer[Int] = JsonUtils.arrayToBuffer(awayStats.getJsonArray("scored"))
-            var homeConcededActual: Buffer[Int] = JsonUtils.arrayToBuffer(homeStats.getJsonArray("conceded"))
-            var awayConcededActual: Buffer[Int] = JsonUtils.arrayToBuffer(awayStats.getJsonArray("conceded"))
+            var homeScoredActual: Buffer[Int] = JsonUtils
+                .arrayToBuffer(homeStats.getJsonArray("scored"))
+            var awayScoredActual: Buffer[Int] = JsonUtils
+                .arrayToBuffer(awayStats.getJsonArray("scored"))
+            var homeConcededActual: Buffer[Int] = JsonUtils
+                .arrayToBuffer(homeStats.getJsonArray("conceded"))
+            var awayConcededActual: Buffer[Int] = JsonUtils
+                .arrayToBuffer(awayStats.getJsonArray("conceded"))
 
             homeScored = (homeScored + expectedValue(homeScoredActual)) / 2
             awayScored = (awayScored + expectedValue(awayScoredActual)) / 2

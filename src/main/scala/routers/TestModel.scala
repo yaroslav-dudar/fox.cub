@@ -41,31 +41,15 @@ object TestModel {
         }
 
         val modelId = model.TournamentModel.getTournamentModel(tournamentId.get).get
-        var totalDist = MLPNet.predict(teamsScoring, model.TournamentModel.getTotalsModel(modelId))
-        var scorelineDist = MLPNet.predict(teamsScoring, model.TournamentModel.getScorelineModel(modelId))
-        var bttsDist = MLPNet.predict(teamsScoring, model.TournamentModel.getBttsModel(modelId))
+        var totalDist = MLPNet.predict(teamsScoring,
+                                       model.TournamentModel.getTotalsModel(modelId))
+        var scorelineDist = MLPNet.predict(teamsScoring,
+                                           model.TournamentModel.getScorelineModel(modelId))
+        var bttsDist = MLPNet.predict(teamsScoring,
+                                      model.TournamentModel.getBttsModel(modelId))
 
-        var bEv = new BettingEvents(scorelineDist, totalDist)
-
-        var draw = bEv.draw
-        var home = bEv.homeWin
-        var away = bEv.awayWin
-
-        var statsJson = Json.obj(
-            ("under 2.5", math.min(totalDist.take(3).sum, bEv._2_5._1)),
-            ("over 2.5", bEv._2_5._2),
-            ("under 3.5", math.min(totalDist.take(4).sum, bEv._3_5._1)),
-            ("over 3.5", bEv._3_5._2),
-            ("BTTS", bttsDist.last),
-            ("Home Win", home),
-            ("Home Win +1.5", bEv.home_1_5),
-            ("Home Win +2.5", bEv.home_2_5),
-            ("Away Win", away),
-            ("Away Win +1.5", bEv.away_1_5),
-            ("Away Win +2.5", bEv.away_2_5),
-            ("Draw", draw),
-            ("Home Double Chance", home + draw),
-            ("Away Double Chance", away + draw))
+        var bEv = new BettingEvents(scorelineDist, totalDist, bttsDist)
+        var statsJson = Json.obj(bEv.getEventsList: _*)
 
         logger.info(context.request.path.get)
         jsonResponse(response, statsJson)

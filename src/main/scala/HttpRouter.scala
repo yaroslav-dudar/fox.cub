@@ -34,11 +34,7 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
     implicit private val eb = vertx.eventBus()
     private val crossHeadersAllowed = SortedSet("Content-Type", "X-Requested-With")
 
-    // register custom message codecs
-    eb.asJava.asInstanceOf[EventBus].registerDefaultCodec(
-        classOf[QueryEvent], new QueryEventCodec())
-    eb.asJava.asInstanceOf[EventBus].registerDefaultCodec(
-        classOf[ResultEvent], new ResultEventCodec())
+    registerMsgCodec()
 
     router.route().handler(BodyHandler.create())
     router.route().handler(
@@ -77,4 +73,20 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
         .handler(RouterOdds.getOdds)
 
     def router = _router
+
+    /**
+     * Registering default message codec for Event Bus
+    */
+    def registerMsgCodec() {
+        try {
+            eb.asJava.asInstanceOf[EventBus].registerDefaultCodec(
+                classOf[QueryEvent], new QueryEventCodec())
+            eb.asJava.asInstanceOf[EventBus].registerDefaultCodec(
+                classOf[ResultEvent], new ResultEventCodec())
+        } catch {
+            case e: java.lang.IllegalStateException => {
+                logger.warn(s"Message codec already registered: $e")
+            }
+        }
+    }
 }
