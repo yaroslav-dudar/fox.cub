@@ -1,9 +1,13 @@
 """Fetch sport fixtures and their odds using Pinaccle API."""
 
+from gevent import monkey
+monkey.patch_all()
+
 import json
 import ssl
 import sys
 import functools
+from collections import namedtuple
 
 from base64 import b64encode
 from datetime import datetime
@@ -36,10 +40,26 @@ SSLConnectionPool._create_tcp_socket = _create_tcp_socket
 
 class League:
 
-    def __init__(self, t_id, teams):
+    def __init__(self, t_id, teams, name = None):
         self.t_id = t_id
         self.teams = teams
+        self.name = name
 
+
+# Pinnacle Fixture object schema
+fixture_fields = ["id", "home", "away", "starts", "liveStatus",
+                  "status", "parlayRestriction", "altTeaser",
+                  "resultingUnit", "rotNum", "parentId"]
+Fixture = namedtuple(
+    'Fixture', fixture_fields, defaults=(None,) * len(fixture_fields))
+# Pinnacle Odd object schema
+odd_fields = ["id", "periods"]
+Odd = namedtuple('Odd', odd_fields, defaults=(None,) * len(odd_fields))
+# Pinnacle Period object schema
+period_fields = ["lineId", "number", "cutoff", "maxSpread", "maxMoneyline",
+                 "maxTotal", "maxTeamTotal", "status",
+                 "spreads", "moneyline", "totals", "teamTotal"]
+Period = namedtuple('Odd', period_fields, defaults=(None,) * len(period_fields))
 
 class PinnacleApi:
 
@@ -63,15 +83,10 @@ class PinnacleApi:
         self.init_data()
 
 
-    @property
-    def LEAGUES(self):
-        return '1872, 1718, 2663'
-
-
-    @property
-    def SPORT_ID(self):
-        return '29'
-
+    LEAGUES       = property(lambda self: '1872, 1718, 2663')
+    SPORT_ID      = property(lambda self: '29')
+    FIND_TEAM_BY  = property(lambda self: 'pinnacle_name')
+    FIND_TOURN_BY = property(lambda self: 'pinnacle_id')
 
     @property
     def auth_headers(self) -> dict:
@@ -96,15 +111,16 @@ class PinnacleApi:
 
         fixtures_list = []
         try:
-            for (league, ev) in self.get_fixture_pairs(data):
+            for (league, ev) in self.get_event_pairs(data):
+                ev = Fixture(**ev)
                 if not self.is_main_fixture(ev): continue
 
                 home_id, away_id, tournament_id = self.\
                     get_fixture_ids(league['id'], ev)
 
                 document = self.fixture.get_document(
-                    ev['id'], ev['home'], ev['away'],
-                    self.parse_date(ev['starts']),
+                    ev.id, ev.home, ev.away,
+                    self.parse_date(ev.starts),
                     league['name'], home_id, away_id,
                     tournament_id)
 
@@ -124,17 +140,18 @@ class PinnacleApi:
 
         odds_list = []
         try:
-            for (_, ev) in self.get_fixture_pairs(data, "leagues"):
-                full_game_odds = ev['periods'][0]
-                spreads, moneyline, totals = self.\
-                    parse_odds(full_game_odds)
-
+            for (_, ev) in self.get_event_pairs(data, "leagues"):
+                odd = Odd(**ev)
+                # [0] - full game period
+                period = Period(**odd.periods[0])
                 # ignore special odds
-                if not all([spreads, moneyline, totals]): continue
+                if not all([period.spreads,
+                            period.moneyline,
+                            period.totals]): continue
 
-                document = self.odds.get_document(
-                    ev['id'], datetime.utcnow(),
-                    spreads, moneyline, totals)
+                document = self.odds.get_document(odd.id, datetime.utcnow(),
+                                                  period.spreads, period.moneyline,
+                                                  period.totals)
 
                 odds_list.append(document)
         except KeyError:
@@ -175,7 +192,7 @@ class PinnacleApi:
         # upload tournaments and teams from DB
         for l in self.LEAGUES.split(','):
             l_id = int(l.strip())
-            tournament = self.tournaments.get(l_id, "pinnacle_id")
+            tournament = self.tournaments.get(l_id, self.FIND_TOURN_BY)
 
             if not tournament:
                 self.leagues_list[l_id] = None
@@ -196,33 +213,26 @@ class PinnacleApi:
         if tournament:
             tournament_id = tournament.t_id
             home_id = self.teams.get_id(
-                fixture['home'],
-                'pinnacle_name',
+                fixture.home,
+                self.FIND_TEAM_BY,
                 tournament.teams)
             away_id = self.teams.get_id(
-                fixture['away'],
-                'pinnacle_name',
+                fixture.away,
+                self.FIND_TEAM_BY,
                 tournament.teams)
 
         return home_id, away_id, tournament_id
 
 
-    def parse_odds(self, game_odds: dict):
-        spreads = game_odds.get('spreads')
-        moneyline = game_odds.get('moneyline')
-        totals = game_odds.get('totals')
-
-        return spreads, moneyline, totals
-
-
     def is_main_fixture(self, fixture: dict):
-        return True if not fixture.get('parentId') else False
+        return True if not fixture.parentId else False
 
 
-    def get_fixture_pairs(self, data: dict, league_attr: str = "league"):
+    def get_event_pairs(self, data: dict, league_attr: str = "league"):
         """ Returns generator with league, event pairs.
         Args:
             data (dict): Pinnacle API response
+            league_attr (str): Path to leagues dict
         """
 
         return ((le, ev) for le in data[league_attr]
@@ -238,19 +248,22 @@ if __name__ == '__main__':
     user_pwd = sys.argv[2]
 
     # create database connection
-    client = MongoClient(Config()['database'])
+    MongoClient(Config()['database'])
 
     pinnacle = PinnacleApi(user_id, user_pwd)
-    pool = gevent.pool.Pool(20)
-    fixtures = pool.spawn(pinnacle.get_fixture, pinnacle.SPORT_ID, pinnacle.LEAGUES)
-    odds = pool.spawn(pinnacle.get_odds, pinnacle.SPORT_ID, pinnacle.LEAGUES)
 
+    pool = gevent.pool.Pool(20)
+    fixtures = pool.spawn(pinnacle.get_fixture,
+                          pinnacle.SPORT_ID,
+                          pinnacle.LEAGUES)
+
+    odds = pool.spawn(pinnacle.get_odds,
+                      pinnacle.SPORT_ID,
+                      pinnacle.LEAGUES)
     pool.join()
 
     for fixture in fixtures.value:
         pinnacle.fixture.add(fixture)
 
     pinnacle.odds.insert_many(odds.value)
-
-    client.conn.close()
     pinnacle.close()
