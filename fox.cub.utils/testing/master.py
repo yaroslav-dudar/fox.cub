@@ -42,7 +42,6 @@ class MasterFoxCubTest:
         self.futures = []
         self.results = TestSessionResult()
         self.pattern = pattern_factory(self.args.pattern)
-        print(self.pattern)
 
 
     def parse_args(self):

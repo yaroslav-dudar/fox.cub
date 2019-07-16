@@ -6,14 +6,13 @@ model results with actual results.
 """
 
 from utils import *
-from testing.helpers import (
-    TestSessionResult,
-    StrongWithWeakPattern,
-    BasePattern)
+from testing.helpers import TestSessionResult
+from testing.searchers import BasePattern
+
 
 class SlaveFoxCubTest:
 
-    def __init__(self, tournament, games, pattern):
+    def __init__(self, tournament, games, pattern: BasePattern):
         # setup http client
         self.fox_cub_client = FoxCub(tournament)
         # amount of games to test from the end
@@ -21,16 +20,6 @@ class SlaveFoxCubTest:
         # search teams by pattern, find games only with this teams
         # and ignore the rest games in testing dataset
         self.team_pattern = pattern
-
-
-    def get_test_teams_by_points(self, stats_data, team1_pos_min,
-                                 team1_pos_max, team2_pos_min, team2_pos_max):
-
-        points_table = get_season_table(stats_data, metric='points')
-        teams_1 = list(points_table)[team1_pos_min:team1_pos_max]
-        teams_2 = list(points_table)[team2_pos_min:team2_pos_max]
-
-        return teams_1, teams_2
 
 
     def test_data_batch(self, test_dataset, stats_dataset):
