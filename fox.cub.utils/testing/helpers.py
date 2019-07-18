@@ -1,6 +1,14 @@
 # -*- coding: utf-8 -*-
 
+from enum import Enum
+
 from utils import *
+
+
+class VenueFilter(Enum):
+    ALL = 'All'
+    TEAM1_HOME = 'Team1Home'
+    TEAM2_HOME = 'Team2Home'
 
 
 class ImmutableProperty():
@@ -85,22 +93,3 @@ class TestSessionResult():
             prediction['Team2'] = "Home"
 
         self.model_results.append(prediction)
-
-
-def pattern_factory(pattern_name):
-    from searchers import (
-        MLSEastConfPattern,
-        MLSWestConfPattern,
-        AllPattern,
-        StrongWithWeakPattern,
-        LeadersVsDogsPattern)
-
-    patterns = [MLSEastConfPattern,
-                MLSWestConfPattern,
-                AllPattern,
-                StrongWithWeakPattern,
-                LeadersVsDogsPattern]
-
-    f = filter(lambda p: p.name == pattern_name, patterns)
-    # AllPattern is a default pattern
-    return next(f, AllPattern)

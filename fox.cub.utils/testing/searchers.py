@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from abc import ABCMeta, abstractmethod
-import functools
 from collections import defaultdict
+import functools
 
 from utils import *
-from helpers import ImmutableProperty
+from helpers import ImmutableProperty, VenueFilter
 
 class BasePattern(metaclass=ABCMeta):
 
@@ -13,6 +13,22 @@ class BasePattern(metaclass=ABCMeta):
         self.dataset = dataset
 
     str_to_datetime = lambda self, g: datetime.strptime(g['Date'], '%d/%m/%Y')
+
+    venue_filter = VenueFilter.ALL
+
+    def get_venue_def(self, teams_1, teams_2):
+        """ Returns venue filter function """
+        filters = {
+            VenueFilter.ALL.value: lambda g:
+                (g['HomeTeam'] in teams_2 and g['AwayTeam'] in teams_1) or
+                (g['HomeTeam'] in teams_1 and g['AwayTeam'] in teams_2),
+            VenueFilter.TEAM1_HOME.value: lambda g:
+                (g['HomeTeam'] in teams_1 and g['AwayTeam'] in teams_2),
+            VenueFilter.TEAM2_HOME.value: lambda g:
+                (g['HomeTeam'] in teams_2 and g['AwayTeam'] in teams_1)
+        }
+
+        return filters[self.venue_filter.value]
 
     def __init_subclass__(cls):
         required_class_variables = ["team_1", "team_2", "name"]
@@ -31,10 +47,9 @@ class BasePattern(metaclass=ABCMeta):
         sorted_dateset = sorted(dataset,
                                 key=self.str_to_datetime)[-games_to_test:]
 
-        return list(filter(lambda g:
-            (g['HomeTeam'] in teams_2 and g['AwayTeam'] in teams_1) or
-            (g['HomeTeam'] in teams_1 and g['AwayTeam'] in teams_2),
-            sorted_dateset))
+        return list(filter(
+                    self.get_venue_def(teams_1, teams_2),
+                    sorted_dateset))
 
     @abstractmethod
     def get_teams(self):
@@ -107,7 +122,26 @@ class StrongWithWeakPattern(ScoringPattern):
     def team_2(self):
         return {
             'attack': { 'min': 0.5, 'max': 1.3 },
-            'defence': { 'min': 1.3, 'max': 2.5 }
+            'defence': { 'min': 1.4, 'max': 2.7 }
+        }
+
+
+class StrongWithStrongPattern(ScoringPattern):
+
+    name = ImmutableProperty('StrongWithStrong')
+
+    @property
+    def team_1(self):
+        return {
+            'attack': { 'min': 1.5, 'max': 3.45 },
+            'defence': { 'min': 0.5, 'max': 1.35 }
+        }
+
+    @property
+    def team_2(self):
+        return {
+            'attack': { 'min': 1.5, 'max': 3.45 },
+            'defence': { 'min': 0.5, 'max': 1.35 }
         }
 
 
@@ -209,3 +243,15 @@ class LeadersVsDogsPattern(StandingsPattern):
     @property
     def team_2(self):
         return { 'standings': { 'min': 18, 'max': 25 } }
+
+
+class MidweekGamesPattern(AllPattern):
+    name  = ImmutableProperty('MidweekGames')
+
+    def get_games(self, games_to_test: int, dataset: list = None):
+        teams_1, teams_2 = self.get_teams()
+        if not dataset: dataset = self.dataset
+
+        midweek = filter(lambda g: self.str_to_datetime(g).\
+                         weekday() < 5, dataset)
+        return super().get_games(games_to_test, midweek)

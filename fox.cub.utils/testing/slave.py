@@ -12,14 +12,14 @@ from testing.searchers import BasePattern
 
 class SlaveFoxCubTest:
 
-    def __init__(self, tournament, games, pattern: BasePattern):
+    def __init__(self, tournament, games, patterns: BasePattern):
         # setup http client
         self.fox_cub_client = FoxCub(tournament)
         # amount of games to test from the end
         self.games_to_test = games
-        # search teams by pattern, find games only with this teams
+        # search teams by pattern(s), find games only with this teams
         # and ignore the rest games in testing dataset
-        self.team_pattern = pattern
+        self.team_patterns = patterns
 
 
     def test_data_batch(self, test_dataset, stats_dataset):
@@ -30,12 +30,11 @@ class SlaveFoxCubTest:
             stats_dataset: dataset used to get teams statistics.
                 In some cases test_dataset and stats_dataset may be equal
         """
-        pattern = self.team_pattern(stats_dataset)
-        teams_1, teams_2 = pattern.get_teams()
+        games, (teams_1, teams_2) = self.build_pipeline(
+            test_dataset, stats_dataset)
 
         results = TestSessionResult(teams_1, teams_2)
         results.set_scoring_results(stats_dataset)
-        games = pattern.get_games(self.games_to_test, test_dataset)
 
         session_id = test_fox_cub(games,
                                   stats_dataset,
@@ -51,3 +50,14 @@ class SlaveFoxCubTest:
 
         self.fox_cub_client.clear_results(session_id)
         return results
+
+
+    def build_pipeline(self, test_dataset, stats_dataset):
+        """ Apply search patterns gradually one by one """
+        games = test_dataset
+        for pattern in self.team_patterns:
+            last_pattern = pattern(stats_dataset)
+            games = last_pattern.get_games(self.games_to_test, games)
+
+        return games, last_pattern.get_teams()
+
