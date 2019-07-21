@@ -23,6 +23,7 @@ from testing.searchers import (
     StrongWithWeakPattern,
     StrongWithStrongPattern,
     LeadersVsDogsPattern,
+    LeadersVsMidtablePattern,
     MidweekGamesPattern)
 
 
@@ -36,12 +37,6 @@ class Tournament(Enum):
     Bundesliga = "5baa5789adddfaf57a803bb2"
 
 
-class Group(Enum):
-
-    Disable = 0
-    Group = 1
-
-
 class MasterFoxCubTest:
 
     searchers = {
@@ -51,6 +46,7 @@ class MasterFoxCubTest:
         StrongWithWeakPattern.name: StrongWithWeakPattern,
         StrongWithStrongPattern.name: StrongWithStrongPattern,
         LeadersVsDogsPattern.name: LeadersVsDogsPattern,
+        LeadersVsMidtablePattern.name: LeadersVsMidtablePattern,
         MidweekGamesPattern.name: MidweekGamesPattern
     }
 
@@ -71,21 +67,36 @@ class MasterFoxCubTest:
                                  ' Use `,` separator to combine multiple paterns.')
         parser.add_argument('-games', default=5000, type=int,
                             help='Amount of games to test for each season.')
-        parser.add_argument('-dataFolder', required=True, type=str,
-                            help='Path to the testing data folder.')
+        parser.add_argument('-seasons', default=100, type=int,
+                            help='Amount of seasons to test in current session.')
+        parser.add_argument('-testDataset', required=True, type=str,
+                            help='Path to the file with teams statistics.' +\
+                                 ' Usefull when stats and test datasets are not the same.')
+        parser.add_argument('-statDataset', default=None, type=str,
+                            help='Path to the statistics data file.')
         parser.add_argument('-venueFilter', required=True, type=str,
                             help='Venue filter pattern.')
+        parser.add_argument('-tournamentId', required=True, type=str,
+                            help='Selecting MLP model based on this attribute')
+        parser.add_argument('-groupBy', default="Off", type=str,
+                            help='Define how to group teams inside a season.')
         self.args = parser.parse_args()
 
     def parse_config(self):
-        venue_f = VenueFilter(self.args.venueFilter)
+        """ Parse passed args and to map them with python objects """
+        if self.args.statDataset is None:
+            # use testDataset for stats if not specified
+            self.args.statDataset = self.args.testDataset
+
+        _filt = VenueFilter(self.args.venueFilter)
         for pattern_name in self.args.patterns.split(','):
             pattern = self.searchers[pattern_name]
-            pattern.venue_filter = venue_f
+            pattern.venue_filter = _filt
             self.patterns.append(pattern)
 
-    def test(self, test_dataset, stats_dataset,
-        tournament, group_by=Group.Disable):
+        self.group_by = Group(self.args.groupBy)
+
+    def test(self, test_dataset, stats_dataset):
         """ Make API calls to Fox.Cub statistical model
         and compare model results with real results.
         Using to test Fox.Cub model
@@ -94,21 +105,22 @@ class MasterFoxCubTest:
             test_dataset: games to test with Fox.Cub model
             stats_dataset: dataset used to get teams statistics.
                 In some cases test_dataset and stats_dataset may be equal
-            group_by: define how to group teams inside a season
         """
 
-        slave = SlaveFoxCubTest(tournament, self.args.games, self.patterns)
+        slave = SlaveFoxCubTest(self.args.tournamentId, self.args.games, self.patterns)
+        reverse = True if self.args.seasons < 0 else False
+        stop_at = abs(self.args.seasons)
 
-        for season in get_seasons(test_dataset):
+        for season in get_seasons(test_dataset, reverse)[:stop_at]:
             data_season = filter_by_season(test_dataset, str(season))
             stats_data = filter_by_season(stats_dataset, str(season))
 
-            if group_by == Group.Disable:
+            if self.group_by == Group.Disable:
                 f = self.executor.submit(slave.test_data_batch,
                                          data_season, stats_data)
                 self.futures.append(f)
 
-            elif group_by == Group.Group:
+            elif self.group_by == Group.Group:
                 groups = get_groups(test_dataset)
 
                 for group in groups:
@@ -163,7 +175,8 @@ class MasterFoxCubTest:
 
     def get_fox_cub_results(self, attr):
         """ Get total score of a given attribute """
-        return sum([res[attr] for res in self.results.model_results]) / len(self.results.model_results)
+        score = sum([res[attr] for res in self.results.model_results])
+        return score / len(self.results.model_results)
 
     def get_fox_cub_scoreline(self, score_type, team):
         """ Get total score to win with a given handicap """
@@ -175,7 +188,8 @@ class MasterFoxCubTest:
 
     def get_actual_results(self, actual_results, handicap):
         """ Get win percentage with a given handicap """
-        return len(list(filter(lambda r: r > handicap, actual_results))) / len(actual_results)
+        wins = list(filter(lambda r: r > handicap, actual_results))
+        return len(wins) / len(actual_results)
 
     def get_percentage(self, collection, value):
         """ Calculate percentage of a given value in collection """
@@ -184,13 +198,12 @@ class MasterFoxCubTest:
 
 if __name__ == '__main__':
     tester = MasterFoxCubTest()
-    test_dataset = readfile(join_path(tester.args.dataFolder, "leagues/mls.json"))
-    stats_dataset = readfile(join_path(tester.args.dataFolder, "leagues/mls.json"))
+    test_dataset = readfile(tester.args.testDataset)
+    stats_dataset = readfile(tester.args.statDataset)
 
     start_at = time.time()
 
-    tester.test(test_dataset, stats_dataset,
-        Tournament.MLS.value, Group.Disable)
+    tester.test(test_dataset, stats_dataset)
     tester.print_test_results()
     tester.results.cleanup()
     print("Execution time: {}".format(time.time() - start_at))

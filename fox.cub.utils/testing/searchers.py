@@ -42,10 +42,11 @@ class BasePattern(metaclass=ABCMeta):
     def get_games(self, games_to_test: int, dataset: list = None):
         """ Detecting games with team_1 and team_2 only. """
         teams_1, teams_2 = self.get_teams()
-
+        is_reversed = True if games_to_test < 0 else False
         if not dataset: dataset = self.dataset
-        sorted_dateset = sorted(dataset,
-                                key=self.str_to_datetime)[-games_to_test:]
+
+        sorted_dateset = sorted(dataset, reverse=is_reversed,
+                                key=self.str_to_datetime)[:abs(games_to_test)]
 
         return list(filter(
                     self.get_venue_def(teams_1, teams_2),
@@ -133,14 +134,14 @@ class StrongWithStrongPattern(ScoringPattern):
     @property
     def team_1(self):
         return {
-            'attack': { 'min': 1.5, 'max': 3.45 },
+            'attack': { 'min': 1.4, 'max': 3.45 },
             'defence': { 'min': 0.5, 'max': 1.35 }
         }
 
     @property
     def team_2(self):
         return {
-            'attack': { 'min': 1.5, 'max': 3.45 },
+            'attack': { 'min': 1.4, 'max': 3.45 },
             'defence': { 'min': 0.5, 'max': 1.35 }
         }
 
@@ -242,7 +243,19 @@ class LeadersVsDogsPattern(StandingsPattern):
 
     @property
     def team_2(self):
-        return { 'standings': { 'min': 18, 'max': 25 } }
+        return { 'standings': { 'min': 15, 'max': 25 } }
+
+
+class LeadersVsMidtablePattern(StandingsPattern):
+    name  = ImmutableProperty('LeadersVsMidtable')
+
+    @property
+    def team_1(self):
+        return { 'standings': { 'min': 0, 'max': 6 } }
+
+    @property
+    def team_2(self):
+        return { 'standings': { 'min': 6, 'max': 14 } }
 
 
 class MidweekGamesPattern(AllPattern):

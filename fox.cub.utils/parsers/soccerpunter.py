@@ -88,7 +88,7 @@ class SoccerPunterSpider(scrapy.Spider):
         for year in range(1994, 2019)]
 
     mls = ["/USA/MLS-{0}".format(year)
-        for year in range(2000, 2019)]
+        for year in range(2000, 2020)]
 
     austria_bundesliga = ["/Austria/Bundesliga-{0}-{1}".format(year, year+1)
         for year in range(1993, 2019)]
@@ -293,7 +293,7 @@ class SoccerPunterSpider(scrapy.Spider):
     open_cup = ["/USA/US-Open-Cup-{0}".format(year)
         for year in range(2007, 2019)]
 
-    tournaments = uefa_u19
+    tournaments = mls
     base_url = "https://www.soccerpunter.com/soccer-statistics"
 
     h_timings = defaultdict(list)
@@ -301,7 +301,8 @@ class SoccerPunterSpider(scrapy.Spider):
 
     GAME_CODE = "G"
     SORT_BY_GROUP = False
-    IGNORE_NON_REGULAR_SEASON = False
+    IGNORE_NON_REGULAR_SEASON = True
+    REGULAR_SEASON_NAMINGS = ["Group Stage", "Regular Season"]
     GROUPS = {}
 
     proxy = "213.56.76.121:3128"
@@ -362,24 +363,31 @@ class SoccerPunterSpider(scrapy.Spider):
 
     def parse_game_details(self, game, matches):
         is_game_finished = game.css("td.score div.score:not([data-timestamp])").\
-            extract_first()
+                                    extract_first()
         if not is_game_finished:
             # ignore not finished games
             return
 
         match_id = game.css("::attr(data-match)").extract_first()
         match = Match()
-
+        # extracting team names
         home_team = game.css(".teamHome a.teamLink::text").extract()
         away_team = game.css(".teamAway a.teamLink::text").extract()
+
         match['HomeTeam'] = ''.join([i for i in home_team]).strip()
         match['AwayTeam'] = ''.join([i for i in away_team]).strip()
-        match['FTHG'], match['FTAG'] = game.css("td.score div.score::text").\
-            extract_first().replace(' ', '').split("-")
-        half_time_score = game.css("div.halfTimeScore::text").extract_first()
 
-        match['HTHG'], match['HTAG'] = half_time_score.replace(' ', '').split("-") if half_time_score else [None, None]
+        match['FTHG'], match['FTAG'] = game.css("td.score div.score::text").\
+                                                 extract_first().\
+                                                 replace(' ', '').split("-")
+
+        match['HTHG'], match['HTAG'] = self.parse_half_time_score(game)
         match['Date'] = game.css("a.dateLink::text").extract_first().strip()
+
+        if not self.is_valid_match(match):
+            # ignoring games without result
+            return
+
         matches[match_id] = match
 
     def parse_table(self, response):
@@ -415,5 +423,15 @@ class SoccerPunterSpider(scrapy.Spider):
             item['Group'] = -1
 
     def is_regular_season_game(self, game):
-        return game.xpath("preceding::tr[@class='titleSpace']/td/h2/text()")[-1]\
-            .extract().strip() == "Regular Season"
+        game_title = game.xpath("preceding::tr[@class='titleSpace']/td/h2/text()")[-1]
+        return game_title.extract().strip() in self.REGULAR_SEASON_NAMINGS
+
+    def is_valid_match(self, match):
+        return match['FTHG'] and match['FTAG']
+
+    def parse_half_time_score(self, game):
+        score = game.css("div.halfTimeScore::text").\
+                         extract_first()
+
+        return score.replace(' ', '').\
+                             split("-") if score else [None, None]

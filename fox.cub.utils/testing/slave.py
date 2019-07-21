@@ -15,7 +15,7 @@ class SlaveFoxCubTest:
     def __init__(self, tournament, games, patterns: BasePattern):
         # setup http client
         self.fox_cub_client = FoxCub(tournament)
-        # amount of games to test from the end
+        # amount of games to test. negative value means take them from the end
         self.games_to_test = games
         # search teams by pattern(s), find games only with this teams
         # and ignore the rest games in testing dataset

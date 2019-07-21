@@ -1,5 +1,6 @@
 from datetime import datetime
 from collections import OrderedDict
+from enum import Enum
 
 import json
 import os
@@ -14,10 +15,10 @@ def readfile(filepath):
     with open(filepath, 'r') as f:
         return json.load(f)
 
-def get_seasons(data):
-    """ Get list of seasons in ascending order"""
+def get_seasons(data, reverse=False):
+    """ Get list of seasons in asc/desc order"""
     seasons = list(set([game['Season'] for game in data]))
-    seasons.sort()
+    seasons.sort(reverse=reverse)
     return seasons
 
 def get_groups(data):
@@ -108,7 +109,7 @@ def is_total_under(game, total=2.5):
 
 def filter_by_season(data, season):
     """ Get games from a season. Verify that game ended successfully. """
-    return list(filter(lambda g: g['Season'] == season and g['FTHG'].isdigit(), data))
+    return list(filter(lambda g: g['Season'] == season, data))
 
 def filter_by_group(data, group):
     return list(filter(lambda g: g['Group'] == group, data))
@@ -166,3 +167,8 @@ def get_team_results(team, data):
 
 def join_path(base_path, file_path):
     return os.path.join(base_path, *file_path.split('/'))
+
+
+class Group(Enum):
+    Disable = 'Off'
+    Group = 'Group'
