@@ -2,20 +2,8 @@
 
 from config import Config
 from models import MongoClient, StatsModel
-
+from testing.helpers import ModelType
 import sys
-from enum import Enum
-
-
-class ModelType(Enum):
-
-    Btts = "btts"
-    Total = "totals"
-    Score = "scoreline"
-
-    @classmethod
-    def has_value(cls, value):
-        return any(value == item.value for item in cls)
 
 
 if __name__ == '__main__':
