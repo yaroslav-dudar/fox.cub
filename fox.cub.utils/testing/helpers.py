@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from enum import Enum
+import importlib
 
 from utils import *
 
@@ -93,3 +94,9 @@ class TestSessionResult():
             prediction['Team2'] = "Home"
 
         self.model_results.append(prediction)
+
+
+def import_string(class_path: str):
+    _package,  _object = class_path.rsplit('.', 1)
+    # dynamically load python class
+    return getattr(importlib.import_module(_package), _object)

@@ -146,6 +146,25 @@ class StrongWithStrongPattern(ScoringPattern):
         }
 
 
+class StrongAttVsWeakDefPattern(ScoringPattern):
+
+    name = ImmutableProperty('StrongAttVsWeakDef')
+
+    @property
+    def team_1(self):
+        return {
+            'attack': { 'min': 1.5, 'max': 3.45 },
+            'defence': { 'min': 0, 'max': 3.45 }
+        }
+
+    @property
+    def team_2(self):
+        return {
+            'attack': { 'min': 0, 'max': 3.45 },
+            'defence': { 'min': 1.5, 'max': 3.45 }
+        }
+
+
 class AllPattern(ScoringPattern):
 
     name  = ImmutableProperty('All')
@@ -256,6 +275,18 @@ class LeadersVsMidtablePattern(StandingsPattern):
     @property
     def team_2(self):
         return { 'standings': { 'min': 6, 'max': 14 } }
+
+
+class MidtableVsDogsPattern(StandingsPattern):
+    name  = ImmutableProperty('MidtableVsDogs')
+
+    @property
+    def team_1(self):
+        return { 'standings': { 'min': 6, 'max': 12 } }
+
+    @property
+    def team_2(self):
+        return { 'standings': { 'min': 17, 'max': 25 } }
 
 
 class MidweekGamesPattern(AllPattern):

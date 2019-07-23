@@ -15,16 +15,7 @@ from concurrent.futures import ProcessPoolExecutor, ALL_COMPLETED, wait
 from utils import *
 from enum import Enum
 from testing.slave import SlaveFoxCubTest
-from testing.helpers import TestSessionResult, VenueFilter
-from testing.searchers import (
-    MLSEastConfPattern,
-    MLSWestConfPattern,
-    AllPattern,
-    StrongWithWeakPattern,
-    StrongWithStrongPattern,
-    LeadersVsDogsPattern,
-    LeadersVsMidtablePattern,
-    MidweekGamesPattern)
+from testing.helpers import TestSessionResult, VenueFilter, import_string
 
 
 class Tournament(Enum):
@@ -39,17 +30,6 @@ class Tournament(Enum):
 
 class MasterFoxCubTest:
 
-    searchers = {
-        MLSEastConfPattern.name: MLSEastConfPattern,
-        MLSWestConfPattern.name: MLSWestConfPattern,
-        AllPattern.name: AllPattern,
-        StrongWithWeakPattern.name: StrongWithWeakPattern,
-        StrongWithStrongPattern.name: StrongWithStrongPattern,
-        LeadersVsDogsPattern.name: LeadersVsDogsPattern,
-        LeadersVsMidtablePattern.name: LeadersVsMidtablePattern,
-        MidweekGamesPattern.name: MidweekGamesPattern
-    }
-
     def __init__(self):
         self.parse_args() # call it first
         self.executor = ProcessPoolExecutor(max_workers=self.args.slaves)
@@ -58,12 +38,19 @@ class MasterFoxCubTest:
         self.results = TestSessionResult()
         self.parse_config()
 
+    def check_pattern_path(self, value):
+        if not (isinstance(value, str) and '.' in value):
+            raise argparse.ArgumentTypeError(
+                "%s is an invalid path to the python class" % value)
+        return value
+
     def parse_args(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('-slaves', default=4, type=int,
                             help='Amount of slaves to use in a test.')
-        parser.add_argument('-patterns', default='AllPattern', type=str,
-                            help='Teams searching pattern(s).' +\
+        parser.add_argument('-patterns', type=self.check_pattern_path,
+                            default='testing.searchers.AllPattern',
+                            help='Teams searching pattern(s) class.' +\
                                  ' Use `,` separator to combine multiple paterns.')
         parser.add_argument('-games', default=5000, type=int,
                             help='Amount of games to test for each season.')
@@ -89,8 +76,8 @@ class MasterFoxCubTest:
             self.args.statDataset = self.args.testDataset
 
         _filt = VenueFilter(self.args.venueFilter)
-        for pattern_name in self.args.patterns.split(','):
-            pattern = self.searchers[pattern_name]
+        for path in self.args.patterns.split(','):
+            pattern = import_string(path)
             pattern.venue_filter = _filt
             self.patterns.append(pattern)
 
