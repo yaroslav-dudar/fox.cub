@@ -108,6 +108,61 @@ class ScoringPattern(BasePattern, metaclass=ABCMeta):
         return teams_1, teams_2
 
 
+class MLSConfPattern(BasePattern, metaclass=ABCMeta):
+
+    @abstractmethod
+    def team_1(self) -> dict: pass
+
+    @abstractmethod
+    def team_2(self) -> dict: pass
+
+    @abstractmethod
+    def name(self) -> str: pass
+
+    @functools.lru_cache(maxsize=None)
+    def get_teams(self):
+        """ Find teams with the same conference as team_1 """
+
+        games = filter(lambda g: g['AwayTeam'] == self.team_1 or \
+            g['HomeTeam'] == self.team_1, self.dataset)
+        teams = defaultdict(lambda: 0)
+
+        for g in games:
+            opposition = g['HomeTeam'] if g['AwayTeam'] ==\
+                self.team_1 else g['AwayTeam']
+            teams[opposition] += 1
+
+        # find teams with more then 1 game in a season
+        teams_list = [t for t, g in teams.items() if g > 1] + [self.team_1]
+        return teams_list, teams_list
+
+    def contains(self, game):
+        return self.team_1 in (game['HomeTeam'], game['AwayTeam'])
+
+
+class StandingsPattern(BasePattern, metaclass=ABCMeta):
+    @abstractmethod
+    def team_1(self) -> dict: pass
+
+    @abstractmethod
+    def team_2(self) -> dict: pass
+
+    @abstractmethod
+    def name(self) -> str: pass
+
+    @functools.lru_cache(maxsize=None)
+    def get_teams(self):
+        points_table = get_season_table(self.dataset, metric='points')
+        teams_1 = list(points_table)[
+            self.team_1['standings']['min']:
+            self.team_1['standings']['max']]
+        teams_2 = list(points_table)[
+            self.team_2['standings']['min']:
+            self.team_2['standings']['max']]
+
+        return teams_1, teams_2
+
+
 class StrongWithWeakPattern(ScoringPattern):
 
     name = ImmutableProperty('StrongWithWeak')
@@ -165,6 +220,25 @@ class StrongAttVsWeakDefPattern(ScoringPattern):
         }
 
 
+class StrongVsAveragePattern(ScoringPattern):
+
+    name = ImmutableProperty('StrongVsAverage')
+
+    @property
+    def team_1(self):
+        return {
+            'attack': { 'min': 1.4, 'max': 3.45 },
+            'defence': { 'min': 0.5, 'max': 1.35 }
+        }
+
+    @property
+    def team_2(self):
+        return {
+            'attack': { 'min': 0.5, 'max': 2.0 },
+            'defence': { 'min': 0.9, 'max': 2.5 }
+        }
+
+
 class AllPattern(ScoringPattern):
 
     name  = ImmutableProperty('All')
@@ -182,61 +256,6 @@ class AllPattern(ScoringPattern):
             'attack': { 'min': 0.1, 'max': 5 },
             'defence': { 'min': 0.1, 'max': 5 }
         }
-
-
-class MLSConfPattern(BasePattern, metaclass=ABCMeta):
-
-    @abstractmethod
-    def team_1(self) -> dict: pass
-
-    @abstractmethod
-    def team_2(self) -> dict: pass
-
-    @abstractmethod
-    def name(self) -> str: pass
-
-    @functools.lru_cache(maxsize=None)
-    def get_teams(self):
-        """ Find teams with the same conference as team_1 """
-
-        games = filter(lambda g: g['AwayTeam'] == self.team_1 or \
-            g['HomeTeam'] == self.team_1, self.dataset)
-        teams = defaultdict(lambda: 0)
-
-        for g in games:
-            opposition = g['HomeTeam'] if g['AwayTeam'] ==\
-                self.team_1 else g['AwayTeam']
-            teams[opposition] += 1
-
-        # find teams with more then 1 game in a season
-        teams_list = [t for t, g in teams.items() if g > 1] + [self.team_1]
-        return teams_list, teams_list
-
-    def contains(self, game):
-        return self.team_1 in (game['HomeTeam'], game['AwayTeam'])
-
-
-class StandingsPattern(BasePattern, metaclass=ABCMeta):
-    @abstractmethod
-    def team_1(self) -> dict: pass
-
-    @abstractmethod
-    def team_2(self) -> dict: pass
-
-    @abstractmethod
-    def name(self) -> str: pass
-
-    @functools.lru_cache(maxsize=None)
-    def get_teams(self):
-        points_table = get_season_table(self.dataset, metric='points')
-        teams_1 = list(points_table)[
-            self.team_1['standings']['min']:
-            self.team_1['standings']['max']]
-        teams_2 = list(points_table)[
-            self.team_2['standings']['min']:
-            self.team_2['standings']['max']]
-
-        return teams_1, teams_2
 
 
 class MLSEastConfPattern(MLSConfPattern):

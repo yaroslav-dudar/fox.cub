@@ -96,9 +96,9 @@ class MasterFoxCubTest:
 
         slave = SlaveFoxCubTest(self.args.tournamentId, self.args.games, self.patterns)
         reverse = True if self.args.seasons < 0 else False
-        stop_at = abs(self.args.seasons)
+        seasons_num = abs(self.args.seasons)
 
-        for season in get_seasons(test_dataset, reverse)[:stop_at]:
+        for season in get_seasons(test_dataset, reverse)[:seasons_num]:
             data_season = filter_by_season(test_dataset, str(season))
             stats_data = filter_by_season(stats_dataset, str(season))
 

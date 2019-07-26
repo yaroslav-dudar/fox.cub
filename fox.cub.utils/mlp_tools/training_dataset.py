@@ -5,175 +5,140 @@ import sys
 import traceback
 import random
 import argparse
-from enum import Enum
 from datetime import datetime
 
 from utils import *
-from mlp_tools.helpers import CONFIG, TrainDataset, ModelType
-
-class Group(Enum):
-
-    Disable = 'Off'
-    Group = 'Group'
+from mlp_tools.helpers import DatasetAggregator, ModelType, FeatureVector
+from mlp_tools.settings import CONFIG
 
 
-def filter_by_month(min_month, max_month):
-    def func(game):
-        game_date = datetime.strptime(game['Date'], '%d/%m/%Y')
-        return game_date.month <= max_month and game_date.month >= min_month
+class TrainDataset:
 
-    return func
-
-
-def get_team_stats(stats_data_list, team):
-    for idx, stats in enumerate(stats_data_list[:1]):
-        try:
-            team_scores = get_team_scores(stats, team)
-        except Exception as e:
-            print(e)
-            return None
-
-        if team_scores['scored_xg']:
-            try:
-                season_totals = get_totals(stats)
-            except Exception as e:
-                traceback.print_exc()
-                raise SystemExit("Something went wrong!")
-
-            return [
-                season_totals['avgScoredHome'] + season_totals['avgScoredAway'],
-                team_scores['scored_xg'], team_scores['conceded_xg'], idx
-            ]
-
-    return None
+    def __init__(self, group_by: str, model_type: ModelType,
+                 is_reshuffle: bool):
+        """
+        Args:
+            group_by: define how to group teams inside a season
+            model_type: output model
+        """
+        self.label_def = model_type.get_label_def()
+        self.group_by = Group(group_by)
+        self.is_reshuffle = is_reshuffle
 
 
-def reshuffle_teams(game, home_team, away_team):
-    """ Alert home team to away and away to home """
+    def filter_by_month(self, min_month, max_month):
+        def func(game):
+            game_date = datetime.strptime(game['Date'], '%d/%m/%Y')
+            return (game_date.month <= max_month and \
+                    game_date.month >= min_month)
 
-    if bool(random.getrandbits(1)):
-        home_team, away_team = away_team, home_team
-        game['FTHG'], game['FTAG'] = game['FTAG'], game['FTHG']
-
-    return home_team, away_team, game
-
-
-def dataset_v1(home_team, away_team):
-    """
-        League avg goals,
-        Home team attack,
-        Home team defence,
-        Away Team attack,
-        Away team defence
-    """
-
-    return [
-        home_team[0],
-        sum(home_team[1])/len(home_team[1]),
-        sum(home_team[2])/len(home_team[2]),
-        sum(away_team[1])/len(away_team[1]),
-        sum(away_team[2])/len(away_team[2])
-    ]
+        return func
 
 
-def dataset_v2(home_team, away_team):
-    """
-        Home team League avg goals,
-        Away team League avg goals,
-        Home team division [0 - higher 1 - lower],
-        Away team division [0 - higher 1 - lower],
-        Home team attack,
-        Home team defence,
-        Away Team attack,
-        Away team defence
-    """
+    def dataset_v1(self, feature: FeatureVector):
+        """
+            League avg goals,
+            Home team attack,
+            Home team defence,
+            Away Team attack,
+            Away team defence
+        """
 
-    return [
-        home_team[0], away_team[0],
-        home_team[3], away_team[3],
-        sum(home_team[1])/len(home_team[1]),
-        sum(home_team[2])/len(home_team[2]),
-        sum(away_team[1])/len(away_team[1]),
-        sum(away_team[2])/len(away_team[2])
-    ]
+        return [
+            feature.get_avg_goals(),
+            feature.attack_strength_home_team,
+            feature.defence_strength_home_team,
+            feature.attack_strength_away_team,
+            feature.defence_strength_away_team,
+        ]
 
 
-def prepare_data_group(games, stats, output_method, is_neutral=False):
-    data_group = []
+    def dataset_v2(self, feature: FeatureVector):
+        """
+            Home team League avg goals,
+            Away team League avg goals,
+            Home team division [0 - higher 1 - lower],
+            Away team division [0 - higher 1 - lower],
+            Home team attack,
+            Home team defence,
+            Away Team attack,
+            Away team defence
+        """
 
-    for i, g in enumerate(games):
-        home_team = get_team_stats(stats, g['HomeTeam'])
-        away_team = get_team_stats(stats, g['AwayTeam'])
+        return [
+            feature.avg_goals_home_team,
+            feature.avg_goals_away_team,
+            feature.league_strength_home_team,
+            feature.league_strength_away_team,
+            feature.attack_strength_home_team,
+            feature.defence_strength_home_team,
+            feature.attack_strength_away_team,
+            feature.defence_strength_away_team
+        ]
 
-        if is_neutral:
-            g, home_team, away_team = reshuffle_teams(
-                g, home_team, away_team, game)
 
-        if not home_team or not away_team: continue
+    def prepare_data_group(self, games, dataset):
+        data_group = []
 
-        data_group.append([
-            output_method(int(g['FTHG']), int(g['FTAG']))] +\
-            dataset_v1(home_team, away_team)
-        )
+        for game in games:
+            label_class, features = dataset.prepare_observation(game,
+                                                               self.label_def)
 
-    return data_group
+            if not features: continue
+            if self.is_reshuffle: features.reshuffle()
+            data_group.append([label_class] + self.dataset_v1(features))
 
-def prepare_dataset(dataset: TrainDataset,
-                    seasons: list,
-                    group_by: Group,
-                    model_type: ModelType):
+        return data_group
 
-    """Generate dataset for Fox.Cub statistical model
 
-    Args:
-        dataset: contain training and stat data
-        seasons: list of seasons we need to put to the output dataset
-        group_by: define how to group teams inside a season
-    """
+    def sort_by_date(self, games):
+        return sorted(games,
+                      key=lambda g: datetime.strptime(g['Date'],
+                      '%d/%m/%Y'))
 
-    output_def = model.get_output_def()
-    output_dataset = []
-    print("Preparing dataset ...")
 
-    for season in seasons:
-        scored, conceded = {}, {}
+    def execute(self, dataset: DatasetAggregator, seasons: list):
+        """Generate dataset for Fox.Cub statistical model
 
-        input_games = filter_by_season(dataset.trainDataset, str(season))
-        stats_data = [filter_by_season(stats, str(season)) for stats in dataset.statDataset]
+        Args:
+            dataset: contain training and stat data
+            seasons: list of seasons we need to put to the output dataset
+        """
+        output_dataset = []
+        print("Preparing dataset {%s} ..." % dataset)
 
-        if not input_games: continue
+        for season in seasons:
+            input_games = filter_by_season(dataset.observations, str(season))
 
-        games_in_season = len(get_season_teams(input_games))*2 - 2
+            # ignore current season if no appropriate games
+            if not input_games: continue
 
-        sorted_games = sorted(input_games,
-                              key=lambda g: datetime.strptime(g['Date'],
-                              '%d/%m/%Y'))
-        #sorted_games = list(filter(filter_by_month(1, 7) , sorted_games))
+            if self.group_by == Group.Disable:
+                output_dataset.extend(
+                    self.prepare_data_group(self.sort_by_date(input_games),
+                                            dataset)
+                )
+            elif self.group_by == Group.Group:
+                groups = get_groups(dataset.observations)
 
-        if group_by == Group.Disable:
-            output_dataset.extend(
-                prepare_data_group(sorted_games,
-                                   stats_data,
-                                   output_def)
-            )
-        elif group_by == Group.Group:
-            groups = get_groups(dataset.trainDataset)
+                for group in groups:
+                    # ignore non group games (e.g playoff games)
+                    if group == -1: continue
 
-            for group in groups:
-                if group == -1: continue
+                    data_group = filter_by_group(input_games, group)
+                    group_games = self.sort_by_date(data_group)
+                    output_dataset.extend(self.prepare_data_group(group_games,
+                                                                  dataset))
 
-                data_group = filter_by_group(input_games, group)
-                stats_group = [filter_by_group(s, group) for s in stats_data]
+        return output_dataset
 
-                group_games = sorted(data_group,
-                                     key=lambda g: datetime.strptime(g['Date'],
-                                     '%d/%m/%Y'))
 
-                output_dataset.extend(prepare_data_group(group_games,
-                                                  stats_data,
-                                                  output_def))
+    def to_csv(self, out_file, data):
+        with open(out_file, 'w+') as out:
+            wr = csv.writer(out, quoting=csv.QUOTE_MINIMAL)
+            for row in data:
+                wr.writerow(row)
 
-    return output_dataset
 
 
 def parse_args():
@@ -184,25 +149,28 @@ def parse_args():
                         help='Grouping pattern.')
     parser.add_argument('-datasetType', required=True, type=str,
                         help='Type of generated dataset')
+    parser.add_argument('-out', default="out.csv", type=str,
+                        help='Output csv file with training data')
+    parser.add_argument('-reshuffle', default=False, type=bool,
+                        help='Reshuffling home and away teams between each other')
+    parser.add_argument('-seasons', default=100, type=int,
+                        help='Amount of seasons to use to generate training dataset')
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     result_dataset = []
     args = parse_args()
+
     dataset = CONFIG[args.datasetName]
-    model = ModelType(args.datasetType)
+    model_type = ModelType(args.datasetType)
+    train = TrainDataset(args.groupBy, model_type, args.reshuffle)
 
-    for d in dataset[model]:
-        seasons = [season for season in get_seasons(d.trainDataset)]
-        result_dataset.extend(prepare_dataset(d,
-                                             seasons[-10:],
-                                             Group(args.groupBy),
-                                             model))
+    reverse = True if args.seasons < 0 else False
+    seasons_num = abs(args.seasons)
 
-    output_file = 'output.csv'
+    for d in dataset[model_type]:
+        seasons = [season for season in get_seasons(d.observations)]
+        result_dataset.extend(train.execute(d, seasons[:seasons_num]))
 
-    with open(output_file, 'w+') as out:
-        wr = csv.writer(out, quoting=csv.QUOTE_MINIMAL)
-        for row in result_dataset:
-            wr.writerow(row)
+    train.to_csv(args.out, result_dataset)

@@ -1,9 +1,56 @@
 import os
-from enum import Enum
+import random
 
-from utils import join_path, readfile
+from enum import Enum
+from typing import List
+from dataclasses import dataclass
+from collections import defaultdict
+from statistics import mean
+
+from utils import (join_path,
+                   readfile,
+                   get_season_teams,
+                   get_team_scores,
+                   get_seasons,
+                   filter_by_season,
+                   collect_stats)
 
 DATA_FOLDER = os.environ['DATA_FOLDER']
+
+
+@dataclass
+class FeatureVector:
+    """ Store features for particular game """
+
+    avg_goals_home_team: float
+    avg_goals_away_team: float
+
+    league_strength_home_team: int
+    league_strength_away_team: int
+    attack_strength_home_team: float
+    attack_strength_away_team: float
+    defence_strength_home_team: float
+    defence_strength_away_team: float
+
+    def get_avg_goals(self):
+        return (self.avg_goals_home_team +\
+                self.avg_goals_away_team) / 2
+
+    def reshuffle(self):
+        """ Alert home team to away and away to home """
+
+        if bool(random.getrandbits(1)):
+            self.avg_goals_home_team, self.avg_goals_away_team =\
+                self.avg_goals_away_team, self.avg_goals_home_team
+
+            self.league_strength_home_team, self.league_strength_away_team =\
+                self.league_strength_away_team, self.league_strength_home_team
+
+            self.attack_strength_home_team, self.attack_strength_away_team =\
+                self.attack_strength_away_team, self.attack_strength_home_team
+
+            self.defence_strength_home_team, self.defence_strength_away_team =\
+                self.defence_strength_away_team, self.defence_strength_home_team
 
 
 class ModelType(Enum):
@@ -16,50 +63,108 @@ class ModelType(Enum):
     def has_value(cls, value):
         return any(value == item.value for item in cls)
 
-    def get_output_def(self):
-        maps = {
-            ModelType.Btts: TrainDataset.btts,
-            ModelType.Total: TrainDataset.totals,
-            ModelType.Score: TrainDataset.scoreline
+    def get_label_def(self):
+        labels = {
+            ModelType.Btts: ObservationDataset.btts,
+            ModelType.Total: ObservationDataset.totals,
+            ModelType.Score: ObservationDataset.scoreline
         }
-        return maps[self]
+        return labels[self]
 
 
-class TrainDataset:
-
-    def __init__(self, trainDatasetPath,
-                 statDatasetPaths: list = None):
-
-        self._statDataset, self._trainDataset = [], None
-
-        self._trainDatasetPath = trainDatasetPath
-        if not statDatasetPaths:
-            self._statDatasetPaths = [trainDatasetPath]
-        else:
-            self._statDatasetPaths = statDatasetPaths
+class BaseDataset:
+    def __init__(self, dataset_path, meta: dict = None):
+        self._dataset_path = dataset_path
+        self._data = None
+        self.meta = meta if meta else {}
 
     @property
-    def trainDataset(self):
-        if not self._trainDataset:
-            self._trainDataset = readfile(join_path(
-                                          DATA_FOLDER,
-                                          self._trainDatasetPath))
-        return self._trainDataset
+    def path(self):
+        return self._dataset_path
 
     @property
-    def statDataset(self):
-        if self._statDataset:
-            return self._statDataset
+    def data(self):
+        if self._data:
+            return self._data
 
-        for _path in self._statDatasetPaths:
-            data = readfile(join_path(DATA_FOLDER, _path))
-            self._statDataset.append(data)
+        self._data = readfile(join_path(DATA_FOLDER,
+                                        self._dataset_path))
+        return self._data
 
-        return self._statDataset
+
+class FeatureDataset:
+    """ Collection of datasets responsible for calculating
+    feature vector for each game observation """
+
+    def __init__(self, datasets: List[BaseDataset]):
+        self._datasets = datasets
+        self._seasons = defaultdict(dict)
+        self.is_ready = False
+
+    def start(self, clean_after = True):
+        """ Collect features for each season/team from input collection """
+
+        for dataset in self._datasets:
+            dataset_stats = collect_stats(dataset.data)
+            dataset_seasons = get_seasons(dataset.data)
+
+            for season in dataset_seasons:
+                self.setup_season(dataset, season)
+
+        if clean_after: self._datasets = None
+        self.is_ready = True
+
+    def setup_season(self, dataset, season):
+        season_data = filter_by_season(dataset.data, season)
+        dataset_stats = collect_stats(season_data)
+
+        for team in get_season_teams(season_data):
+            team_stats = get_team_scores(season_data, team)
+            self.collect_team_features(team,
+                                       dataset_stats,
+                                       season,
+                                       team_stats,
+                                       dataset.meta.get('strength', 0))
+
+    def get_feature_vector(self, game):
+        """ Return feature vector for an input game.
+        Return None if at least one team not exists in dataset"""
+
+        try:
+            home = self._seasons[game['Season']][game['HomeTeam']]
+            away = self._seasons[game['Season']][game['HomeTeam']]
+        except KeyError:
+            return None
+
+        return FeatureVector(
+            avg_goals_home_team=home['league_avg'],
+            avg_goals_away_team=away['league_avg'],
+            league_strength_home_team=home['league_strength'],
+            league_strength_away_team=away['league_strength'],
+            attack_strength_home_team=home['attack_strength'],
+            attack_strength_away_team=away['attack_strength'],
+            defence_strength_home_team=home['defence_strength'],
+            defence_strength_away_team=away['defence_strength'])
+
+    def collect_team_features(self, team, dataset_stats, season,
+                              team_stats, league_strength):
+
+        self._seasons[season][team] = {
+            'attack_strength': mean(team_stats['scored_xg']),
+            'defence_strength': mean(team_stats['conceded_xg']),
+            'league_strength': league_strength,
+            'league_avg': (dataset_stats['avgScoredHome'] +\
+                           dataset_stats['avgScoredAway'])
+        }
+
+
+class ObservationDataset(BaseDataset):
+    """ Represents football history data.
+    Used to generate training datasets """
 
     @staticmethod
     def scoreline(home_goals, away_goals):
-        diff = home_goals - away_goals
+        diff = int(home_goals) - int(away_goals)
 
         if diff > 2: return 3
         if diff < -2: return 6
@@ -69,93 +174,46 @@ class TrainDataset:
 
     @staticmethod
     def btts(home_goals, away_goals):
-        return 1 if home_goals and away_goals else 0
+        return 1 if int(home_goals) and int(away_goals) else 0
 
     @staticmethod
     def totals(home_goals, away_goals):
-        return home_goals + away_goals
+        return int(home_goals) + int(away_goals)
 
 
-PLAYOFF = [
-    TrainDataset('cups/scotland_fa_cup.json',
-                 ['leagues/scotland_premiership.json']),
-    TrainDataset('cups/fa_cup.json',
-                 ['leagues/epl.json', 'leagues/efl_championship.json']),
-    TrainDataset('cups/league_cup.json',
-                 ['leagues/epl.json', 'leagues/efl_championship.json']),
-    TrainDataset('cups/dfb_pokal.json',
-                 ['leagues/bundesliga.json', 'leagues/bundesliga2.json']),
-    TrainDataset('cups/coupe_de_france.json',
-                 ['leagues/france_ligue1.json', 'leagues/france_ligue2.json']),
-    TrainDataset('cups/copa_de_ligue.json',
-                 ['leagues/france_ligue1.json', 'leagues/france_ligue2.json']),
-    TrainDataset('cups/copa_del_rey.json',
-                 ['leagues/laliga.json', 'leagues/segunda.json']),
-    TrainDataset('cups/copa_italia.json',
-                 ['leagues/serie_a.json', 'leagues/serie_b.json']),
-    TrainDataset('cups/taga_de_portugal.json',
-                 ['leagues/portugal_liga.json']),
-]
+class DatasetAggregator:
+    """ Combine football game observation and feature datasets.
+    Allow to calculate feture vector and label value
+    for each observation
+    """
 
-INT_FINAL = [
-    TrainDataset('international/africa_cup.json'),
-    TrainDataset('international/asia_cup.json'),
-    TrainDataset('international/copa_america.json'),
-    TrainDataset('international/eu_championship.json'),
-    TrainDataset('international/world_cup.json'),
-    TrainDataset('international/gold_cup.json')
-]
+    def __init__(self, obs_dataset: ObservationDataset,
+                 feat_dataset: FeatureDataset = None):
 
-INT_QUALIFICATION = [
-    TrainDataset('international/europe_qual.json'),
-    TrainDataset('international/africa_qual.json'),
-    TrainDataset('international/asia_qual.json'),
-    TrainDataset('international/southamerica_qualific.json')
-]
+        self.obs_dataset = obs_dataset
 
-MLS = [TrainDataset('leagues/mls.json')]
-CHAMPIONSHIP = [TrainDataset('leagues/efl_championship.json')]
-BUNDESLIGA = [TrainDataset('leagues/bundesliga.json')]
+        if not feat_dataset:
+            # use the same dataset for features if not provided
+            datasets = [BaseDataset(obs_dataset.path)]
+            feat_dataset = FeatureDataset(datasets)
 
-CONFIG = {
-    'epl': {
-        ModelType.Score: [TrainDataset('leagues/epl.json')],
-        ModelType.Total: [
-            TrainDataset('eradivisie.json'),
-            TrainDataset('epl.json'),
-            TrainDataset('laliga.json'),
-            TrainDataset('bundesliga.json')
-        ],
-        ModelType.Btts: [
-            TrainDataset('eradivisie.json'),
-            TrainDataset('epl.json'),
-            TrainDataset('laliga.json'),
-            TrainDataset('bundesliga.json')
-        ]
-    },
-    'international_final': {
-        ModelType.Score: INT_FINAL,
-        ModelType.Total: INT_FINAL,
-        ModelType.Btts: INT_FINAL
-    },
-    "international_qualification": {
-        ModelType.Score: INT_QUALIFICATION,
-        ModelType.Total: INT_QUALIFICATION,
-        ModelType.Btts: INT_QUALIFICATION
-    },
-    'mls': {
-        ModelType.Score: MLS,
-        ModelType.Total: MLS,
-        ModelType.Btts: MLS
-    },
-    "playoff": {
-        ModelType.Score: PLAYOFF,
-        ModelType.Total: PLAYOFF,
-        ModelType.Btts: PLAYOFF
-    },
-    "bundesliga": {
-        ModelType.Score: BUNDESLIGA,
-        ModelType.Total: BUNDESLIGA,
-        ModelType.Btts: BUNDESLIGA
-    }
-}
+        self.feat_dataset = feat_dataset
+
+    def prepare_observation(self, game, label_class_def):
+        """ Return label class and feature vector """
+
+        if not self.feat_dataset.is_ready:
+            # prepare features dataset on demand
+            self.feat_dataset.start()
+
+        label = label_class_def(game['FTHG'], game['FTAG'])
+        features = self.feat_dataset.get_feature_vector(game)
+
+        return label, features
+
+    @property
+    def observations(self):
+        return self.obs_dataset.data
+
+    def __repr__(self):
+        return "DatasetAggregator(observations_path=%s)" % self.obs_dataset.path

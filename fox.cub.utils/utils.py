@@ -65,7 +65,7 @@ def get_team_goals(game, team, is_team_score):
     if game['AwayTeam'] == team:
         return int(game['FTAG']) if is_team_score else int(game['FTHG'])
 
-def get_totals(data, date_min=None, date_max=None):
+def collect_stats(data, date_min=None, date_max=None):
     under2_5 = len(list(filter(is_total_under, data)))
     under3_5 = len(list(filter(lambda g: is_total_under(g, 3.5), data)))
     under1_5 = len(list(filter(lambda g: is_total_under(g, 1.5), data)))
@@ -145,12 +145,12 @@ def test_fox_cub(games_to_test, season_data, client, countAllSeason = False):
 
     if countAllSeason:
         games_before = tuple(season_data)
-        season_avg = get_totals(games_before)
+        season_avg = collect_stats(games_before)
 
     for game in games_to_test:
         if not countAllSeason:
             games_before = filter_games(season_data, game['Date'])
-            season_avg = get_totals(games_before)
+            season_avg = collect_stats(games_before)
 
         home_team = get_team_scores(games_before, game['HomeTeam'])
         away_team = get_team_scores(games_before, game['AwayTeam'])
