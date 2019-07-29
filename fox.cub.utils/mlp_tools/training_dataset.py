@@ -140,7 +140,6 @@ class TrainDataset:
                 wr.writerow(row)
 
 
-
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-datasetName', required=True, type=str,
@@ -164,13 +163,13 @@ if __name__ == '__main__':
 
     dataset = CONFIG[args.datasetName]
     model_type = ModelType(args.datasetType)
-    train = TrainDataset(args.groupBy, model_type, args.reshuffle)
+    train_dataset = TrainDataset(args.groupBy, model_type, args.reshuffle)
 
     reverse = True if args.seasons < 0 else False
     seasons_num = abs(args.seasons)
 
     for d in dataset[model_type]:
         seasons = [season for season in get_seasons(d.observations)]
-        result_dataset.extend(train.execute(d, seasons[:seasons_num]))
+        result_dataset.extend(train_dataset.execute(d, seasons[:seasons_num]))
 
-    train.to_csv(args.out, result_dataset)
+    train_dataset.to_csv(args.out, result_dataset)

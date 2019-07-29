@@ -132,7 +132,7 @@ class FeatureDataset:
 
         try:
             home = self._seasons[game['Season']][game['HomeTeam']]
-            away = self._seasons[game['Season']][game['HomeTeam']]
+            away = self._seasons[game['Season']][game['AwayTeam']]
         except KeyError:
             return None
 
