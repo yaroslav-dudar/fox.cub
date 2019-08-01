@@ -26,6 +26,7 @@ class Tournament(Enum):
     International_Qualification = "5ce63f5200c0b9b3700e5a88"
     International_Final = "5ce63f5200c0b9b3700e5a87"
     Bundesliga = "5baa5789adddfaf57a803bb2"
+    Testing = "5d3eaf08010fb18a18b1073b"
 
 
 class MasterFoxCubTest:

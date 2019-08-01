@@ -15,7 +15,7 @@ from utils import (join_path,
                    filter_by_season,
                    collect_stats)
 
-DATA_FOLDER = os.environ['DATA_FOLDER']
+DATA_FOLDER = os.environ.get('DATA_FOLDER', '')
 
 
 @dataclass

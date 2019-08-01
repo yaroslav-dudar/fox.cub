@@ -25,7 +25,7 @@ import org.datavec.api.split.FileSplit
 import scala.collection.mutable.ArrayBuffer
 import java.io.File
 import java.nio.file.Paths
-import java.io.ByteArrayInputStream
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 
 /**
  * MLP neural network model
@@ -155,6 +155,10 @@ object MLPNet {
         models += (modelName -> ModelSerializer.restoreMultiLayerNetwork(inputStream, true))
     }
 
+    def dropModel(modelName: String) {
+        models.remove(modelName)
+    }
+
     /**
      * Save MLP model on disk
      * @param modelPath path to MLP model file
@@ -162,4 +166,12 @@ object MLPNet {
     def saveModel(modelPath: String, modelName: String) {
         ModelSerializer.writeModel(models(modelName), modelPath, true)
     }
+
+    def getModel(modelName: String) = {
+        val out = new ByteArrayOutputStream()
+        ModelSerializer.writeModel(models(modelName), out, true)
+        out
+    }
+
+
 }

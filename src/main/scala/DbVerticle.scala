@@ -13,7 +13,6 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.util.{Failure, Success, Try}
-import scala.collection.mutable.Buffer
 
 import fox.cub.internals.{QueryEvent, ResultEvent}
 import fox.cub.utils.HttpUtils.jsonResponse
@@ -65,40 +64,6 @@ class DatabaseVerticle extends ScalaVerticle {
     }
 
     /**
-     * Upload statistical model from DB to app memory
-    */
-    def prepareModels(result: JsonObject) {
-        result.getJsonArray("firstBatch").forEach(statsModel => {
-            statsModel match {
-                case m: JsonObject => {
-                    model.TournamentModel.setupModel(m)
-                }
-                case m => { logger.warn(
-                    s"""Model: $m not loaded to application.
-                    Has incorrect format""") }
-            }
-        })
-    }
-
-    /**
-     * Generate mapping from tournament to the statistical model
-    */
-    def prepareTournaments(result: JsonObject) {
-        result.getJsonArray("firstBatch").forEach(tournament => {
-            tournament match {
-                case t: JsonObject => {
-                    model.TournamentModel.addTournament(
-                        model.Tournament.getId(t),
-                        model.Tournament.getModel(t))
-                }
-                case t => { logger.warn(
-                    s"""Tournament: $t not loaded to application.
-                    Has incorrect format""") }
-            }
-        })
-    }
-
-    /**
      * Registering Vertx Query handler
      */
     def registerQueryHandler(): MessageConsumer[QueryEvent] = {
@@ -108,9 +73,11 @@ class DatabaseVerticle extends ScalaVerticle {
                     replyResult(result, msg)
                 }
                 case Failure(cause: MongoCommandException) => {
+                    logger.error(cause.getStackTraceString)
                     msg.fail(422, cause.toString)
                 }
                 case Failure(cause) => {
+                    logger.error(cause.getStackTraceString)
                     msg.fail(422, cause.toString)
                 }
             }
@@ -132,7 +99,7 @@ class DatabaseVerticle extends ScalaVerticle {
                 .sendFuture[ResultEvent](DbProps.QueueName, modelQuery)
                 .onComplete {
                     case Success(result) => {
-                        prepareModels(result.body.result)
+                        model.TournamentModel.prepareModels(result.body.result)
                     }
                     case Failure(cause) => logger.error(s"$cause")
             }
@@ -141,7 +108,7 @@ class DatabaseVerticle extends ScalaVerticle {
                 .sendFuture[ResultEvent](DbProps.QueueName, tournamentQuery)
                 .onComplete {
                     case Success(result) => {
-                        prepareTournaments(result.body.result)
+                        model.TournamentModel.prepareTournaments(result.body.result)
                     }
                     case Failure(cause) => logger.error(s"$cause");
             }

@@ -12,7 +12,7 @@ class FoxCub:
     results = defaultdict(list)
 
     def __init__(self, tournament_id):
-        self.test_model_url = URL('/api/v1/test/stats?tournament_id=%s' % tournament_id)
+        self.test_model_url = URL('/api/v1/model/stats?tournament_id=%s' % tournament_id)
 
     def get_stats(self, home_results,
         away_results, tournament_avg,

@@ -33,7 +33,7 @@ export const actions = {
     async [FETCH_MANUAL_STATS](context, data) {
         var params = {tournament_id: data.tournament_id};
 
-        let getManualStatsUrl = `${Vue.config.host}/api/v1/test/stats`;
+        let getManualStatsUrl = `${Vue.config.host}/api/v1/model/stats`;
 
         let bodyData = {
             firstBatch: [{

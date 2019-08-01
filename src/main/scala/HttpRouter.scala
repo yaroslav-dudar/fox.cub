@@ -19,7 +19,7 @@ import fox.cub.router.{
     Team => RouterTeam,
     Tournament => RouterTournament,
     UserNotes => RouterUserNotes,
-    TestModel => RouterTestModel,
+    StatisticalModel => RouterModel,
     Fixtures => RouterFixtures,
     Odds => RouterOdds
 }
@@ -36,7 +36,9 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
 
     registerMsgCodec()
 
-    router.route().handler(BodyHandler.create())
+    router.route().handler(BodyHandler.create()
+        .setDeleteUploadedFilesOnEnd(true))
+
     router.route().handler(
         CorsHandler.create("*")
             .allowedMethod(HttpMethod.GET)
@@ -61,7 +63,10 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
         .handler(RouterUserNotes.getNoteValidator.handle)
         .handler(RouterUserNotes.getNotes)
 
-    router.post("/api/v1/test/stats").handler(RouterTestModel.getGameStats)
+    router.post("/api/v1/model/stats").handler(RouterModel.getGameStats)
+    router.post("/api/v1/model/train")
+        .handler(RouterModel.trainModelValidator.handle)
+        .handler(RouterModel.trainModel)
 
     router.get("/api/v1/fixtures")
         .handler(RouterFixtures.getFixtures)

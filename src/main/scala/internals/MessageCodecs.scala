@@ -16,7 +16,7 @@ class ResultEventCodec extends MessageCodec[ResultEvent, ResultEvent] {
 
         val jsonToStr = jsonToEncode.encode
         val length = jsonToStr.getBytes.length
-    
+
         buffer.appendInt(length)
         buffer.appendString(jsonToStr)
     }
@@ -56,7 +56,7 @@ class QueryEventCodec extends MessageCodec[QueryEvent, QueryEvent] {
 
         val jsonToStr = jsonToEncode.encode
         val length = jsonToStr.getBytes.length
-    
+
         buffer.appendInt(length)
         buffer.appendString(jsonToStr)
     }
