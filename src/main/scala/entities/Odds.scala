@@ -1,5 +1,7 @@
 package fox.cub.model
 
+import scala.collection.mutable.Buffer
+
 import io.vertx.lang.scala.json.Json
 import io.vertx.core.json.JsonObject
 
@@ -11,12 +13,15 @@ object Odds {
 
     /**
      * Get odds timeline for fixture
-     * @param fixtureId Fixture id
+     * @param fixtureIds External fixture ids
     */
 
-    def get(fixtureId: Int): QueryEvent = {
-        val filter = Json.obj(("fixture_id", fixtureId))
+    def get(fixtureIds: Buffer[Int]): QueryEvent = {
+        val filter = Json.obj(("fixture_id",
+                               Json.obj(("$in", fixtureIds))))
+
         val query = new JsonObject().put("find", Collection).put("filter", filter)
+        println(query.toString)
         QueryEvent("find", query)
     }
 }

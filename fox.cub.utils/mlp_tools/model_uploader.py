@@ -2,7 +2,7 @@
 
 from config import Config
 from models import MongoClient, StatsModel
-from testing.helpers import ModelType
+from mlp_tools.helpers import ModelType
 import sys
 
 

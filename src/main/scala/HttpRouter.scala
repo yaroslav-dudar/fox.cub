@@ -73,7 +73,7 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
     router.get("/api/v1/fixtures/:tournament_id")
         .handler(RouterFixtures.getFixtures)
 
-    router.get("/api/v2/odds/:fixture_id")
+    router.get("/api/v2/odds")
         .handler(RouterOdds.getOddsValidator.handle)
         .handler(RouterOdds.getOdds)
 

@@ -1,6 +1,7 @@
 """Pymongo wrapper with object models and operations with them."""
 
 import atexit
+from datetime import datetime
 
 import pymongo
 from bson.objectid import ObjectId
@@ -55,8 +56,21 @@ class Fixtures:
     def add(self, document):
         """ Insert fixture record if it not existed before """
         self.collection.update(
-            { "_id": document["_id"] },
-            document, upsert=True
+            { "home_id": document["home_id"],
+              "away_id": document["away_id"]
+            },
+            {
+                '$addToSet': {'external_ids': document['external_id']},
+                '$set': {
+                    'home_name': document['home_name'],
+                    'away_name': document['away_name'],
+                    'tournament_name': document['tournament_name'],
+                    "tournament_id": document['tournament_id'],
+                    'home_id': document['home_id'],
+                    'away_id': document['away_id'],
+                    'date': document['date']
+                }
+            }, upsert=True
         )
 
 
@@ -65,13 +79,21 @@ class Fixtures:
         home_id=None, away_id=None, tournament_id=None):
 
         return {
-            "_id": fixture_id,
+            "external_id": fixture_id,
             "home_name": home_name, "away_name": away_name,
             "date": date, "tournament_id": tournament_id,
             "tournament_name": tournament_name,
             "home_id": home_id, "away_id": away_id
         }
 
+    def get_id(self, home_id, away_id, date: datetime):
+        """ Non-rigid date filter """
+        where = 'return this.date.getDay() == {0}'.format(date.day)
+        fixture = self.collection.find_one({'$where' : where,
+                                            "home_id" : home_id,
+                                            "away_id": away_id})
+
+        return None if not fixture else str(fixture['_id'])
 
 class StatsModel:
     def __init__(self):

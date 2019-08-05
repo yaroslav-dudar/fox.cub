@@ -20,8 +20,14 @@ object Odds {
 
     def getOdds(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
         var response = context.response
-        var fixtureId = context.request.getParam("fixture_id")
-        var query = model.Odds.get(fixtureId.get.toInt)
+        // fetching input list of fixture ids
+        var fixtureIds = context.request
+            .params()
+            .getAll("fixture_id")
+            .map(f => f.toInt)
+
+        println(fixtureIds)
+        var query = model.Odds.get(fixtureIds)
 
         val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
             case Success(result) => {

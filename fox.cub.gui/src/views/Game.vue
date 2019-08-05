@@ -107,13 +107,12 @@ export default {
         highcharts: Chart
     },
     created: function() {
-        this.home_team = this.$route.query.home_team;
-        this.away_team = this.$route.query.away_team;
-        this.tournament = this.$route.query.tournament;
-
         let fixture_id = this.$route.query.fixture;
 
-        this.fixture = this.fixtures.find(f => f._id == fixture_id);
+        this.fixture = this.fixtures.find(f => f._id.$oid == fixture_id);
+        this.home_team = this.fixture.home_id.$oid;
+        this.away_team = this.fixture.away_id.$oid;
+        this.tournament = this.fixture.tournament_id;
 
         this.$store.dispatch(FETCH_GAMES,
             {
@@ -129,7 +128,7 @@ export default {
                 venue: 'away'
             });
 
-        this.$store.dispatch(FETCH_ODDS, fixture_id);
+        this.$store.dispatch(FETCH_ODDS, this.fixture.external_ids);
         this.$store.dispatch(FETCH_STATS, {
             home_team_id: this.home_team,
             away_team_id: this.away_team,

@@ -26,8 +26,11 @@ export const actions = {
 
         Vue.http.get(getStatsUrl, {params: params})
             .then(function (response) {
-                context.commit(SET_STATS, response.body)
-            });
+                context.commit(SET_STATS, response.body);
+            })
+            .catch(function (response) {
+                context.commit(SET_STATS, response.body);
+            })
     },
 
     async [FETCH_MANUAL_STATS](context, data) {

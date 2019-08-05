@@ -83,7 +83,7 @@ class PinnacleApi:
         self.init_data()
 
 
-    LEAGUES       = property(lambda self: '1872, 1718, 2663')
+    LEAGUES       = property(lambda self: '1977, 2663')
     SPORT_ID      = property(lambda self: '29')
     FIND_TEAM_BY  = property(lambda self: 'pinnacle_name')
     FIND_TOURN_BY = property(lambda self: 'pinnacle_id')
@@ -113,7 +113,8 @@ class PinnacleApi:
         try:
             for (league, ev) in self.get_event_pairs(data):
                 ev = Fixture(**ev)
-                if not self.is_main_fixture(ev): continue
+                if not self.is_main_fixture(ev) or\
+                    self.is_live_bet(ev): continue
 
                 home_id, away_id, tournament_id = self.\
                     get_fixture_ids(league['id'], ev)
@@ -201,7 +202,7 @@ class PinnacleApi:
                 self.leagues_list[l_id] = League(t_id, self.teams.find(t_id))
 
 
-    def get_fixture_ids(self, league_id, fixture: dict):
+    def get_fixture_ids(self, league_id, fixture: Fixture):
         """ Fetch Fox.Cub DB ids (home, away, tournament) for a given fixture
         Args:
             league_id (str): Pinnacle League Id
@@ -224,9 +225,11 @@ class PinnacleApi:
         return home_id, away_id, tournament_id
 
 
-    def is_main_fixture(self, fixture: dict):
+    def is_main_fixture(self, fixture: Fixture):
         return True if not fixture.parentId else False
 
+    def is_live_bet(self, fixture: Fixture):
+        return True if fixture.liveStatus == 1 else False
 
     def get_event_pairs(self, data: dict, league_attr: str = "league"):
         """ Returns generator with league, event pairs.

@@ -289,7 +289,7 @@ class LeadersVsMidtablePattern(StandingsPattern):
 
     @property
     def team_1(self):
-        return { 'standings': { 'min': 0, 'max': 6 } }
+        return { 'standings': { 'min': 0, 'max': 5 } }
 
     @property
     def team_2(self):

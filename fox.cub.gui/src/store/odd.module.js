@@ -15,8 +15,10 @@ const initialState = {
 export const state = { ...initialState };
 
 export const actions = {
-    async [FETCH_ODDS](context, fixture_id) {
-        let getOddsUrl = `${Vue.config.host}/api/v2/odds/${fixture_id}`;
+    async [FETCH_ODDS](context, ids) {
+        var getOddsUrl = `${Vue.config.host}/api/v2/odds?`;
+        let fixtures = ids.map(id => `fixture_id=${id}`);
+        getOddsUrl += fixtures.join('&');
 
         Vue.http.get(getOddsUrl)
             .then(function (response) {

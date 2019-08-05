@@ -11,7 +11,6 @@ from datetime import timezone
 
 class InfogolSpider(scrapy.Spider):
     name = 'infogol'
-    proxy = "131.108.6.118:50435"
     user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36"
 
     mode = 'create' # update or create
@@ -31,7 +30,7 @@ class InfogolSpider(scrapy.Spider):
         "orderBy[0][propertyName]": "MatchDateTime"
     }
 
-    url = "https://www.infogolapp.com/DataRequest/ExecuteRequest?r=getTeamCompetitionResults&v={team_id}&v={comp_id}"
+    url = "https://www.infogolapp.com/DataRequest/ExecuteRequest?r=getTeamResultsInCompetition&v={team_id}&v={comp_id}"
 
     def __init__(self, *a, **kw):
         super(InfogolSpider, self).__init__(*a, **kw)
@@ -46,7 +45,7 @@ class InfogolSpider(scrapy.Spider):
         )
         self.db = self.client[self.db_conf['db_name']]
 
-        self.proxy = "191.252.185.161:8090"
+        self.proxy = "104.236.248.219:3128"
 
         self.pull_db_data()
 
@@ -86,7 +85,10 @@ class InfogolSpider(scrapy.Spider):
                 yield scrapy.http.FormRequest(
                     url=team_url,
                     callback=callback,
-                    headers={'User-Agent': self.user_agent},
+                    headers={
+                        'User-Agent': self.user_agent,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
                     formdata=self.get_form_data(team_id, comp_id),
                     meta={
                         'proxy': self.proxy,
@@ -107,13 +109,19 @@ class InfogolSpider(scrapy.Spider):
             venue = 'home' if res['HomeTeamID'] == infogol_team_id else 'away'
 
             if venue == 'home':
-                game = self.get_game_id(res['HomeTeamID'], res['AwayTeamID'], venue)
+                game = self.get_game_id(res['HomeTeamID'],
+                                        res['AwayTeamID'],
+                                        venue,
+                                        tournament_id)
                 team_id = str(self.get_team_by_id(res['HomeTeamID'])['_id'])
                 opponent_id = str(self.get_team_by_id(res['AwayTeamID'])['_id'])
                 goals_for, goals_against = res['HomeTeamGoals'], res['AwayTeamGoals']
                 xg_for, xg_against = res[self.HOME_XG], res[self.AWAY_XG]
             else:
-                game = self.get_game_id(res['AwayTeamID'], res['HomeTeamID'], venue)
+                game = self.get_game_id(res['AwayTeamID'],
+                                        res['HomeTeamID'],
+                                        venue,
+                                        tournament_id)
                 team_id = str(self.get_team_by_id(res['AwayTeamID'])['_id'])
                 opponent_id = str(self.get_team_by_id(res['HomeTeamID'])['_id'])
                 goals_for, goals_against = res['AwayTeamGoals'], res['HomeTeamGoals']
@@ -169,7 +177,7 @@ class InfogolSpider(scrapy.Spider):
     def get_team_by_id(self, id):
         return next(filter(lambda t: t.get(self.config["find_team_by"]) == id, self.teams))
 
-    def get_game_id(self, team_infogol_id, opponent_infogol_id, venue):
+    def get_game_id(self, team_infogol_id, opponent_infogol_id, venue, tournament_id):
         team_id = str(self.get_team_by_id(team_infogol_id)['_id'])
         opponent_id = str(self.get_team_by_id(opponent_infogol_id)['_id'])
 
@@ -177,7 +185,8 @@ class InfogolSpider(scrapy.Spider):
             find_one({
                 'team': team_id,
                 'opponent': opponent_id,
-                'venue': venue
+                'venue': venue,
+                'tournament': tournament_id
             })
 
         return game['_id'] if game else None
