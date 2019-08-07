@@ -122,12 +122,24 @@ class Teams:
     def __init__(self):
         self.collection = MongoClient.db["team"]
 
-    def get_id(self, t_name, t_attr, t_list=None):
+    def get_id(self, t_name, t_attr, t_list=None, is_iterable=True):
+        """ Searching team id using t_attr field
+        Args:
+            t_name (str): team name to search
+            t_attr (str): attr used in search
+            t_list (list): list of preloaded teams
+            is_iterable (bool): is t_attr field array
+        """
+
         if not t_list:
             team = self.collection.find_one({t_attr: t_name})
             return team
         else:
-            t_filt = filter(lambda t: t[t_attr] == t_name , t_list)
+            if not is_iterable:
+                t_filt = filter(lambda t: t[t_attr] == t_name , t_list)
+            else:
+                t_filt = filter(lambda t: t_name in t[t_attr], t_list)
+
             team = next(t_filt, None)
             return None if not team else str(team['_id'])
 

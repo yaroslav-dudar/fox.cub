@@ -7,9 +7,15 @@ import os
 import time
 import uuid
 import functools
+from collections import namedtuple
 
 from fox_cub_client import FoxCub
 import gevent.pool
+
+game_fields = ["AwayTeam", "HomeTeam", "FTAG", "FTHG", "HTHG",
+               "HTAG", "HomeGoalsTiming", "AwayGoalsTiming",
+               "Season", "Group"]
+Game = namedtuple('Game', game_fields, defaults=(None,) * len(game_fields))
 
 def readfile(filepath):
     with open(filepath, 'r') as f:

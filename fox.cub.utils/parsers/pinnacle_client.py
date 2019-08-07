@@ -59,7 +59,7 @@ Odd = namedtuple('Odd', odd_fields, defaults=(None,) * len(odd_fields))
 period_fields = ["lineId", "number", "cutoff", "maxSpread", "maxMoneyline",
                  "maxTotal", "maxTeamTotal", "status",
                  "spreads", "moneyline", "totals", "teamTotal"]
-Period = namedtuple('Odd', period_fields, defaults=(None,) * len(period_fields))
+Period = namedtuple('Period', period_fields, defaults=(None,) * len(period_fields))
 
 class PinnacleApi:
 
@@ -83,7 +83,7 @@ class PinnacleApi:
         self.init_data()
 
 
-    LEAGUES       = property(lambda self: '1977, 2663')
+    LEAGUES       = property(lambda self: '1977, 1980, 2663')
     SPORT_ID      = property(lambda self: '29')
     FIND_TEAM_BY  = property(lambda self: 'pinnacle_name')
     FIND_TOURN_BY = property(lambda self: 'pinnacle_id')

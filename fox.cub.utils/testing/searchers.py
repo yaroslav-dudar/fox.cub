@@ -220,6 +220,25 @@ class StrongAttVsWeakDefPattern(ScoringPattern):
         }
 
 
+class StrongAttVsStrongDefPattern(ScoringPattern):
+
+    name = ImmutableProperty('StrongAttVsWeakDef')
+
+    @property
+    def team_1(self):
+        return {
+            'attack': { 'min': 1.4, 'max': 3.45 },
+            'defence': { 'min': 0, 'max': 2.0 }
+        }
+
+    @property
+    def team_2(self):
+        return {
+            'attack': { 'min': 1.0, 'max': 2.0 },
+            'defence': { 'min': 0.5, 'max': 1.5 }
+        }
+
+
 class StrongVsAveragePattern(ScoringPattern):
 
     name = ImmutableProperty('StrongVsAverage')
