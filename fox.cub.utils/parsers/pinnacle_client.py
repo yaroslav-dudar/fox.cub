@@ -18,7 +18,6 @@ from geventhttpclient.connectionpool import SSLConnectionPool
 import gevent.pool
 import pymongo
 
-from config import Config
 from models import Fixtures, Odds, Tournaments, Teams, MongoClient
 
 
@@ -249,9 +248,6 @@ if __name__ == '__main__':
 
     user_id = sys.argv[1]
     user_pwd = sys.argv[2]
-
-    # create database connection
-    MongoClient(Config()['database'])
 
     pinnacle = PinnacleApi(user_id, user_pwd)
 

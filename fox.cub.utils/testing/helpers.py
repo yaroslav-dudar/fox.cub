@@ -57,33 +57,33 @@ class TestSessionResult():
         self.scored_2, self.conceded_2 = [], []
         self.btts = []
 
-    def set_scoring_results(self, results):
-        scoring_table = get_season_table(results, metric='scored')
-        cons_table = get_season_table(results, metric='conceded')
+    def set_scoring_results(self, season: Season):
+        scoring_table = season.get_table(metric='scored')
+        cons_table = season.get_table(metric='conceded')
 
         for t in self.teams_1:
-            number_of_games = get_team_games(results, t)
+            number_of_games = season.get_team_games(t)
             self.scored_1.append(scoring_table[t] / number_of_games)
             self.conceded_1.append(cons_table[t] / number_of_games)
 
         for t in self.teams_2:
-            number_of_games = get_team_games(results, t)
+            number_of_games = season.get_team_games(t)
             self.scored_2.append(scoring_table[t] / number_of_games)
             self.conceded_2.append(cons_table[t] / number_of_games)
 
-    def set_actual_results(self, game):
-        if game['HomeTeam'] in self.teams_1:
+    def set_actual_results(self, game: Game):
+        if game.HomeTeam in self.teams_1:
             self.actual_results_team1.\
-                append(float(game['FTHG']) - float(game['FTAG']))
+                append(game.FTHG - game.FTAG)
             self.actual_results_team2.\
-                append(float(game['FTAG']) - float(game['FTHG']))
+                append(game.FTAG - game.FTHG)
         else:
             self.actual_results_team2.\
-                append(float(game['FTHG']) - float(game['FTAG']))
+                append(game.FTHG - game.FTAG)
             self.actual_results_team1.\
-                append(float(game['FTAG']) - float(game['FTHG']))
+                append(game.FTAG - game.FTHG)
 
-        self.btts.append(float(game['FTHG']) > 0 and float(game['FTAG']) > 0)
+        self.btts.append(game.FTHG > 0 and game.FTAG > 0)
 
     def set_model_results(self, prediction):
         if prediction['HomeTeam'] in self.teams_1:

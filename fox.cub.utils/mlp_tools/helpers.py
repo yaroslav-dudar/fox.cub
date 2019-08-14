@@ -183,7 +183,7 @@ class ObservationDataset(BaseDataset):
 
 class DatasetAggregator:
     """ Combine football game observation and feature datasets.
-    Allow to calculate feture vector and label value
+    Allow to calculate feature vector and label value
     for each observation
     """
 

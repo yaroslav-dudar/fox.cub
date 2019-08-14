@@ -99,9 +99,9 @@ class MasterFoxCubTest:
         reverse = True if self.args.seasons < 0 else False
         seasons_num = abs(self.args.seasons)
 
-        for season in get_seasons(test_dataset, reverse)[:seasons_num]:
-            data_season = filter_by_season(test_dataset, str(season))
-            stats_data = filter_by_season(stats_dataset, str(season))
+        for season in Season.get_seasons(test_dataset, reverse)[:seasons_num]:
+            data_season = Season.get(test_dataset, str(season))
+            stats_data = Season.get(stats_dataset, str(season))
 
             if self.group_by == Group.Disable:
                 f = self.executor.submit(slave.test_data_batch,
@@ -114,8 +114,8 @@ class MasterFoxCubTest:
                 for group in groups:
                     if group == -1: continue
 
-                    data_group = filter_by_group(data_season, group)
-                    stats_group = filter_by_group(stats_data, group)
+                    data_group = data_season.get_group_games(group)
+                    stats_group = stats_data.get_group_games(group)
 
                     scoring_table = get_season_table(stats_group,
                                                      metric='scored')

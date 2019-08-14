@@ -9,10 +9,10 @@ from helpers import ImmutableProperty, VenueFilter
 
 class BasePattern(metaclass=ABCMeta):
 
-    def __init__(self, dataset: list):
+    def __init__(self, dataset: Season):
         self.dataset = dataset
 
-    str_to_datetime = lambda self, g: datetime.strptime(g['Date'], '%d/%m/%Y')
+    str_to_datetime = lambda self, g: datetime.strptime(g.Date, '%d/%m/%Y')
 
     venue_filter = VenueFilter.ALL
 
@@ -20,12 +20,12 @@ class BasePattern(metaclass=ABCMeta):
         """ Returns venue filter function """
         filters = {
             VenueFilter.ALL.value: lambda g:
-                (g['HomeTeam'] in teams_2 and g['AwayTeam'] in teams_1) or
-                (g['HomeTeam'] in teams_1 and g['AwayTeam'] in teams_2),
+                (g.HomeTeam in teams_2 and g.AwayTeam in teams_1) or
+                (g.HomeTeam in teams_1 and g.AwayTeam in teams_2),
             VenueFilter.TEAM1_HOME.value: lambda g:
-                (g['HomeTeam'] in teams_1 and g['AwayTeam'] in teams_2),
+                (g.HomeTeam in teams_1 and g.AwayTeam in teams_2),
             VenueFilter.TEAM2_HOME.value: lambda g:
-                (g['HomeTeam'] in teams_2 and g['AwayTeam'] in teams_1)
+                (g.HomeTeam in teams_2 and g.AwayTeam in teams_1)
         }
 
         return filters[self.venue_filter.value]
@@ -43,14 +43,15 @@ class BasePattern(metaclass=ABCMeta):
         """ Detecting games with team_1 and team_2 only. """
         teams_1, teams_2 = self.get_teams()
         is_reversed = True if games_to_test < 0 else False
-        if not dataset: dataset = self.dataset
+        if not dataset: dataset = self.dataset.games
 
         sorted_dateset = sorted(dataset, reverse=is_reversed,
                                 key=self.str_to_datetime)[:abs(games_to_test)]
 
-        return list(filter(
+        a = list(filter(
                     self.get_venue_def(teams_1, teams_2),
                     sorted_dateset))
+        return a
 
     @abstractmethod
     def get_teams(self):
@@ -73,12 +74,12 @@ class ScoringPattern(BasePattern, metaclass=ABCMeta):
 
     def get_filter(self, filter_by, table):
         return lambda t: filter_by['min'] <= table[t] / \
-            get_team_games(self.dataset, t) <= filter_by['max']
+            self.dataset.get_team_games(t) <= filter_by['max']
 
     @functools.lru_cache(maxsize=None)
     def get_teams(self):
-        scoring_table = get_season_table(self.dataset, metric='scored')
-        cons_table = get_season_table(self.dataset, metric='conceded')
+        scoring_table = self.dataset.get_table(metric='scored')
+        cons_table = self.dataset.get_table(metric='conceded')
 
         # search teams that match team_1 pattern
         scoring_teams_1 = filter(
@@ -124,7 +125,7 @@ class MLSConfPattern(BasePattern, metaclass=ABCMeta):
         """ Find teams with the same conference as team_1 """
 
         games = filter(lambda g: g['AwayTeam'] == self.team_1 or \
-            g['HomeTeam'] == self.team_1, self.dataset)
+            g['HomeTeam'] == self.team_1, self.dataset.games)
         teams = defaultdict(lambda: 0)
 
         for g in games:
@@ -152,7 +153,7 @@ class StandingsPattern(BasePattern, metaclass=ABCMeta):
 
     @functools.lru_cache(maxsize=None)
     def get_teams(self):
-        points_table = get_season_table(self.dataset, metric='points')
+        points_table = self.dataset.get_table(metric='points')
         teams_1 = list(points_table)[
             self.team_1['standings']['min']:
             self.team_1['standings']['max']]
@@ -332,8 +333,29 @@ class MidweekGamesPattern(AllPattern):
 
     def get_games(self, games_to_test: int, dataset: list = None):
         teams_1, teams_2 = self.get_teams()
-        if not dataset: dataset = self.dataset
+        if not dataset: dataset = self.dataset.games
 
         midweek = filter(lambda g: self.str_to_datetime(g).\
                          weekday() < 5, dataset)
         return super().get_games(games_to_test, midweek)
+
+
+class SingleTeamPattern(AllPattern):
+    name  = ImmutableProperty('SingleTeam')
+
+    @property
+    def team_1(self):
+        return "Arsenal"
+
+    @property
+    def team_2(self):
+        return "Arsenal"
+
+    @functools.lru_cache(maxsize=None)
+    def get_teams(self):
+        teams_1 = [self.team_1]
+        points_table = self.dataset.get_table(metric='points')
+        teams_2 = list(points_table)[10:18]
+        #teams_2 = self.dataset.get_teams()
+
+        return teams_1, teams_2

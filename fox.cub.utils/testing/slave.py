@@ -9,10 +9,12 @@ from utils import *
 from testing.helpers import TestSessionResult
 from testing.searchers import BasePattern
 
+from typing import List
+
 
 class SlaveFoxCubTest:
 
-    def __init__(self, tournament, games, patterns: BasePattern):
+    def __init__(self, tournament, games: List[Game] , patterns: BasePattern):
         # setup http client
         self.fox_cub_client = FoxCub(tournament)
         # amount of games to test. negative value means take them from the end
@@ -22,7 +24,7 @@ class SlaveFoxCubTest:
         self.team_patterns = patterns
 
 
-    def test_data_batch(self, test_dataset, stats_dataset):
+    def test_data_batch(self, test_dataset: Season, stats_dataset: Season):
         """ Send batch of games to Fox.Cub
 
         Args:
@@ -37,13 +39,13 @@ class SlaveFoxCubTest:
         results.set_scoring_results(stats_dataset)
 
         session_id = test_fox_cub(games,
-                                  stats_dataset,
+                                  stats_dataset.games,
                                   self.fox_cub_client,
                                   True)
 
         for i, g in enumerate(games):
-            results.totals_2_5.append(is_total_under(g, total=2.5))
-            results.totals_3_5.append(is_total_under(g, total=3.5))
+            results.totals_2_5.append(g.is_total_under(total=2.5))
+            results.totals_3_5.append(g.is_total_under(total=3.5))
             results.set_actual_results(g)
             model_result = self.fox_cub_client.results[session_id][i]
             results.set_model_results(model_result)
@@ -54,7 +56,7 @@ class SlaveFoxCubTest:
 
     def build_pipeline(self, test_dataset, stats_dataset):
         """ Apply search patterns gradually one by one """
-        games = test_dataset
+        games = test_dataset.games
         for pattern in self.team_patterns:
             last_pattern = pattern(stats_dataset)
             games = last_pattern.get_games(self.games_to_test, games)

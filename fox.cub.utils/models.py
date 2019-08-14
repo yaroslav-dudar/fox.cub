@@ -6,33 +6,59 @@ from datetime import datetime
 import pymongo
 from bson.objectid import ObjectId
 
+from config import Config
+
+class Connection:
+    def __set_name__(self, owner, name):
+        self.name = name
+
+    def __set__(self, instance, value):
+        if not isinstance(value, pymongo.MongoClient):
+            raise ValueError("Should be MongoDB instance only")
+
+        instance.__dict__[self.name] = value
+
+    def __get__(self, instance, owner):
+        if not instance:
+            return None
+
+        return instance.__dict__.get(self.name)
+
+
+class BaseModel(type):
+    def __new__(cls, name, bases, attr):
+        attr['client'] = MongoClient(Config()['database'])
+        return super(BaseModel, cls).__new__(cls, name, bases, attr)
+
 
 class MongoClient:
     """ Global MongoDB connector """
-    conn = None
+    conn = Connection()
     db = None
+    _obj = None
 
     def __new__(cls, *args, **kwargs):
-        if MongoClient.conn and MongoClient.db:
+        if cls._obj:
             # prevent to create multiple db connections
-            pass
+            return cls._obj
         else:
-            return super(MongoClient, cls).__new__(cls)
+            cls._obj = super(MongoClient, cls).__new__(cls)
+            return cls._obj
 
     def __init__(self, db_config):
-        MongoClient.conn = pymongo.MongoClient(
+        self.conn = pymongo.MongoClient(
             db_config['host'],
             db_config['port']
         )
-        MongoClient.db = MongoClient.conn[db_config['db_name']]
+        MongoClient.db = self.conn[db_config['db_name']]
         # clean-up DB resources
-        atexit.register(MongoClient.conn.close)
+        atexit.register(self.conn.close)
 
 
-class Odds:
+class Odds(metaclass=BaseModel):
 
     def __init__(self):
-        self.collection = MongoClient.db["odds"]
+        self.collection = self.client.db["odds"]
 
     def insert(self, document):
         self.collection.insert(document)
@@ -48,10 +74,10 @@ class Odds:
         }
 
 
-class Fixtures:
+class Fixtures(metaclass=BaseModel):
 
     def __init__(self):
-        self.collection = MongoClient.db["fixtures"]
+        self.collection = self.client.db["fixtures"]
 
     def add(self, document):
         """ Insert fixture record if it not existed before """
@@ -95,9 +121,9 @@ class Fixtures:
 
         return None if not fixture else str(fixture['_id'])
 
-class StatsModel:
+class StatsModel(metaclass=BaseModel):
     def __init__(self):
-        self.collection = MongoClient.db["tournament_model"]
+        self.collection = self.client.db["tournament_model"]
 
     def update(self, model_id, model_type, model_content):
         self.collection.update(
@@ -107,20 +133,20 @@ class StatsModel:
         )
 
 
-class Tournaments:
+class Tournaments(metaclass=BaseModel):
 
     def __init__(self):
-        self.collection = MongoClient.db["tournament"]
+        self.collection = self.client.db["tournament"]
 
     def get(self, t_name, t_attr='name'):
         tournament_id = self.collection.find_one({t_attr: t_name})
         return tournament_id
 
 
-class Teams:
+class Teams(metaclass=BaseModel):
 
     def __init__(self):
-        self.collection = MongoClient.db["team"]
+        self.collection = self.client.db["team"]
 
     def get_id(self, t_name, t_attr, t_list=None, is_iterable=True):
         """ Searching team id using t_attr field
