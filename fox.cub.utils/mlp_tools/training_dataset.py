@@ -5,10 +5,9 @@ import sys
 import traceback
 import random
 import argparse
-from datetime import datetime
 
 from utils import *
-from mlp_tools.helpers import DatasetAggregator, ModelType, FeatureVector
+from dataset import DatasetAggregator, ModelType, FeatureVector
 from mlp_tools.settings import CONFIG
 
 
@@ -27,8 +26,8 @@ class TrainDataset:
 
 
     def filter_by_month(self, min_month, max_month):
-        def func(game):
-            game_date = datetime.strptime(game['Date'], '%d/%m/%Y')
+        def func(game: Game):
+            game_date = game.date_as_datetime()
             return (game_date.month <= max_month and \
                     game_date.month >= min_month)
 
@@ -93,8 +92,7 @@ class TrainDataset:
 
     def sort_by_date(self, games):
         return sorted(games,
-                      key=lambda g: datetime.strptime(g['Date'],
-                      '%d/%m/%Y'))
+                      key=lambda g: g.date_as_datetime())
 
 
     def execute(self, dataset: DatasetAggregator, seasons: list):
@@ -107,15 +105,14 @@ class TrainDataset:
         output_dataset = []
         print("Preparing dataset {%s} ..." % dataset)
 
-        for season in seasons:
-            input_games = filter_by_season(dataset.observations, str(season))
-
+        for season_name in seasons:
+            season = Season.get(dataset.observations, season_name)
             # ignore current season if no appropriate games
-            if not input_games: continue
+            if season.is_empty(): continue
 
             if self.group_by == Group.Disable:
                 output_dataset.extend(
-                    self.prepare_data_group(self.sort_by_date(input_games),
+                    self.prepare_data_group(self.sort_by_date(season.games),
                                             dataset)
                 )
             elif self.group_by == Group.Group:
@@ -125,7 +122,7 @@ class TrainDataset:
                     # ignore non group games (e.g playoff games)
                     if group == -1: continue
 
-                    data_group = filter_by_group(input_games, group)
+                    data_group = season.get_group_games(group)
                     group_games = self.sort_by_date(data_group)
                     output_dataset.extend(self.prepare_data_group(group_games,
                                                                   dataset))
@@ -169,7 +166,7 @@ if __name__ == '__main__':
     seasons_num = abs(args.seasons)
 
     for d in dataset[model_type]:
-        seasons = [season for season in get_seasons(d.observations)]
+        seasons = Season.get_seasons(d.observations)
         result_dataset.extend(train_dataset.execute(d, seasons[:seasons_num]))
 
     train_dataset.to_csv(args.out, result_dataset)

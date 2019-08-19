@@ -9,11 +9,9 @@ from statistics import mean
 
 from utils import (join_path,
                    readfile,
-                   get_season_teams,
-                   get_team_scores,
-                   get_seasons,
-                   filter_by_season,
-                   collect_stats)
+                   collect_stats,
+                   Game,
+                   Season)
 
 DATA_FOLDER = os.environ.get('DATA_FOLDER', '')
 
@@ -73,10 +71,18 @@ class ModelType(Enum):
 
 
 class BaseDataset:
-    def __init__(self, dataset_path, meta: dict = None):
+    def __init__(self, dataset_path, data = None, meta: dict = None):
         self._dataset_path = dataset_path
-        self._data = None
+        self._data = data
         self.meta = meta if meta else {}
+
+    @classmethod
+    def from_list(cls, games: List[Game], meta: dict = None):
+        return cls(None, games, meta)
+
+    @classmethod
+    def from_file(cls, path: str, meta: dict = None):
+        return cls(path, None, meta)
 
     @property
     def path(self):
@@ -98,7 +104,8 @@ class FeatureDataset:
 
     def __init__(self, datasets: List[BaseDataset]):
         self._datasets = datasets
-        self._seasons = defaultdict(dict)
+        self._stats = defaultdict(dict)
+        self._seasons = defaultdict(list)
         self.is_ready = False
 
     def start(self, clean_after = True):
@@ -106,33 +113,31 @@ class FeatureDataset:
 
         for dataset in self._datasets:
             dataset_stats = collect_stats(dataset.data)
-            dataset_seasons = get_seasons(dataset.data)
 
-            for season in dataset_seasons:
+            for season in Season.get_seasons(dataset.data):
                 self.setup_season(dataset, season)
 
         if clean_after: self._datasets = None
         self.is_ready = True
 
-    def setup_season(self, dataset, season):
-        season_data = filter_by_season(dataset.data, season)
-        dataset_stats = collect_stats(season_data)
+    def setup_season(self, dataset, season_name):
+        season = Season.get(dataset.data, season_name)
+        dataset_stats = collect_stats(season.games)
 
-        for team in get_season_teams(season_data):
-            team_stats = get_team_scores(season_data, team)
+        for team in season.get_teams():
             self.collect_team_features(team,
                                        dataset_stats,
+                                       season_name,
                                        season,
-                                       team_stats,
                                        dataset.meta.get('strength', 0))
 
-    def get_feature_vector(self, game):
+    def get_feature_vector(self, game: Game):
         """ Return feature vector for an input game.
         Return None if at least one team not exists in dataset"""
 
         try:
-            home = self._seasons[game['Season']][game['HomeTeam']]
-            away = self._seasons[game['Season']][game['AwayTeam']]
+            home = self._stats[game.Season][game.HomeTeam]
+            away = self._stats[game.Season][game.AwayTeam]
         except KeyError:
             return None
 
@@ -146,12 +151,16 @@ class FeatureDataset:
             defence_strength_home_team=home['defence_strength'],
             defence_strength_away_team=away['defence_strength'])
 
-    def collect_team_features(self, team, dataset_stats, season,
-                              team_stats, league_strength):
+    def collect_team_features(self, team, dataset_stats, season_name,
+                              season, league_strength):
 
-        self._seasons[season][team] = {
-            'attack_strength': mean(team_stats['scored_xg']),
-            'defence_strength': mean(team_stats['conceded_xg']),
+        team_scores = season.get_team_scores(team)
+
+        self._seasons[season_name].append(season)
+        self._stats[season_name][team] = {
+            'season': season,
+            'attack_strength': mean(team_scores['scored_xg']),
+            'defence_strength': mean(team_scores['conceded_xg']),
             'league_strength': league_strength,
             'league_avg': (dataset_stats['avgScoredHome'] +\
                            dataset_stats['avgScoredAway'])
@@ -199,14 +208,11 @@ class DatasetAggregator:
 
         self.feat_dataset = feat_dataset
 
-    def prepare_observation(self, game, label_class_def):
+    def prepare_observation(self, game, label_class_def = None):
         """ Return label class and feature vector """
+        self.check_features()
 
-        if not self.feat_dataset.is_ready:
-            # prepare features dataset on demand
-            self.feat_dataset.start()
-
-        label = label_class_def(game['FTHG'], game['FTAG'])
+        label = label_class_def(game.FTHG, game.FTAG) if label_class_def else None
         features = self.feat_dataset.get_feature_vector(game)
 
         return label, features
@@ -214,6 +220,43 @@ class DatasetAggregator:
     @property
     def observations(self):
         return self.obs_dataset.data
+
+    def split(self, season_name, split_by_group = False):
+        """ Generate subdataset(s) for a given season and groups"""
+        output_sets = []
+        season = Season.get(self.observations, season_name)
+
+        if not split_by_group:
+            obs_set = ObservationDataset.from_list(season.games,
+                                                   self.obs_dataset.meta)
+            return [DatasetAggregator(obs_set, self.feat_dataset)]
+
+        for group in season.get_groups():
+            if group == -1: continue
+
+            obs_set = ObservationDataset.from_list(season.get_group_games(group),
+                                                   self.obs_dataset.meta)
+            output_sets.append(DatasetAggregator(obs_set, self.feat_dataset))
+
+        return output_sets
+
+    def get_team_stats(self, team, season) -> dict:
+        self.check_features()
+        return self.feat_dataset._stats[season][team]
+
+    def get_season_stats(self, season) -> dict:
+        self.check_features()
+        return self.feat_dataset._stats[season]
+
+    def get_seasons(self, season) -> list:
+        """ Returns list of seasons with a given name """
+        self.check_features()
+        return self.feat_dataset._seasons[season]
+
+    def check_features(self):
+        if not self.feat_dataset.is_ready:
+            # prepare features dataset on demand
+            self.feat_dataset.start()
 
     def __repr__(self):
         return "DatasetAggregator(observations_path=%s)" % self.obs_dataset.path

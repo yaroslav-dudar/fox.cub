@@ -63,13 +63,19 @@ class TestSessionResult():
 
         for t in self.teams_1:
             number_of_games = season.get_team_games(t)
-            self.scored_1.append(scoring_table[t] / number_of_games)
-            self.conceded_1.append(cons_table[t] / number_of_games)
+            try:
+                self.scored_1.append(scoring_table[t] / number_of_games)
+                self.conceded_1.append(cons_table[t] / number_of_games)
+            except KeyError:
+                pass
 
         for t in self.teams_2:
             number_of_games = season.get_team_games(t)
-            self.scored_2.append(scoring_table[t] / number_of_games)
-            self.conceded_2.append(cons_table[t] / number_of_games)
+            try:
+                self.scored_2.append(scoring_table[t] / number_of_games)
+                self.conceded_2.append(cons_table[t] / number_of_games)
+            except KeyError:
+                pass
 
     def set_actual_results(self, game: Game):
         if game.HomeTeam in self.teams_1:

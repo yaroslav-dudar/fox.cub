@@ -1,4 +1,4 @@
-from mlp_tools.helpers import (
+from dataset import (
     DatasetAggregator,
     ObservationDataset,
     FeatureDataset,
@@ -30,62 +30,62 @@ PLAYOFF = [
     DatasetAggregator(
         ObservationDataset('cups/scotland_fa_cup.json'),
         FeatureDataset([
-            BaseDataset('leagues/scotland_premiership.json', {'strength': 0})
+            BaseDataset.from_file('leagues/scotland_premiership.json', {'strength': 0})
             ])
     ),
     DatasetAggregator(
         ObservationDataset('cups/fa_cup.json'),
         FeatureDataset([
-            BaseDataset('leagues/epl.json', {'strength': 0}),
-            BaseDataset('leagues/efl_championship.json', {'strength': 1})
+            BaseDataset.from_file('leagues/epl.json', {'strength': 0}),
+            BaseDataset.from_file('leagues/efl_championship.json', {'strength': 1})
             ])
     ),
     DatasetAggregator(
         ObservationDataset('cups/league_cup.json'),
         FeatureDataset([
-            BaseDataset('leagues/epl.json', {'strength': 0}),
-            BaseDataset('leagues/efl_championship.json', {'strength': 1})
+            BaseDataset.from_file('leagues/epl.json', {'strength': 0}),
+            BaseDataset.from_file('leagues/efl_championship.json', {'strength': 1})
             ])
     ),
     DatasetAggregator(
         ObservationDataset('cups/dfb_pokal.json'),
         FeatureDataset([
-            BaseDataset('leagues/bundesliga.json', {'strength': 0}),
-            BaseDataset('leagues/bundesliga2.json', {'strength': 1})
+            BaseDataset.from_file('leagues/bundesliga.json', {'strength': 0}),
+            BaseDataset.from_file('leagues/bundesliga2.json', {'strength': 1})
             ])
     ),
     DatasetAggregator(
         ObservationDataset('cups/coupe_de_france.json'),
         FeatureDataset([
-            BaseDataset('leagues/france_ligue1.json', {'strength': 0}),
-            BaseDataset('leagues/france_ligue2.json', {'strength': 1})
+            BaseDataset.from_file('leagues/france_ligue1.json', {'strength': 0}),
+            BaseDataset.from_file('leagues/france_ligue2.json', {'strength': 1})
             ])
     ),
     DatasetAggregator(
         ObservationDataset('cups/copa_de_ligue.json'),
         FeatureDataset([
-            BaseDataset('leagues/france_ligue1.json', {'strength': 0}),
-            BaseDataset('leagues/france_ligue2.json', {'strength': 1})
+            BaseDataset.from_file('leagues/france_ligue1.json', {'strength': 0}),
+            BaseDataset.from_file('leagues/france_ligue2.json', {'strength': 1})
             ])
     ),
     DatasetAggregator(
         ObservationDataset('cups/copa_del_rey.json'),
         FeatureDataset([
-            BaseDataset('leagues/laliga.json', {'strength': 0}),
-            BaseDataset('leagues/segunda.json', {'strength': 1})
+            BaseDataset.from_file('leagues/laliga.json', {'strength': 0}),
+            BaseDataset.from_file('leagues/segunda.json', {'strength': 1})
             ])
     ),
     DatasetAggregator(
         ObservationDataset('cups/copa_italia.json'),
         FeatureDataset([
-            BaseDataset('leagues/serie_a.json', {'strength': 0}),
-            BaseDataset('leagues/serie_b.json', {'strength': 1})
+            BaseDataset.from_file('leagues/serie_a.json', {'strength': 0}),
+            BaseDataset.from_file('leagues/serie_b.json', {'strength': 1})
             ])
     ),
     DatasetAggregator(
         ObservationDataset('cups/taga_de_portugal.json'),
         FeatureDataset([
-            BaseDataset('leagues/portugal_liga.json', {'strength': 0})
+            BaseDataset.from_file('leagues/portugal_liga.json', {'strength': 0})
             ])
     )
 ]

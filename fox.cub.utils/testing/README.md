@@ -6,12 +6,11 @@ Send requests to the fox.cub core system, collect results and allow to compare m
 ## Command line arguments
 
 <pre>required arguments:
-    - testDataset        Path to the file with games that should be tested
+    - testDataset        Dataset name from settings.py
     - venueFilter        Venue filter pattern
     - tournamentId       Selecting MLP model based on DB tournament id
 
 optional arguments:
-    - statDataset        Path to the file with teams statistics. Using testDataset for stats if not specified
     - slaves             Amount of slaves to use in a test
     - patterns           Teams searching pattern(s) class. Use `,` separator to combine multiple paterns
     - games              Amount of games to test for each season

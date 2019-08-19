@@ -60,6 +60,9 @@ class Game(_GameTuple):
         if self.AwayTeam == team:
             return self.FTAG if is_score else self.FTHG
 
+    def date_as_datetime(self):
+        return to_datetime(self.Date)
+
 
 class Season:
 
@@ -68,6 +71,9 @@ class Season:
 
     def get_teams(self):
         return list(set([g.AwayTeam for g in self.games]))
+
+    def is_empty(self):
+        return len(self.games) == 0
 
     @staticmethod
     def get_seasons(games: List[Game], reverse=False):
@@ -102,15 +108,15 @@ class Season:
 
         return OrderedDict(sorted(table.items(), key=lambda t: t[1], reverse=True))
 
-    @staticmethod
-    def get_team_scores(games, team, include_home=True, include_away=True):
+    @functools.lru_cache(maxsize=32)
+    def get_team_scores(self, team, include_home=True, include_away=True):
         if include_away:
-            away_games = list(filter(lambda g: team == g.AwayTeam, games))
+            away_games = list(filter(lambda g: team == g.AwayTeam, self.games))
         else:
             away_games = []
 
         if include_home:
-            home_games = list(filter(lambda g: team == g.HomeTeam, games))
+            home_games = list(filter(lambda g: team == g.HomeTeam, self.games))
         else:
             home_games = []
 
@@ -125,9 +131,13 @@ class Season:
                         games['conceded_xg']))
 
     @staticmethod
-    def get(games: List[Game], season):
+    def get(games: List[Game], season: str = None):
         """ Get Season entity. """
-        season_games = filter(lambda g: g.Season == season, games)
+        if season:
+            season_games = filter(lambda g: g.Season == season, games)
+        else:
+            season_games = games
+
         return Season(list(season_games))
 
     def get_group_games(self, group):
@@ -137,7 +147,7 @@ class Season:
     def filter_games(games: List[Game], before):
         before = to_datetime(before)
         return tuple(filter(
-            lambda g: to_datetime(g.Date) < before, games))
+            lambda g: g.date_as_datetime() < before, games))
 
     def get_multiteam_games(self, teams):
         teams = set(teams)
@@ -154,9 +164,15 @@ def to_datetime(str_date, date_format='%d/%m/%Y'):
     return time.strptime(str_date, date_format)
 
 def readfile(filepath):
+    games = []
     with open(filepath, 'r') as f:
-        data = json.load(f)
-        return [ Game(**g) for g in data ]
+        for g in json.load(f):
+            try:
+                games.append(Game(**g))
+            except ValueError:
+                pass
+
+    return games
 
 def collect_stats(data, date_min=None, date_max=None):
     under2_5 = len(list(filter(lambda g: g.is_total_under(), data)))
@@ -196,23 +212,28 @@ def get_mean_line(data):
     return [sum(data[0:i+1])/(i+1) for i in range(len(data))]
 
 
-def test_fox_cub(games_to_test, season_data, client, countAllSeason = False):
+def test_fox_cub(games_to_test, dataset, client):
     pool = gevent.pool.Pool(1024)
+    # unique testing id
     session_id = str(uuid.uuid4())
 
-    if countAllSeason:
-        games_before = tuple(season_data)
-        season_avg = collect_stats(games_before)
-
     for game in games_to_test:
-        if not countAllSeason:
-            games_before = Season.filter_games(season_data, game.Date)
-            season_avg = collect_stats(games_before)
+        _, features = dataset.prepare_observation(game)
 
-        home_team = Season.get_team_scores(games_before, game.HomeTeam)
-        away_team = Season.get_team_scores(games_before, game.AwayTeam)
-        pool.spawn(client.get_stats, home_team, away_team, season_avg,
-                   game.HomeTeam, game.AwayTeam, session_id)
+        home_team_season = dataset.get_team_stats(game.HomeTeam,
+                                                  game.Season)['season']
+        away_team_season = dataset.get_team_stats(game.AwayTeam,
+                                                  game.Season)['season']
+
+        home_team_res = home_team_season.get_team_scores(game.HomeTeam)
+        away_team_res = away_team_season.get_team_scores(game.AwayTeam)
+
+        season_avg = {
+            "avgScoredHome": features.avg_goals_home_team/2,
+            "avgScoredAway": features.avg_goals_away_team/2
+        }
+        pool.spawn(client.get_stats, home_team_res, away_team_res,
+                   season_avg, game.HomeTeam, game.AwayTeam, session_id)
 
     pool.join()
     return session_id

@@ -9,14 +9,21 @@ import os
 import sys
 import time
 import argparse
+from enum import Enum
 from statistics import mean
-from concurrent.futures import ProcessPoolExecutor, ALL_COMPLETED, wait
+from concurrent.futures import (
+    ProcessPoolExecutor,
+    ALL_COMPLETED,
+    wait)
 
 from utils import *
-from enum import Enum
+from dataset import DatasetAggregator
 from testing.slave import SlaveFoxCubTest
-from testing.helpers import TestSessionResult, VenueFilter, import_string
-
+from testing.settings import CONFIG
+from testing.helpers import (
+    TestSessionResult,
+    VenueFilter,
+    import_string)
 
 class Tournament(Enum):
 
@@ -58,10 +65,8 @@ class MasterFoxCubTest:
         parser.add_argument('-seasons', default=100, type=int,
                             help='Amount of seasons to test in current session.')
         parser.add_argument('-testDataset', required=True, type=str,
-                            help='Path to the file with teams statistics.' +\
-                                 ' Usefull when stats and test datasets are not the same.')
-        parser.add_argument('-statDataset', default=None, type=str,
-                            help='Path to the statistics data file.')
+                            help='Path to the file with games that should be tested' +\
+                                 ' or name of dataset inside settings.py')
         parser.add_argument('-venueFilter', required=True, type=str,
                             help='Venue filter pattern.')
         parser.add_argument('-tournamentId', required=True, type=str,
@@ -72,9 +77,6 @@ class MasterFoxCubTest:
 
     def parse_config(self):
         """ Parse passed args and to map them with python objects """
-        if self.args.statDataset is None:
-            # use testDataset for stats if not specified
-            self.args.statDataset = self.args.testDataset
 
         _filt = VenueFilter(self.args.venueFilter)
         for path in self.args.patterns.split(','):
@@ -84,46 +86,34 @@ class MasterFoxCubTest:
 
         self.group_by = Group(self.args.groupBy)
 
-    def test(self, test_dataset, stats_dataset):
+    def test(self, dataset: DatasetAggregator):
         """ Make API calls to Fox.Cub statistical model
         and compare model results with real results.
         Using to test Fox.Cub model
 
         Args:
-            test_dataset: games to test with Fox.Cub model
-            stats_dataset: dataset used to get teams statistics.
-                In some cases test_dataset and stats_dataset may be equal
+            dataset: dataset to test with Fox.Cub model
         """
 
-        slave = SlaveFoxCubTest(self.args.tournamentId, self.args.games, self.patterns)
+        slave = SlaveFoxCubTest(self.args.tournamentId,
+                                self.args.games,
+                                self.patterns)
         reverse = True if self.args.seasons < 0 else False
         seasons_num = abs(self.args.seasons)
 
-        for season in Season.get_seasons(test_dataset, reverse)[:seasons_num]:
-            data_season = Season.get(test_dataset, str(season))
-            stats_data = Season.get(stats_dataset, str(season))
+        for season in Season.get_seasons(dataset.observations,
+                                         reverse)[:seasons_num]:
 
             if self.group_by == Group.Disable:
+                subdataset = dataset.split(season)[0]
                 f = self.executor.submit(slave.test_data_batch,
-                                         data_season, stats_data)
+                                         subdataset, season)
                 self.futures.append(f)
 
             elif self.group_by == Group.Group:
-                groups = get_groups(test_dataset)
-
-                for group in groups:
-                    if group == -1: continue
-
-                    data_group = data_season.get_group_games(group)
-                    stats_group = stats_data.get_group_games(group)
-
-                    scoring_table = get_season_table(stats_group,
-                                                     metric='scored')
-                    cons_table = get_season_table(stats_group,
-                                                  metric='conceded')
-
+                for subdataset in dataset.split(season, True):
                     f = self.executor.submit(slave.test_data_batch,
-                                             data_group, stats_group)
+                                             subdataset, season)
                     self.futures.append(f)
 
         wait(self.futures, return_when=ALL_COMPLETED)
@@ -168,6 +158,7 @@ class MasterFoxCubTest:
 
     def get_fox_cub_scoreline(self, score_type, team):
         """ Get total score to win with a given handicap """
+
         def get_attr(result):
             return result[result[team] + " " + score_type]
 
@@ -186,12 +177,10 @@ class MasterFoxCubTest:
 
 if __name__ == '__main__':
     tester = MasterFoxCubTest()
-    test_dataset = readfile(tester.args.testDataset)
-    stats_dataset = readfile(tester.args.statDataset)
+    dataset = CONFIG[tester.args.testDataset]
 
     start_at = time.time()
-
-    tester.test(test_dataset, stats_dataset)
+    tester.test(dataset)
     tester.print_test_results()
     tester.results.cleanup()
     print("Execution time: {}".format(time.time() - start_at))
