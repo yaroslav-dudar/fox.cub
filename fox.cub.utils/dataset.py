@@ -8,8 +8,6 @@ from collections import defaultdict
 from statistics import mean
 
 from utils import (join_path,
-                   readfile,
-                   collect_stats,
                    Game,
                    Season)
 
@@ -93,7 +91,7 @@ class BaseDataset:
         if self._data:
             return self._data
 
-        self._data = readfile(join_path(DATA_FOLDER,
+        self._data = Game.from_file(join_path(DATA_FOLDER,
                                         self._dataset_path))
         return self._data
 
@@ -112,7 +110,7 @@ class FeatureDataset:
         """ Collect features for each season/team from input collection """
 
         for dataset in self._datasets:
-            dataset_stats = collect_stats(dataset.data)
+            dataset_stats = Season.collect_stats(dataset.data)
 
             for season in Season.get_seasons(dataset.data):
                 self.setup_season(dataset, season)
@@ -121,8 +119,9 @@ class FeatureDataset:
         self.is_ready = True
 
     def setup_season(self, dataset, season_name):
+        """ Storing team stats and seasons """
         season = Season.get(dataset.data, season_name)
-        dataset_stats = collect_stats(season.games)
+        dataset_stats = Season.collect_stats(season.games)
 
         for team in season.get_teams():
             self.collect_team_features(team,
@@ -241,10 +240,12 @@ class DatasetAggregator:
         return output_sets
 
     def get_team_stats(self, team, season) -> dict:
+        """ Returns team stats in a season. """
         self.check_features()
         return self.feat_dataset._stats[season][team]
 
     def get_season_stats(self, season) -> dict:
+        """ Returns stats for every team in a season. """
         self.check_features()
         return self.feat_dataset._stats[season]
 

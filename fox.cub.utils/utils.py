@@ -61,7 +61,24 @@ class Game(_GameTuple):
             return self.FTAG if is_score else self.FTHG
 
     def date_as_datetime(self):
-        return to_datetime(self.Date)
+        return self.to_datetime(self.Date)
+
+    @classmethod
+    def from_file(cls, filepath):
+        """ Create list of games using input file. """
+        games = []
+        with open(filepath, 'r') as f:
+            for g in json.load(f):
+                try:
+                    games.append(cls(**g))
+                except ValueError:
+                    pass
+
+        return games
+
+    @staticmethod
+    def to_datetime(str_date, date_format='%d/%m/%Y'):
+        return datetime.strptime(str_date, date_format)
 
 
 class Season:
@@ -143,9 +160,9 @@ class Season:
     def get_group_games(self, group):
         return list(filter(lambda g: g.Group == group, self.games))
 
-    @staticmethod
-    def filter_games(games: List[Game], before):
-        before = to_datetime(before)
+    @classmethod
+    def filter_games(cls, games: List[Game], before):
+        before = cls.to_datetime(before)
         return tuple(filter(
             lambda g: g.date_as_datetime() < before, games))
 
@@ -159,58 +176,41 @@ class Season:
     def get_teams_by_table_pos(self, min_place, max_place):
         return list(get_season_table(self.games).keys())[min_place-1:max_place-1]
 
+    @staticmethod
+    def collect_stats(games: List[Game], date_min = None, date_max = None):
+        """ Collecting general statistics for batch of games """
+        if not games: games = self.games
 
-def to_datetime(str_date, date_format='%d/%m/%Y'):
-    return time.strptime(str_date, date_format)
+        under2_5 = len(list(filter(lambda g: g.is_total_under(), games)))
+        under3_5 = len(list(filter(lambda g: g.is_total_under(3.5), games)))
+        under1_5 = len(list(filter(lambda g: g.is_total_under(1.5), games)))
 
-def readfile(filepath):
-    games = []
-    with open(filepath, 'r') as f:
-        for g in json.load(f):
-            try:
-                games.append(Game(**g))
-            except ValueError:
-                pass
+        home_score = sum([g.FTHG for g in games])
+        away_score = sum([g.FTAG for g in games])
 
-    return games
+        home_wins = sum(1 for _ in filter(lambda g: g.FTHG > g.FTAG, games))
+        away_wins = sum(1 for _ in filter(lambda g: g.FTHG < g.FTAG, games))
+        draws = sum(1 for _ in filter(lambda g: g.FTHG == g.FTAG, games))
 
-def collect_stats(data, date_min=None, date_max=None):
-    under2_5 = len(list(filter(lambda g: g.is_total_under(), data)))
-    under3_5 = len(list(filter(lambda g: g.is_total_under(3.5), data)))
-    under1_5 = len(list(filter(lambda g: g.is_total_under(1.5), data)))
-
-    home_score = sum([g.FTHG for g in data])
-    away_score = sum([g.FTAG for g in data])
-
-    home_wins = sum(1 for _ in filter(lambda g: g.FTHG > g.FTAG, data))
-    away_wins = sum(1 for _ in filter(lambda g: g.FTHG < g.FTAG, data))
-    draws = sum(1 for _ in filter(lambda g: g.FTHG == g.FTAG, data))
-
-    return {
-        'under2.5': float(under2_5) / len(data),
-        'under3.5': float(under3_5) / len(data),
-        'under1.5': float(under1_5) / len(data),
-        'avgScoredHome': float(home_score) / len(data),
-        'avgScoredAway': float(away_score) / len(data),
-        "home_wins": float(home_wins) / len(data),
-        "away_wins": float(away_wins) / len(data),
-        "draws": float(draws) / len(data),
-    }
-
-def get_teams_from(data, min_place, max_place):
-    return list(get_season_table(data).keys())[min_place-1:max_place-1]
+        return {
+            'under2.5': float(under2_5) / len(games),
+            'under3.5': float(under3_5) / len(games),
+            'under1.5': float(under1_5) / len(games),
+            'avgScoredHome': float(home_score) / len(games),
+            'avgScoredAway': float(away_score) / len(games),
+            "home_wins": float(home_wins) / len(games),
+            "away_wins": float(away_wins) / len(games),
+            "draws": float(draws) / len(games),
+        }
 
 
-def filter_by_date(data, date_min, date_max, date_format="%d/%m/%Y"):
-    date_min = to_datetime(date_min, date_format)
-    date_max = to_datetime(date_max, date_format)
+class Group(Enum):
+    Disable = 'Off'
+    Group = 'Group'
 
-    foo = lambda g: date_min < to_datetime(g.Date, date_format) < date_max
-    return list(filter(foo, data))
 
 def get_mean_line(data):
     return [sum(data[0:i+1])/(i+1) for i in range(len(data))]
-
 
 def test_fox_cub(games_to_test, dataset, client):
     pool = gevent.pool.Pool(1024)
@@ -241,8 +241,3 @@ def test_fox_cub(games_to_test, dataset, client):
 
 def join_path(base_path, file_path):
     return os.path.join(base_path, *file_path.split('/'))
-
-
-class Group(Enum):
-    Disable = 'Off'
-    Group = 'Group'

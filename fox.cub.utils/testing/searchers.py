@@ -2,6 +2,7 @@
 
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
+from typing import Tuple
 import functools
 
 from utils import *
@@ -56,7 +57,8 @@ class BasePattern(metaclass=ABCMeta):
         return a
 
     @abstractmethod
-    def get_teams(self):
+    def get_teams(self) -> Tuple[set, set]:
+        """ Return 2 sets of teams. """
         return NotImplemented
 
     def get_filter(self, filter_by, data, field):
@@ -80,7 +82,7 @@ class ScoringPattern(BasePattern, metaclass=ABCMeta):
             data[t][field] <= filter_by['max']
 
     @functools.lru_cache(maxsize=None)
-    def get_teams(self):
+    def get_teams(self) -> Tuple[set, set]:
         season_data = self.dataset.get_season_stats(self.season)
 
         # search teams that match team_1 pattern
@@ -127,7 +129,7 @@ class LeagueStrengthPattern(BasePattern, metaclass=ABCMeta):
     def name(self) -> str: pass
 
     @functools.lru_cache(maxsize=None)
-    def get_teams(self):
+    def get_teams(self) -> Tuple[set, set]:
         season_data = self.dataset.get_season_stats(self.season)
 
         teams_1 = filter(
@@ -143,7 +145,7 @@ class LeagueStrengthPattern(BasePattern, metaclass=ABCMeta):
                             'league_strength'),
             season_data.keys())
 
-        return list(teams_1), list(teams_2)
+        return set(teams_1), set(teams_2)
 
 
 class MLSConfPattern(BasePattern, metaclass=ABCMeta):
@@ -158,7 +160,7 @@ class MLSConfPattern(BasePattern, metaclass=ABCMeta):
     def name(self) -> str: pass
 
     @functools.lru_cache(maxsize=None)
-    def get_teams(self):
+    def get_teams(self) -> Tuple[set, set]:
         """ Find teams with the same conference as team_1 """
 
         games = filter(lambda g: g['AwayTeam'] == self.team_1 or \
@@ -172,7 +174,7 @@ class MLSConfPattern(BasePattern, metaclass=ABCMeta):
 
         # find teams with more then 1 game in a season
         teams_list = [t for t, g in teams.items() if g > 1] + [self.team_1]
-        return teams_list, teams_list
+        return set(teams_list), set(teams_list)
 
     def contains(self, game):
         return self.team_1 in (game['HomeTeam'], game['AwayTeam'])
@@ -189,7 +191,7 @@ class StandingsPattern(BasePattern, metaclass=ABCMeta):
     def name(self) -> str: pass
 
     @functools.lru_cache(maxsize=None)
-    def get_teams(self):
+    def get_teams(self) -> Tuple[set, set]:
         teams_1, teams_2 = [], []
 
         for season in self.dataset.get_seasons(self.season):
@@ -201,7 +203,7 @@ class StandingsPattern(BasePattern, metaclass=ABCMeta):
                 self.team_2['standings']['min']:
                 self.team_2['standings']['max']])
 
-        return teams_1, teams_2
+        return set(teams_1), set(teams_2)
 
 
 class StrongWithWeakPattern(ScoringPattern):
@@ -280,6 +282,25 @@ class StrongAttVsStrongDefPattern(ScoringPattern):
         }
 
 
+class WeakDefWithWeakDefPattern(ScoringPattern):
+
+    name = ImmutableProperty('WeakDefWithWeakDef')
+
+    @property
+    def team_1(self):
+        return {
+            'attack': { 'min': 1.2, 'max': 1.6 },
+            'defence': { 'min': 1.25, 'max': 1.6 }
+        }
+
+    @property
+    def team_2(self):
+        return {
+            'attack': { 'min': 1.2, 'max': 1.6 },
+            'defence': { 'min': 1.25, 'max': 1.6 }
+        }
+
+
 class StrongVsAveragePattern(ScoringPattern):
 
     name = ImmutableProperty('StrongVsAverage')
@@ -337,7 +358,7 @@ class LeadersVsDogsPattern(StandingsPattern):
 
     @property
     def team_1(self):
-        return { 'standings': { 'min': 0, 'max': 5 } }
+        return { 'standings': { 'min': 0, 'max': 2 } }
 
     @property
     def team_2(self):
@@ -353,7 +374,7 @@ class LeadersVsMidtablePattern(StandingsPattern):
 
     @property
     def team_2(self):
-        return { 'standings': { 'min': 7, 'max': 17 } }
+        return { 'standings': { 'min': 7, 'max': 13 } }
 
 
 class MidtableVsDogsPattern(StandingsPattern):
@@ -361,11 +382,11 @@ class MidtableVsDogsPattern(StandingsPattern):
 
     @property
     def team_1(self):
-        return { 'standings': { 'min': 4, 'max': 10 } }
+        return { 'standings': { 'min': 8, 'max': 15 } }
 
     @property
     def team_2(self):
-        return { 'standings': { 'min': 10, 'max': 18 } }
+        return { 'standings': { 'min': 15, 'max': 25 } }
 
 
 class MidtableVsMidtablePattern(StandingsPattern):
@@ -373,11 +394,11 @@ class MidtableVsMidtablePattern(StandingsPattern):
 
     @property
     def team_1(self):
-        return { 'standings': { 'min': 4, 'max': 10 } }
+        return { 'standings': { 'min': 7, 'max': 15 } }
 
     @property
     def team_2(self):
-        return { 'standings': { 'min': 5, 'max': 12 } }
+        return { 'standings': { 'min': 7, 'max': 15 } }
 
 
 class MidweekGamesPattern(AllPattern):
@@ -404,14 +425,14 @@ class SingleTeamPattern(AllPattern):
         return "Arsenal"
 
     @functools.lru_cache(maxsize=None)
-    def get_teams(self):
+    def get_teams(self) -> Tuple[set, set]:
         teams_1, teams_2 = [self.team_1], []
 
         for season in self.dataset.get_seasons(self.season):
             points_table = season.get_table(metric='points')
             teams_2.extend(list(points_table)[0:4])
 
-        return teams_1, teams_2
+        return set(teams_1), set(teams_2)
 
 
 

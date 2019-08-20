@@ -6,11 +6,11 @@ model results with actual results.
 """
 
 from utils import *
-from dataset import DatasetAggregator
+from dataset import DatasetAggregator, ObservationDataset
 from testing.helpers import TestSessionResult
 from testing.searchers import BasePattern
 
-from typing import List
+from typing import List, Tuple
 
 
 class SlaveFoxCubTest:
@@ -22,6 +22,7 @@ class SlaveFoxCubTest:
         self.games_to_test = games
         # search teams by pattern(s), find games only with this teams
         # and ignore the rest games in testing dataset
+        assert len(patterns) > 0
         self.team_patterns = patterns
 
 
@@ -57,9 +58,23 @@ class SlaveFoxCubTest:
     def build_pipeline(self, dataset: DatasetAggregator, season):
         """ Apply search patterns gradually one by one """
         games = dataset.observations
+        teams_1, teams_2 = None, None
+
         for pattern in self.team_patterns:
             last_pattern = pattern(dataset, season)
             games = last_pattern.get_games(self.games_to_test, games)
 
-        return games, last_pattern.get_teams()
+            if not teams_1 and not teams_2:
+                teams_1, teams_2 = last_pattern.get_teams()
+            else:
+                teams_1, teams_2 = self.intersection((teams_1, teams_2),
+                                                     last_pattern.get_teams())
 
+        return games, (teams_1, teams_2)
+
+    def intersection(self, tuple1: Tuple[set, set],
+                     tuple2: Tuple[set, set]) -> Tuple[set, set]:
+
+        intersection_result1 = tuple1[0] & tuple2[0]
+        intersection_result2 = tuple1[1] & tuple2[1]
+        return intersection_result1, intersection_result2
