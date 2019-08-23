@@ -17,11 +17,14 @@ object GameStats {
     /**
      * Get team performed games with opponents detailed info
     */
-    def get(teamId: String, tournamentId: String): QueryEvent = {
-        val aggMatch = Json.obj(
-            ("$match", Json.obj(
-                ("team", teamId), ("tournament", tournamentId))
-            ))
+    def get(teamId: String, tournamentId: Option[String]): QueryEvent = {
+        var aggMatch = Json.obj(
+            ("$match", Json.obj(("team", teamId))))
+
+        if (tournamentId != None)
+            aggMatch
+                .getJsonObject("$match")
+                .put("tournament", tournamentId.get)
 
         val teamsToObjects =  Json.obj(("$addFields", Json.obj(
                 ("team", Json.obj(("$toObjectId", "$team"))),

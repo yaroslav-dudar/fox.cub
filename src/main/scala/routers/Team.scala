@@ -21,7 +21,7 @@ object Team {
         var response = context.response
         var team = context.request.getParam("team_id")
         var tournament = context.request.getParam("tournament_id")
-        var query = model.GameStats.get(team.get, tournament.get)
+        var query = model.GameStats.get(team.get, tournament)
 
         val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
             case Success(result) => {

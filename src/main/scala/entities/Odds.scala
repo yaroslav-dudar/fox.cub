@@ -21,7 +21,6 @@ object Odds {
                                Json.obj(("$in", fixtureIds))))
 
         val query = new JsonObject().put("find", Collection).put("filter", filter)
-        println(query.toString)
         QueryEvent("find", query)
     }
 }

@@ -15,7 +15,7 @@ import {
 const initialState = {
     tournaments: [],
     // points-per-game table
-    ppg_table: [],
+    ppg_table: {},
     selected_tournament: ''
 };
 
@@ -25,8 +25,9 @@ export const actions = {
     async [FETCH_TOURNAMENTS](context) {
         let getTournametsUrl = `${Vue.config.host}/api/v1/tournament`;
 
-        Vue.http.get(getTournametsUrl).then(function (response) {
-            context.commit(SET_TOURNAMENTS, response.body.firstBatch)
+        return await Vue.http.get(getTournametsUrl).then(function (response) {
+            context.commit(SET_TOURNAMENTS, response.body.firstBatch);
+            return response.body.firstBatch
         });
     },
 
@@ -35,7 +36,7 @@ export const actions = {
 
         Vue.http.get(getPPGTableUrl)
             .then(function (response) {
-                context.commit(SET_PPG_TABLE, response.body.table)
+                context.commit(SET_PPG_TABLE, {table: response.body.table, id: tournament})
             });
     },
 
@@ -51,8 +52,8 @@ export const mutations = {
     [SET_SELECTED_TOURNAMENT](state, tournament) {
         state.selected_tournament = tournament;
     },
-    [SET_PPG_TABLE](state, ppg_table) {
-        state.ppg_table = ppg_table;
+    [SET_PPG_TABLE](state, payload) {
+        state.ppg_table[payload.id] = payload.table;
     }
 };
 

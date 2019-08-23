@@ -26,7 +26,6 @@ object Odds {
             .getAll("fixture_id")
             .map(f => f.toInt)
 
-        println(fixtureIds)
         var query = model.Odds.get(fixtureIds)
 
         val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {

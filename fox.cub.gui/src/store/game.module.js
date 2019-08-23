@@ -22,10 +22,8 @@ export const actions = {
     async [FETCH_GAMES](context, data) {
         let getGameUrl = `${Vue.config.host}/api/v1/game`;
 
-        let params = {
-            "team_id": data.team_id,
-            "tournament_id": data.tournament_id
-        };
+        let params = { "team_id": data.team_id };
+        if (data.tournament_id) params.tournament_id = data.tournament_id;
 
         Vue.http.get(getGameUrl, {params: params})
             .then(function (response) {

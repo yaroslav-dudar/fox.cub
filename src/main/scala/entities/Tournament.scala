@@ -52,7 +52,7 @@ object Tournament {
             teams.append(teamRes)
         })
 
-        // sort teams by amount of points
+        // sort teams by points
         val sortedTeams = teams.sortBy(- _.getFloat("ppg"))
         Json.obj(("table", sortedTeams))
     }

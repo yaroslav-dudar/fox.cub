@@ -117,14 +117,14 @@ export default {
         this.$store.dispatch(FETCH_GAMES,
             {
                 team_id: this.home_team,
-                tournament_id: this.tournament,
+                tournament_id: null,
                 venue: 'home'
             });
 
         this.$store.dispatch(FETCH_GAMES,
             {
                 team_id: this.away_team,
-                tournament_id: this.tournament,
+                tournament_id: null,
                 venue: 'away'
             });
 
@@ -157,6 +157,7 @@ export default {
             } else if (venue == "away") {
                 data = this.away_games;
             }
+            data = data.filter(game => game.tournament == this.tournament);
 
             var xg = {
                 "scored": data.reduce((a, b) => +a + +b.xG_for, 0) / data.length,
@@ -170,6 +171,10 @@ export default {
             return {xg: xg, actual: actual}
         },
 
+        /**
+         * Calculate last 6 games data and encapsulate
+         * it to highcarts API object
+         */
         getLast6Data(venue) {
             var team_name = venue == "home" ?
                 this.fixture.home_name :
@@ -180,7 +185,7 @@ export default {
                 this.away_games;
 
             // print only last 6 games
-            data = data.slice(1).slice(-6);
+            data = data.slice(-6);
 
             return {
                 chart: {
@@ -202,6 +207,10 @@ export default {
             }
         },
 
+        /**
+         * Calculate rolling trend data array
+         * and encapsulate it to highcarts API object
+         */
         getRollingTrendData(venue, games_amount = 6, goals_type = "xG") {
             var team_name = venue == "home" ?
                 this.fixture.home_name :
@@ -233,13 +242,17 @@ export default {
             }
         },
 
+        /**
+         * Calculate sequence of opponents PPG
+         */
         getShcheduleComplexity(venue, games_amount = 6) {
             var data = venue == "home" ? this.home_games : this.away_games;
             var points = data.map(
                 (v, i) => data.slice(0,i+1).slice(-games_amount));
 
             var opponents_schedule = points.map(batch => batch.reduce(
-                (a, b) => +a + +this.getTeamPPG(b.opponent[0]._id.$oid), 0) / batch.length)
+                (a, b) => +a + +this.getTeamPPG(b.opponent[0]._id.$oid,
+                                                b.tournament), 0) / batch.length)
 
             return {
                 title: {
@@ -256,9 +269,15 @@ export default {
             }
         },
 
-        getTeamPPG(team_id) {
-            var filtered = this.ppg_table.filter(team => team.team_id == team_id);
-            if (filtered) return filtered[0].ppg;
+        /**
+         * Return teams points per game from a specific tournament
+         * @return {number}
+         */
+        getTeamPPG(team_id, tournament_id) {
+            var filtered = this.ppg_table[tournament_id]
+                .filter(team => team.team_id == team_id);
+
+            if (filtered.length > 0) return filtered[0].ppg;
             return 0;
         }
     }

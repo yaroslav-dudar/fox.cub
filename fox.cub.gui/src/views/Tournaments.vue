@@ -15,14 +15,13 @@
 </template>
 
 <script>
-import Vue from 'vue'
 import { mapGetters } from "vuex";
 
 import Fixtures from '@/components/Fixtures.vue'
 import {
     SELECT_TOURNAMENT,
     FETCH_FIXTURES,
-    FETCH_PPG_TABLE
+    FETCH_TEAMS
 } from '@/store/actions.type'
 
 export default {
@@ -47,18 +46,12 @@ export default {
 
     methods: {
         /**
-         * @desc pre-load tournament data
+         * @desc pre-load tournament related data
         */
         onChange() {
             this.$store.dispatch(SELECT_TOURNAMENT, this.tournament);
-
             this.$store.dispatch(FETCH_FIXTURES, this.selected_tournament);
-            this.$store.dispatch(FETCH_PPG_TABLE, this.selected_tournament);
-
-            this.$http.get(Vue.config.host + '/api/v1/team/' + this.selected_tournament)
-                .then(function (response) {
-                    this.teams = response.body.firstBatch;
-                });
+            this.$store.dispatch(FETCH_TEAMS, this.selected_tournament);
         }
     }
 }

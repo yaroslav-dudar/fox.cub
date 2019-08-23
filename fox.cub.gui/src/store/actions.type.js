@@ -10,3 +10,5 @@ export const FETCH_GAMES = "fetchGames";
 
 export const FETCH_STATS = "fetchStats";
 export const FETCH_MANUAL_STATS = "fetchManualStats";
+
+export const FETCH_TEAMS = "fetchTeams";
