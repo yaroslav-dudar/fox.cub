@@ -30,14 +30,14 @@ export default {
     computed: {
         ...mapGetters([
             "tournaments", "ppg_table",
-            "selected_tournament", "fixtures"
+            "selected_tournament", "fixtures",
+            "teams"
         ])
     },
 
     data: function() {
         return {
-            tournament: '',
-            teams: []
+            tournament: ''
         }
     },
     components: {

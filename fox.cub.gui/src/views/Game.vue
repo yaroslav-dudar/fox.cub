@@ -9,11 +9,11 @@
         <div class="pure-g">
             <div class="pure-u-1-3">
                 <h3>Home Team Results:</h3>
-                <team-results v-bind:games="home_games"></team-results>
+                <team-results v-bind:games="home_games_to_view"></team-results>
             </div>
             <div class="pure-u-1-3">
                 <h3>Away Team Results:</h3>
-                <team-results v-bind:games="away_games"></team-results>
+                <team-results v-bind:games="away_games_to_view"></team-results>
             </div>
             <div class="pure-u-1-3">
                 <h3>Game Odds History:</h3>
@@ -34,29 +34,36 @@
         <br>
         <div class="pure-g">
             <div class="pure-u-1-3">
-                Select trend size:
-                <select name="trendSize" v-model="rolling_trend_size" class="form-control">
-                    <option value="6">6 games trend</option>
-                    <option value="10">10 games trend</option>
-                </select>
-                <highcharts :options="getRollingTrendData('home', rolling_trend_size, rolling_trend_type)" ref="home-trend"></highcharts>
+                <highcharts
+                    :options="getRollingTrendData('home',
+                                                  settings.rolling_trend.size,
+                                                  settings.rolling_trend.type)"
+                    ref="home-trend"></highcharts>
             </div>
             <div class="pure-u-1-3">
-                Select type of goals:
-                <select name="trendType" v-model="rolling_trend_type" class="form-control">
-                    <option value="xG">Expected goals Ingogol</option>
-                    <option value="goals">Actual goals</option>
-                </select>
-                <highcharts :options="getRollingTrendData('away', rolling_trend_size, rolling_trend_type)" ref="away-trend"></highcharts>
+                <highcharts
+                    :options="getRollingTrendData('away',
+                                                  settings.rolling_trend.size,
+                                                  settings.rolling_trend.type)"
+                    ref="away-trend"></highcharts>
             </div>
         </div>
         <div class="pure-g">
             <div class="pure-u-1-3">
-                <highcharts :options="getShcheduleComplexity('home', rolling_trend_size)"></highcharts>
+                <highcharts
+                    :options="getShcheduleComplexity('home',
+                                                     settings.rolling_trend.size)">
+                </highcharts>
             </div>
             <div class="pure-u-1-3">
-                <highcharts :options="getShcheduleComplexity('away', rolling_trend_size)"></highcharts>
+                <highcharts
+                    :options="getShcheduleComplexity('away',
+                                                     settings.rolling_trend.size)">
+                </highcharts>
             </div>
+        </div>
+        <div>
+            <app-settings v-bind:settings="settings"></app-settings>
         </div>
         <div class="pure-g pure-u-1">
             <h3>Calculated probabilities:</h3>
@@ -73,6 +80,8 @@ import {Chart} from 'highcharts-vue'
 import GameOdds from '@/components/GameOdds.vue'
 import TeamResults from '@/components/TeamResults.vue'
 import TeamStats from '@/components/TeamStats.vue'
+import AppSettings from '@/components/AppSettings.vue'
+
 import {
     FETCH_GAMES,
     FETCH_ODDS,
@@ -96,14 +105,23 @@ export default {
             fixture: {},
             home_team_stats: {},
             away_team_stats: {},
-            rolling_trend_size: 6,
-            rolling_trend_type: 'xG' // allowed [xG, goals]
+            home_games_to_view: [], // home games with applied filters
+            away_games_to_view: [], // away games with applied filters
+            settings: {
+                full_history: true,
+                rolling_trend: {
+                    type: 'xG', // allowed [xG, goals]
+                    size: 6
+                },
+                away_home_filter: false
+            }
         }
     },
     components: {
         GameOdds,
         TeamResults,
         TeamStats,
+        AppSettings,
         highcharts: Chart
     },
     created: function() {
@@ -114,19 +132,9 @@ export default {
         this.away_team = this.fixture.away_id.$oid;
         this.tournament = this.fixture.tournament_id;
 
-        this.$store.dispatch(FETCH_GAMES,
-            {
-                team_id: this.home_team,
-                tournament_id: null,
-                venue: 'home'
-            });
-
-        this.$store.dispatch(FETCH_GAMES,
-            {
-                team_id: this.away_team,
-                tournament_id: null,
-                venue: 'away'
-            });
+        this.fetchGames();
+        this.applyHomeGameFilters();
+        this.applyAwayGameFilters();
 
         this.$store.dispatch(FETCH_ODDS, this.fixture.external_ids);
         this.$store.dispatch(FETCH_STATS, {
@@ -137,25 +145,72 @@ export default {
     },
 
     watch: {
-        home_games() {
-            // is triggered whenever the store state changes
+        home_games() { this.applyHomeGameFilters() },
+        away_games() { this.applyAwayGameFilters() },
+        home_games_to_view() {
             this.home_team_stats = this.getTeamPerformance("home");
         },
-        away_games() {
-            // is triggered whenever the store state changes
+        away_games_to_view() {
             this.away_team_stats = this.getTeamPerformance("away");
+        },
+        'settings.full_history': {
+            handler: function() { this.fetchGames() },
+            deep: true
+        },
+        'settings.away_home_filter': {
+            handler: function() {
+                this.applyHomeGameFilters();
+                this.applyAwayGameFilters();
+            },
+            deep: true
         }
+
     },
     methods: {
+        applyHomeGameFilters() {
+            var games = this.home_games.filter((g) => {
+                if (this.settings.away_home_filter) {
+                    return g.venue == "home";
+                }
+                return true;
+            });
+            this.home_games_to_view = games;
+        },
+        applyAwayGameFilters() {
+            var games = this.away_games.filter((g) => {
+                if (this.settings.away_home_filter) {
+                    return g.venue == "away";
+                }
+                return true;
+            });
+            this.away_games_to_view = games;
+        },
+
+        fetchGames() {
+            this.$store.dispatch(FETCH_GAMES,
+                {
+                    team_id: this.home_team,
+                    tournament_id: this.settings.full_history ? null : this.tournament,
+                    venue: 'home'
+                });
+
+            this.$store.dispatch(FETCH_GAMES,
+                {
+                    team_id: this.away_team,
+                    tournament_id: this.settings.full_history ? null : this.tournament,
+                    venue: 'away'
+                });
+        },
+
         redirectToTeam(team_id) {
             router.push({path: '/team', query: { team: team_id }})
         },
 
         getTeamPerformance(venue) {
             if (venue == "home") {
-                var data = this.home_games;
+                var data = this.home_games_to_view;
             } else if (venue == "away") {
-                data = this.away_games;
+                data = this.away_games_to_view;
             }
             data = data.filter(game => game.tournament == this.tournament);
 
@@ -181,19 +236,15 @@ export default {
                 this.fixture.away_name;
 
             var data = venue == "home" ?
-                this.home_games :
-                this.away_games;
+                this.home_games_to_view :
+                this.away_games_to_view;
 
             // print only last 6 games
-            data = data.slice(-6);
+            data = data.length > 0 ? data.slice(-6) : data;
 
             return {
-                chart: {
-                    type: 'column'
-                },
-                title: {
-                    text: team_name + " last 6 games"
-                },
+                chart: { type: 'column' },
+                title: { text: team_name + " last 6 games" },
                 series: [{
                     name: 'Expected goals for',
                     data: data.map(g => g.xG_for)
@@ -217,8 +268,8 @@ export default {
                 this.fixture.away_name;
 
             var data = venue == "home" ?
-                this.home_games :
-                this.away_games;
+                this.home_games_to_view :
+                this.away_games_to_view;
 
             var points = data.map((v, i) => data.slice(0,i+1).slice(-games_amount));
 
@@ -246,7 +297,10 @@ export default {
          * Calculate sequence of opponents PPG
          */
         getShcheduleComplexity(venue, games_amount = 6) {
-            var data = venue == "home" ? this.home_games : this.away_games;
+            var data = venue == "home" ?
+                this.home_games_to_view :
+                this.away_games_to_view;
+
             var points = data.map(
                 (v, i) => data.slice(0,i+1).slice(-games_amount));
 
@@ -255,9 +309,7 @@ export default {
                                                 b.tournament), 0) / batch.length)
 
             return {
-                title: {
-                    text: "Schedule complexity"
-                },
+                title: { text: "Schedule complexity" },
                 xAxis: {
                     type: 'datetime',
                     categories: data.map(g => new Date(g.date*1000))

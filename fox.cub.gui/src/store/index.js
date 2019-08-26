@@ -6,6 +6,7 @@ import odd from "./odd.module";
 import tournament from "./tournament.module";
 import game from "./game.module";
 import stats from "./stats.module";
+import team from "./team.module";
 
 Vue.use(Vuex);
 
@@ -15,6 +16,7 @@ export default new Vuex.Store({
     fixture,
     odd,
     game,
-    stats
+    stats,
+    team
   }
 });

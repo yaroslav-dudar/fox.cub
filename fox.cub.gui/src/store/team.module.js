@@ -18,7 +18,7 @@ export const actions = {
     async [FETCH_TEAMS](context, tournament_id) {
         var getTeamsUrl = `${Vue.config.host}/api/v1/team/${tournament_id}`;
 
-        Vue.http.get(getOddsUrl)
+        Vue.http.get(getTeamsUrl)
             .then(function (response) {
                 context.commit(SET_TEAMS, response.body.firstBatch)
             });

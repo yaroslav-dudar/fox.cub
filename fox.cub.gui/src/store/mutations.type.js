@@ -11,3 +11,5 @@ export const SET_HOME_GAMES = "setHomeGames";
 export const SET_AWAY_GAMES = "setAwayGames";
 
 export const SET_STATS = "setStats";
+
+export const SET_TEAMS = "setTeams";
