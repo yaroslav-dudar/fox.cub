@@ -33,6 +33,38 @@
 
 <script>
 export default {
-    props: ['stats']
+    props: ['games'],
+    data: function() {
+        return {
+            stats: {}
+        }
+    },
+    created: function() {
+        this.stats = this.getTeamPerformance();
+    },
+    watch: {
+        games: {
+            handler: function() {
+                this.stats = this.getTeamPerformance();
+            },
+            deep: true
+        }
+    },
+    methods: {
+        getTeamPerformance() {
+            let data = this.games.filter(game => game.selected == true);
+
+            var xg = {
+                "scored": data.reduce((a, b) => +a + +b.xG_for, 0) / data.length,
+                "conceded": data.reduce((a, b) => +a + +b.xG_against, 0) / data.length
+            }
+            var actual = {
+                "scored": data.reduce((a, b) => +a + +b.goals_for, 0) / data.length,
+                "conceded": data.reduce((a, b) => +a + +b.goals_against, 0) / data.length
+            }
+
+            return {xg: xg, actual: actual}
+        }
+    }
 }
 </script>

@@ -38,10 +38,18 @@ export const actions = {
 
 export const mutations = {
     [SET_HOME_GAMES](state, games) {
-        state.home_games = games;
+        state.home_games = games.map((g) => {
+            // adding selected field
+            g.selected = false;
+            return g;
+        });
     },
     [SET_AWAY_GAMES](state, games) {
-        state.away_games = games;
+        state.away_games = games.map((g) => {
+            // adding selected field
+            g.selected = false;
+            return g;
+        });
     }
 };
 

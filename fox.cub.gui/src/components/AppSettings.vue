@@ -39,6 +39,10 @@
                     <option v-bind:value="true">Home - Away games only</option>
                     <option v-bind:value="false">Show all games</option>
                 </select>
+
+                <button class="pure-button" v-on:click="resetFilters">
+                    Reset Selected Games
+                </button>
             </form>
 
         </modal>
@@ -53,9 +57,8 @@ Vue.use(vmodal)
 export default {
     props: ['settings'],
     methods: {
-        openModel() {
-            this.$modal.show('appSettings');
-        }
+        openModel() { this.$modal.show('appSettings'); },
+        resetFilters() { this.$emit('reset'); }
     }
 }
 </script>
