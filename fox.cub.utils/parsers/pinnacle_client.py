@@ -51,9 +51,9 @@ fixture_fields = ["id", "home", "away", "starts", "liveStatus",
                   "resultingUnit", "rotNum", "parentId"]
 Fixture = namedtuple(
     'Fixture', fixture_fields, defaults=(None,) * len(fixture_fields))
-# Pinnacle Odd object schema
-odd_fields = ["id", "periods"]
-Odd = namedtuple('Odd', odd_fields, defaults=(None,) * len(odd_fields))
+# Pinnacle Odds object schema
+event_fields = ["id", "periods"]
+Event = namedtuple('Event', event_fields, defaults=(None,) * len(event_fields))
 # Pinnacle Period object schema
 period_fields = ["lineId", "number", "cutoff", "maxSpread", "maxMoneyline",
                  "maxTotal", "maxTeamTotal", "status",
@@ -82,7 +82,7 @@ class PinnacleApi:
         self.init_data()
 
 
-    LEAGUES       = property(lambda self: '1977, 1980, 2663')
+    LEAGUES       = property(lambda self: '1977, 1980, 2663, 1842')
     SPORT_ID      = property(lambda self: '29')
     FIND_TEAM_BY  = property(lambda self: 'pinnacle_name')
     FIND_TOURN_BY = property(lambda self: 'pinnacle_id')
@@ -133,23 +133,25 @@ class PinnacleApi:
         return fixtures_list
 
 
-    def get_odds(self, sport_id, leagues_ids, oddsFormat="Decimal"):
+    def get_odds(self, sport_id, leagues_ids, since=None, oddsFormat="Decimal"):
         req = URL(self.odds_v1.format(sport_id, leagues_ids, oddsFormat))
+        if since: req['since'] = since
+
         response = self.http.get(req.request_uri, headers=self.auth_headers)
         data = self.read_json(response)
 
         odds_list = []
         try:
             for (_, ev) in self.get_event_pairs(data, "leagues"):
-                odd = Odd(**ev)
-                # [0] - full game period
-                period = Period(**odd.periods[0])
+                event = Event(**ev)
+                period = self.get_full_game_period(event)
+                if not period: continue
                 # ignore special odds
                 if not all([period.spreads,
                             period.moneyline,
                             period.totals]): continue
 
-                document = self.odds.get_document(odd.id, datetime.utcnow(),
+                document = self.odds.get_document(event.id, datetime.utcnow(),
                                                   period.spreads, period.moneyline,
                                                   period.totals)
 
@@ -239,6 +241,20 @@ class PinnacleApi:
 
         return ((le, ev) for le in data[league_attr]
                 for ev in le['events'])
+
+    def get_full_game_period(self, event: Event) -> Period:
+        """ Finding full game period.
+        Args:
+            event (Event): Pinnacle odds to find period
+        """
+
+        for period in event.periods:
+            p = Period(**period)
+            if p.number == 0:
+                return p
+
+        # not found full game period
+        return None
 
 
 if __name__ == '__main__':

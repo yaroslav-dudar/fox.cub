@@ -26,14 +26,14 @@
                 <team-stats v-bind:games="home_games_to_view"> </team-stats>
                 <last-games-chart
                     v-bind:games="home_games_to_view"
-                    v-bind:team_name="fixture.home_team">
+                    v-bind:team_name="fixture.home_name">
                 </last-games-chart>
             </div>
             <div class="pure-u-1-3">
                 <team-stats v-bind:games="away_games_to_view"> </team-stats>
                 <last-games-chart
                     v-bind:games="away_games_to_view"
-                    v-bind:team_name="fixture.away_team">
+                    v-bind:team_name="fixture.away_name">
                 </last-games-chart>
 
             </div>
@@ -43,7 +43,7 @@
             <div class="pure-u-1-3">
                 <rolling-trend-chart
                     v-bind:games="home_games_to_view"
-                    v-bind:team_name="fixture.home_team"
+                    v-bind:team_name="fixture.home_name"
                     v-bind:type="settings.rolling_trend.type"
                     v-bind:size="settings.rolling_trend.size">
                 </rolling-trend-chart>
@@ -51,7 +51,7 @@
             <div class="pure-u-1-3">
                 <rolling-trend-chart
                     v-bind:games="away_games_to_view"
-                    v-bind:team_name="fixture.away_team"
+                    v-bind:team_name="fixture.away_name"
                     v-bind:type="settings.rolling_trend.type"
                     v-bind:size="settings.rolling_trend.size">
                 </rolling-trend-chart>

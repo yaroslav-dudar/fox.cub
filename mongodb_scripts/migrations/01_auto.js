@@ -15,9 +15,9 @@ db.tournament.insert({ name: "EFL Championship 2019/2020", tournament_model: cha
 db.tournament.insert({ name: "Premier League England 2019/2020", tournament_model: epl._id.valueOf(), pinnacle_id: 1980 });
 db.tournament.insert({ name: "Internal Testing", tournament_model: testing._id.valueOf(), pinnacle_id: -1 });
 
-
-championship19_20 = db.tournament.findOne({"name": "EFL Championship 2019/2020"})
-epl19_20 = db.tournament.findOne({"name": "Premier League England 2019/2020"})
+championship19_20 = db.tournament.findOne({"name": "EFL Championship 2019/2020"});
+epl19_20 = db.tournament.findOne({"name": "Premier League England 2019/2020"});
+bundesiga19_20 = db.tournament.findOne({"name": "Bundesliga 2019/2020"});
 
 // English Championship
 db.team.update({name: "Stoke City"}, {$set : {pinnacle_name: ["Stoke City"]}, $push: {tournaments: championship19_20._id.valueOf()}}, { upsert: false });
@@ -67,3 +67,24 @@ db.team.update({name: "Bournemouth"}, {$set : {pinnacle_name: ["Bournemouth", "B
 db.team.update({name: "Watford"}, {$set : {pinnacle_name: ["Watford"]}, $push: {tournaments: epl19_20._id.valueOf()}}, { upsert: false });
 db.team.update({name: "Norwich City"}, {$set : {pinnacle_name: ["Norwich City"]}, $push: {tournaments: epl19_20._id.valueOf()}}, { upsert: false });
 db.team.update({name: "Sheffield United"}, {$set : {pinnacle_name: ["Sheffield United"]}, $push: {tournaments: epl19_20._id.valueOf()}}, { upsert: false });
+
+
+//Bundesliga
+db.team.update({name: "Bayern Munich"}, {$set : {pinnacle_name: ["Bayern Munich"]}, $push: {tournaments: bundesiga19_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Borussia Dortmund"}, {$set : {pinnacle_name: ["Borussia Dortmund"]}, $push: {tournaments: bundesiga19_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Bayer 04 Leverkusen"}, {$set : {pinnacle_name: ["Bayer Leverkusen"]}, $push: {tournaments: bundesiga19_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "RB Leipzig"}, {$set : {pinnacle_name: ["RB Leipzig"]}, $push: {tournaments: bundesiga19_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "FC Schalke 04"}, {$set : {pinnacle_name: ["Schalke 04"]}, $push: {tournaments: bundesiga19_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "TSG 1899 Hoffenheim"}, {$set : {pinnacle_name: ["Hoffenheim"]}, $push: {tournaments: bundesiga19_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Borussia Mönchengladbach"}, {$set : {pinnacle_name: ["Borussia Monchengladbach"]}, $push: {tournaments: bundesiga19_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "VfL Wolfsburg"}, {$set : {pinnacle_name: ["Wolfsburg"]}, $push: {tournaments: bundesiga19_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Eintracht Frankfurt"}, {$set : {pinnacle_name: ["Eintracht Frankfurt"]}, $push: {tournaments: bundesiga19_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Hertha BSC"}, {$set : {pinnacle_name: ["Hertha Berlin"]}, $push: {tournaments: bundesiga19_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Werder Bremen"}, {$set : {pinnacle_name: ["Werder Bremen"]}, $push: {tournaments: bundesiga19_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Mainz 05"}, {$set : {pinnacle_name: ["Mainz 05"]}, $push: {tournaments: bundesiga19_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "FC Augsburg"}, {$set : {pinnacle_name: ["Augsburg"]}, $push: {tournaments: bundesiga19_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "SC Freiburg"}, {$set : {pinnacle_name: ["Freiburg"]}, $push: {tournaments: bundesiga19_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Fortuna Düsseldorf"}, {$set : {pinnacle_name: ["Fortuna Dusseldorf"]}, $push: {tournaments: bundesiga19_20._id.valueOf()}}, { upsert: false });
+db.team.insert({name: "SC Paderborn 07", infogol_id: 974, news_feed: [], market_value: 0 , tournaments: [bundesiga19_20._id.valueOf()], pinnacle_name: ["SC Paderborn 07"]});
+db.team.insert({name: "FC Koln", infogol_id: 476, news_feed: [], market_value: 0 , tournaments: [bundesiga19_20._id.valueOf()], pinnacle_name: ["FC Koln"]});
+db.team.insert({name: "Union Berlin", infogol_id: 956, news_feed: [], market_value: 0 , tournaments: [bundesiga19_20._id.valueOf()], pinnacle_name: ["Union Berlin"]});

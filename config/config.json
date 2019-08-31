@@ -47,7 +47,8 @@
         "find_team_by": "infogol_id",
         "tournaments_list": {
             "EFL Championship 2019/2020": 151,
-            "Premier League England 2019/2020": 138
+            "Premier League England 2019/2020": 138,
+            "Bundesliga 2019/2020": 155
         }
     },
     "americansocceranalysis_parser": {

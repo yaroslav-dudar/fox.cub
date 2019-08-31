@@ -166,7 +166,8 @@ if __name__ == '__main__':
     seasons_num = abs(args.seasons)
 
     for d in dataset[model_type]:
-        seasons = Season.get_seasons(d.observations)
+        seasons = Season.get_seasons(d.observations,
+                                     reverse=reverse)
         result_dataset.extend(train_dataset.execute(d, seasons[:seasons_num]))
 
     train_dataset.to_csv(args.out, result_dataset)
