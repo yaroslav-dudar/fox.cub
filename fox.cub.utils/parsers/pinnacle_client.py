@@ -18,7 +18,9 @@ from geventhttpclient.connectionpool import SSLConnectionPool
 import gevent.pool
 import pymongo
 
-from models import Fixtures, Odds, Tournaments, Teams, MongoClient
+from models import (
+    Fixture as FixtureModel, Odds, Tournament,
+    Team, MongoClient, Pinnacle)
 
 
 def _create_tcp_socket(self, family, socktype, protocol):
@@ -73,12 +75,7 @@ class PinnacleApi:
         self.username = username
         self.password = password
 
-        self.fixture = Fixtures()
-        self.odds = Odds()
-        self.tournaments = Tournaments()
-        self.teams = Teams()
-
-        self.leagues_list = {}
+        self.leagues_list, self.last_since_id = {}, {}
         self.init_data()
 
 
@@ -103,12 +100,17 @@ class PinnacleApi:
                          ).encode()).decode("ascii")
 
 
-    def get_fixture(self, sport_id, leagues_ids, since=None):
+    def get_fixture(self, sport_id, leagues_ids):
         req = URL(self.fixtures_v1.format(sport_id, leagues_ids))
+        since = self.last_since_id.get('last_fixture')
+        if since: req['since'] = since
+
         response = self.http.get(req.request_uri, headers=self.auth_headers)
         data = self.read_json(response)
 
         fixtures_list = []
+        if not data: return fixtures_list
+
         try:
             for (league, ev) in self.get_event_pairs(data):
                 ev = Fixture(**ev)
@@ -118,7 +120,7 @@ class PinnacleApi:
                 home_id, away_id, tournament_id = self.\
                     get_fixture_ids(league['id'], ev)
 
-                document = self.fixture.get_document(
+                document = FixtureModel.get_document(
                     ev.id, ev.home, ev.away,
                     self.parse_date(ev.starts),
                     league['name'], home_id, away_id,
@@ -130,17 +132,22 @@ class PinnacleApi:
                 "Error occured during processing fixtures." +
                 " Pinnacle response: {}".format(data))
 
+        # save since ID
+        self.last_since_id['last_fixture'] = data['last']
         return fixtures_list
 
 
-    def get_odds(self, sport_id, leagues_ids, since=None, oddsFormat="Decimal"):
+    def get_odds(self, sport_id, leagues_ids, oddsFormat="Decimal"):
         req = URL(self.odds_v1.format(sport_id, leagues_ids, oddsFormat))
+        since = self.last_since_id.get('last_odds')
         if since: req['since'] = since
 
         response = self.http.get(req.request_uri, headers=self.auth_headers)
         data = self.read_json(response)
 
         odds_list = []
+        if not data: return odds_list
+
         try:
             for (_, ev) in self.get_event_pairs(data, "leagues"):
                 event = Event(**ev)
@@ -151,8 +158,10 @@ class PinnacleApi:
                             period.moneyline,
                             period.totals]): continue
 
-                document = self.odds.get_document(event.id, datetime.utcnow(),
-                                                  period.spreads, period.moneyline,
+                document = Odds.get_document(event.id,
+                                                  datetime.utcnow(),
+                                                  period.spreads,
+                                                  period.moneyline,
                                                   period.totals)
 
                 odds_list.append(document)
@@ -161,6 +170,8 @@ class PinnacleApi:
                 "Error occured during processing odds." +
                 " Pinnacle response: {}".format(data))
 
+        # save since ID
+        self.last_since_id['last_odds'] = data['last']
         return odds_list
 
 
@@ -172,8 +183,10 @@ class PinnacleApi:
                 break
 
             data += chunk
+
         print(data)
-        return json.loads(data)
+        # NOTE: return empty object if no data
+        return json.loads(data) if data else {}
 
 
     @functools.lru_cache(maxsize=128)
@@ -194,13 +207,16 @@ class PinnacleApi:
         # upload tournaments and teams from DB
         for l in self.LEAGUES.split(','):
             l_id = int(l.strip())
-            tournament = self.tournaments.get(l_id, self.FIND_TOURN_BY)
+            tournament = Tournament.get(l_id, self.FIND_TOURN_BY)
 
             if not tournament:
                 self.leagues_list[l_id] = None
             else:
                 t_id = str(tournament['_id'])
-                self.leagues_list[l_id] = League(t_id, self.teams.find(t_id))
+                self.leagues_list[l_id] = League(t_id, Team.find(t_id))
+
+        # upload latest fixture and odds since ID
+        self.last_since_id = Pinnacle.get()
 
 
     def get_fixture_ids(self, league_id, fixture: Fixture):
@@ -214,11 +230,11 @@ class PinnacleApi:
 
         if tournament:
             tournament_id = tournament.t_id
-            home_id = self.teams.get_id(
+            home_id = Team.get_id(
                 fixture.home,
                 self.FIND_TEAM_BY,
                 tournament.teams)
-            away_id = self.teams.get_id(
+            away_id = Team.get_id(
                 fixture.away,
                 self.FIND_TEAM_BY,
                 tournament.teams)
@@ -256,6 +272,11 @@ class PinnacleApi:
         # not found full game period
         return None
 
+    def update_last_requests(self):
+        document = Pinnacle.get_document(self.last_since_id['last_fixture'],
+                                         self.last_since_id['last_odds'])
+        Pinnacle.insert(document)
+
 
 if __name__ == '__main__':
 
@@ -266,8 +287,8 @@ if __name__ == '__main__':
     user_pwd = sys.argv[2]
 
     pinnacle = PinnacleApi(user_id, user_pwd)
-
     pool = gevent.pool.Pool(20)
+
     fixtures = pool.spawn(pinnacle.get_fixture,
                           pinnacle.SPORT_ID,
                           pinnacle.LEAGUES)
@@ -278,7 +299,10 @@ if __name__ == '__main__':
     pool.join()
 
     for fixture in fixtures.value:
-        pinnacle.fixture.add(fixture)
+        FixtureModel.add(fixture)
 
-    pinnacle.odds.insert_many(odds.value)
+    if odds.value:
+        Odds.insert_many(odds.value)
+
+    pinnacle.update_last_requests()
     pinnacle.close()

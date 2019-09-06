@@ -28,8 +28,29 @@ class Connection:
 class BaseModel(type):
     def __new__(cls, name, bases, attr):
         attr['client'] = MongoClient(Config()['database'])
-        return super(BaseModel, cls).__new__(cls, name, bases, attr)
 
+        if attr.get("capped_settings"):
+            cls.setup_capped_collection(attr)
+
+        attr['db_context'] = attr['client'].db[attr["collection"]]
+        return super().__new__(cls, name, bases, attr)
+
+
+    @classmethod
+    def setup_capped_collection(cls, attr):
+        settings = attr.get("capped_settings")
+        try:
+            attr['client'].db.create_collection(attr["collection"],
+                                                    capped=settings["capped"],
+                                                    size=settings["size"],
+                                                    max=settings["max"])
+        except pymongo.errors.CollectionInvalid:
+            stats = attr['client'].db.command('collStats',
+                                              attr["collection"])
+            # verifing that collection is capped
+            if not stats.get('capped'):
+                raise RuntimeError('{} should be capped collection'.\
+                                format(stats['ns']))
 
 class MongoClient:
     """ Global MongoDB connector """
@@ -57,16 +78,18 @@ class MongoClient:
 
 class Odds(metaclass=BaseModel):
 
-    def __init__(self):
-        self.collection = self.client.db["odds"]
+    collection = "odds"
 
-    def insert(self, document):
-        self.collection.insert(document)
+    @classmethod
+    def insert(cls, document):
+        cls.db_context.insert(document)
 
-    def insert_many(self, documents):
-        self.collection.insert_many(documents)
+    @classmethod
+    def insert_many(cls, documents):
+        cls.db_context.insert_many(documents)
 
-    def get_document(self, fixture_id, date, spreads, moneyline, totals):
+    @classmethod
+    def get_document(cls, fixture_id, date, spreads, moneyline, totals):
         return {
             "fixture_id": fixture_id, "date": date,
             "spreads": spreads, "moneyline": moneyline,
@@ -74,14 +97,13 @@ class Odds(metaclass=BaseModel):
         }
 
 
-class Fixtures(metaclass=BaseModel):
+class Fixture(metaclass=BaseModel):
+    collection = "fixtures"
 
-    def __init__(self):
-        self.collection = self.client.db["fixtures"]
-
-    def add(self, document):
+    @classmethod
+    def add(cls, document):
         """ Insert fixture record if it not existed before """
-        self.collection.update(
+        cls.db_context.update(
             { "home_id": document["home_id"],
               "away_id": document["away_id"]
             },
@@ -99,8 +121,8 @@ class Fixtures(metaclass=BaseModel):
             }, upsert=True
         )
 
-
-    def get_document(self, fixture_id, home_name,
+    @classmethod
+    def get_document(cls, fixture_id, home_name,
         away_name, date, tournament_name,
         home_id=None, away_id=None, tournament_id=None):
 
@@ -112,43 +134,43 @@ class Fixtures(metaclass=BaseModel):
             "home_id": home_id, "away_id": away_id
         }
 
+    @classmethod
     def get_id(self, home_id, away_id, date: datetime):
         """ Non-rigid date filter """
         where = 'return this.date.getDay() == {0}'.format(date.day)
-        fixture = self.collection.find_one({'$where' : where,
+        fixture = cls.db_context.find_one({'$where' : where,
                                             "home_id" : home_id,
                                             "away_id": away_id})
 
         return None if not fixture else str(fixture['_id'])
 
 class StatsModel(metaclass=BaseModel):
-    def __init__(self):
-        self.collection = self.client.db["tournament_model"]
+    collection = "tournament_model"
 
-    def update(self, model_id, model_type, model_content):
-        self.collection.update(
+    @classmethod
+    def update(cls, model_id, model_type, model_content):
+        cls.db_context.update(
             {'_id': ObjectId(model_id)},
             {"$set": {model_type: model_content}},
             upsert=False
         )
 
 
-class Tournaments(metaclass=BaseModel):
+class Tournament(metaclass=BaseModel):
+    collection = "tournament"
 
-    def __init__(self):
-        self.collection = self.client.db["tournament"]
-
-    def get(self, t_name, t_attr='name'):
-        tournament_id = self.collection.find_one({t_attr: t_name})
-        return tournament_id
+    @classmethod
+    def get(cls, t_name, t_attr='name'):
+        tournament = cls.db_context.find_one({t_attr: t_name})
+        return tournament
 
 
-class Teams(metaclass=BaseModel):
+class Team(metaclass=BaseModel):
 
-    def __init__(self):
-        self.collection = self.client.db["team"]
+    collection = "team"
 
-    def get_id(self, t_name, t_attr, t_list=None, is_iterable=True):
+    @classmethod
+    def get_id(cls, t_name, t_attr, t_list=None, is_iterable=True):
         """ Searching team id using t_attr field
         Args:
             t_name (str): team name to search
@@ -158,7 +180,7 @@ class Teams(metaclass=BaseModel):
         """
 
         if not t_list:
-            team = self.collection.find_one({t_attr: t_name})
+            team = cls.db_context.find_one({t_attr: t_name})
             return team
         else:
             if not is_iterable:
@@ -169,5 +191,77 @@ class Teams(metaclass=BaseModel):
             team = next(t_filt, None)
             return None if not team else str(team['_id'])
 
-    def find(self, t_id):
-        return list(self.collection.find({"tournaments": t_id}))
+    @classmethod
+    def find(cls, t_id):
+        """ Searching team id by tournament
+        Args:
+            t_id (list): tournament ids
+        """
+        return list(cls.db_context.find({"tournaments": t_id}))
+
+    @classmethod
+    def find_all(cls):
+        return list(cls.db_context.find({}))
+
+
+class Pinnacle(metaclass=BaseModel):
+    collection = "pinnacle"
+    capped_settings = {
+        "capped": True,
+        "size": 100000,
+        "max": 1
+    }
+
+    @classmethod
+    def get(cls):
+        return cls.db_context.find_one({}) or {}
+
+    @classmethod
+    def insert(cls, document):
+        cls.db_context.insert(document)
+
+    @classmethod
+    def get_document(self, last_fixture, last_odds):
+        return {
+            "last_fixture": last_fixture,
+            "last_odds": last_odds,
+        }
+
+
+class Game(metaclass=BaseModel):
+
+    collection = "game_stats"
+
+    @classmethod
+    def insert(cls, document):
+        cls.db_context.insert_one(document)
+
+    @classmethod
+    def get_document(self, team, opponent,
+                     tournament, date, venue,
+                     goals_for, goals_against,
+                     xg_for, xg_against):
+        return {
+            "team": team,
+            "opponent": opponent,
+            "tournament": tournament,
+            "date": date,
+            "venue": venue,
+            "goals_for": int(goals_for),
+            "goals_against": int(goals_against),
+            "xG_for": float(xg_for),
+            "xG_against": float(xg_against)
+        }
+
+    @classmethod
+    def find_one(cls, team, opponent, tournament, venue):
+        return cls.db_context.find_one({
+            'team': team,
+            'opponent': opponent,
+            'venue': venue,
+            'tournament': tournament
+        })
+
+    @classmethod
+    def find_all(cls, tournament):
+        return cls.db_context.find({ 'tournament': tournament })
