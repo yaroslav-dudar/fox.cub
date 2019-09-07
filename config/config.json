@@ -8,7 +8,7 @@
         "db_name": "fox_cub",
         "useObjectId": true,
 
-        "host" : "127.0.0.1",
+        "host" : "52.215.183.123",
         "port" : 27017,
 
         "maxPoolSize" : 50,
@@ -19,6 +19,11 @@
         "waitQueueTimeoutMS" : 10000,
         "maintenanceFrequencyMS" : 2000,
         "maintenanceInitialDelayMS" : 500,
+
+        "username"   : "",
+        "password"   : "",
+        "authSource" : "admin",
+        "authMechanism" : "",
 
         "collections": {
             "odds": "game_odds",
@@ -60,7 +65,14 @@
     "fivethirtyeight_parser": {
         "find_team_by": "fivethirtyeight_name",
         "tournaments_list": {
-            "MLS 2019": "Major League Soccer"
+            "MLS 2019": {
+                "league": "Major League Soccer",
+                "range": {"start": 2019, "end": 2019}
+            },
+            "Internal Testing": {
+                "league": "German 2. Bundesliga",
+                "range": {"start": 2019, "end": 2020}
+            }
         }
     }
 }

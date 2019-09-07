@@ -67,9 +67,17 @@ class MongoClient:
             return cls._obj
 
     def __init__(self, db_config):
+        auth_config = {}
+        if db_config.get("authMechanism") == "SCRAM-SHA-1":
+            auth_config['authMechanism'] = db_config["authMechanism"]
+            auth_config['authSource'] = db_config["authSource"]
+            auth_config['username'] = db_config["username"]
+            auth_config['password'] = db_config["password"]
+
         self.conn = pymongo.MongoClient(
-            db_config['host'],
-            db_config['port']
+            host=db_config['host'],
+            port=db_config['port'],
+            **auth_config
         )
         MongoClient.db = self.conn[db_config['db_name']]
         # clean-up DB resources

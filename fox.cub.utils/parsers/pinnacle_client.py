@@ -79,7 +79,7 @@ class PinnacleApi:
         self.init_data()
 
 
-    LEAGUES       = property(lambda self: '1977, 1980, 2663, 1842')
+    LEAGUES       = property(lambda self: '1977, 1980, 2663, 1842, 2635')
     SPORT_ID      = property(lambda self: '29')
     FIND_TEAM_BY  = property(lambda self: 'pinnacle_name')
     FIND_TOURN_BY = property(lambda self: 'pinnacle_id')
