@@ -2,25 +2,31 @@ import scrapy
 import copy
 import json
 
+from datetime import datetime, timezone
+from collections import namedtuple
+
 from config import Config
+from models import Team, Game, Tournament
 
-import pymongo
-
-from datetime import datetime
-from datetime import timezone
+League = namedtuple("League",
+                    ["id", "teams", "games", "external_id"],
+                    defaults=(None,) * 4)
 
 class InfogolSpider(scrapy.Spider):
     name = 'infogol'
-    user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36"
+    user_agent = (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36"
+    )
 
     mode = 'create' # update or create
+    FIND_TOURN_BY = property(lambda self: 'name')
+    DATE_FORMAT   = property(lambda self: "%Y-%m-%dT%H:%M:%S")
 
-    DATE_FORMAT = "%Y-%m-%dT%H:%M:%S"
+    HOME_XG = property(lambda self: 'PostMatchExpectedHomeTeamGoals')
+    AWAY_XG = property(lambda self: 'PostMatchExpectedAwayTeamGoals')
 
-    HOME_XG = "PostMatchExpectedHomeTeamGoals"
-    AWAY_XG = "PostMatchExpectedAwayTeamGoals"
-
-    form_data = {
+    FORM_DATA = property(lambda self: {
         "filterJson": ["AND",[
             ["CompID","eq"],
             ["MatchStatus","eq","FullTime"],
@@ -28,35 +34,41 @@ class InfogolSpider(scrapy.Spider):
         ],
         "objectName": "vw_MatchList",
         "orderBy[0][propertyName]": "MatchDateTime"
-    }
+    })
 
-    url = "https://www.infogolapp.com/DataRequest/ExecuteRequest?r=getTeamResultsInCompetition&v={team_id}&v={comp_id}"
+    INFOGOL_URL = property(lambda self: (
+        "https://www.infogolapp.com/DataRequest/ExecuteRequest?"
+        "r=getTeamResultsInCompetition&v={team_id}&v={comp_id}"
+    ))
 
     def __init__(self, *a, **kw):
         super(InfogolSpider, self).__init__(*a, **kw)
 
         self.global_conf = Config()
         self.config = self.global_conf['infogol_parser']
-        self.db_conf = self.global_conf['database']
-
-        self.client = pymongo.MongoClient(
-            self.db_conf['host'],
-            self.db_conf['port']
-        )
-        self.db = self.client[self.db_conf['db_name']]
 
         self.proxy = "104.236.248.219:3128"
+        self.leagues_list = {}
+        self.init_data()
 
-        self.pull_db_data()
 
+    def init_data(self):
+        for t_name in self.config['tournaments_list']:
+            tournament = Tournament.get(t_name, self.FIND_TOURN_BY)
+            infogol_id = self.config['tournaments_list'][t_name]
 
-    def pull_db_data(self):
-        self.tournamemnts = list(self.db[self.db_conf['collections']['tournament']].find())
-        self.games = list(self.db[self.db_conf['collections']['game']].find())
-        self.teams = list(self.db[self.db_conf['collections']['team']].find())
+            if not tournament:
+                self.leagues_list[t_name] = None
+            else:
+                t_id = str(tournament['_id'])
+                self.leagues_list[t_name] = League(t_id,
+                                                   Team.find(t_id),
+                                                   Game.find_all(t_id),
+                                                   infogol_id)
+
 
     def get_form_data(self, team_id, comp_id):
-        form = copy.deepcopy(self.form_data)
+        form = copy.deepcopy(self.FORM_DATA)
         form['filterJson'][1][0].append(comp_id)
         form['filterJson'][1][2][1][0].append(team_id)
         form['filterJson'][1][2][1][1].append(team_id)
@@ -64,23 +76,19 @@ class InfogolSpider(scrapy.Spider):
         return form
 
     def start_requests(self):
-        """ Update xG for existing games """
+        """ Call API request for each tournament
+        and team subscribed to infogol parser
+        """
 
         callback = self.parse_and_update if self.mode == 'update' else self.parse_and_add
-        available_tournaments = filter(
-            lambda t: t['name'] in self.config['tournaments_list'].keys(),
-            self.tournamemnts)
 
-        for t in available_tournaments:
-            comp_id = self.config['tournaments_list'][t['name']]
-            # get all teams in a tournament
-            teams = list(filter(lambda team: str(t['_id']) in team['tournaments'], self.teams))
-
-            # fetch results for all teams
-            for team in teams:
+        for name, tournament in self.leagues_list.items():
+            # fetch results for each team in a tournament
+            for team in tournament.teams:
                 team_id = int(team[self.config["find_team_by"]])
-                team_url = self.url.format(
-                    team_id=team_id, comp_id=comp_id)
+                team_url = self.INFOGOL_URL.format(
+                    team_id=team_id,
+                    comp_id=tournament.external_id)
 
                 yield scrapy.http.FormRequest(
                     url=team_url,
@@ -89,11 +97,11 @@ class InfogolSpider(scrapy.Spider):
                         'User-Agent': self.user_agent,
                         'Content-Type': 'application/x-www-form-urlencoded'
                     },
-                    formdata=self.get_form_data(team_id, comp_id),
+                    formdata=self.get_form_data(team_id, tournament.external_id),
                     meta={
                         'proxy': self.proxy,
                         'team_id': team_id,
-                        'tournament_id': str(t['_id'])
+                        'tournament': tournament
                     }
                 )
 
@@ -103,27 +111,25 @@ class InfogolSpider(scrapy.Spider):
 
         results = json.loads(response.body.decode("utf-8"))
         infogol_team_id = response.request.meta['team_id']
-        tournament_id = response.request.meta['tournament_id']
+        tournament = response.request.meta['tournament']
 
         for res in results:
             venue = 'home' if res['HomeTeamID'] == infogol_team_id else 'away'
 
             if venue == 'home':
-                game = self.get_game_id(res['HomeTeamID'],
+                game = self.get_game(res['HomeTeamID'],
                                         res['AwayTeamID'],
                                         venue,
-                                        tournament_id)
-                team_id = str(self.get_team_by_id(res['HomeTeamID'])['_id'])
-                opponent_id = str(self.get_team_by_id(res['AwayTeamID'])['_id'])
+                                        tournament)
+
                 goals_for, goals_against = res['HomeTeamGoals'], res['AwayTeamGoals']
                 xg_for, xg_against = res[self.HOME_XG], res[self.AWAY_XG]
             else:
-                game = self.get_game_id(res['AwayTeamID'],
-                                        res['HomeTeamID'],
-                                        venue,
-                                        tournament_id)
-                team_id = str(self.get_team_by_id(res['AwayTeamID'])['_id'])
-                opponent_id = str(self.get_team_by_id(res['HomeTeamID'])['_id'])
+                game = self.get_game(res['AwayTeamID'],
+                                     res['HomeTeamID'],
+                                     venue,
+                                     tournament)
+
                 goals_for, goals_against = res['AwayTeamGoals'], res['HomeTeamGoals']
                 xg_for, xg_against = res[self.AWAY_XG], res[self.HOME_XG]
 
@@ -131,18 +137,13 @@ class InfogolSpider(scrapy.Spider):
             if game:
                 continue
 
-            self.db[self.db_conf['collections']['game']].\
-                insert_one({
-                    "team": team_id,
-                    "opponent": opponent_id,
-                    "tournament": tournament_id,
-                    "date": self.get_time(res['MatchDateTime']),
-                    "venue": venue,
-                    "goals_for": goals_for,
-                    "goals_against": goals_against,
-                    "xG_for": xg_for,
-                    "xG_against": xg_against
-                })
+            team_id, opponent_id = game['team'], game['opponent']
+            game_data = Game.get_document(team_id, opponent_id,
+                                          tournament.id,
+                                          self.get_time(res['MatchDateTime']),
+                                          venue, goals_for, goals_against,
+                                          xg_for, xg_against)
+            Game.insert(game_data)
 
 
     def parse_and_update(self, response):
@@ -150,17 +151,24 @@ class InfogolSpider(scrapy.Spider):
 
         results = json.loads(response.body.decode("utf-8"))
         team_id = response.request.meta['team_id']
+        tournament = response.request.meta['tournament']
 
         for res in results:
             venue = 'home' if res['HomeTeamID'] == team_id else 'away'
             if venue == 'home':
-                game = self.get_game_id(res['HomeTeamID'], res['AwayTeamID'], venue)
+                game = self.get_game(res['HomeTeamID'],
+                                        res['AwayTeamID'],
+                                        venue,
+                                        tournament)
                 upd_with = {
                     'xG_for': res[self.HOME_XG],
                     'xG_against': res[self.AWAY_XG]
                 }
             else:
-                game = self.get_game_id(res['AwayTeamID'], res['HomeTeamID'], venue)
+                game = self.get_game(res['AwayTeamID'],
+                                        res['HomeTeamID'],
+                                        venue,
+                                        tournament)
                 upd_with = {
                     'xG_for': res[self.AWAY_XG],
                     'xG_against': res[self.HOME_XG]
@@ -170,26 +178,32 @@ class InfogolSpider(scrapy.Spider):
             if not game:
                 continue
 
-            self.db[self.db_conf['collections']['game']].\
-                update({ '_id': game }, { '$set': upd_with }, upsert=False)
+            Game.update(str(game['_id']), upd_with)
 
 
-    def get_team_by_id(self, id):
-        return next(filter(lambda t: t.get(self.config["find_team_by"]) == id, self.teams))
+    def get_team_by_id(self, id, tournament: League):
+        return next(filter(
+            lambda t: t.get(self.config["find_team_by"]) == id,
+            tournament.teams)
+        )
 
-    def get_game_id(self, team_infogol_id, opponent_infogol_id, venue, tournament_id):
-        team_id = str(self.get_team_by_id(team_infogol_id)['_id'])
-        opponent_id = str(self.get_team_by_id(opponent_infogol_id)['_id'])
 
-        game = self.db[self.db_conf['collections']['game']].\
-            find_one({
-                'team': team_id,
-                'opponent': opponent_id,
-                'venue': venue,
-                'tournament': tournament_id
-            })
+    def get_game(self, team_value, opponent_value, venue, tournament: League):
+        team_id = Team.get_id(
+            team_value,
+            self.config["find_team_by"],
+            tournament.teams,
+            False)
 
-        return game['_id'] if game else None
+        opponent_id = Team.get_id(
+            opponent_value,
+            self.config["find_team_by"],
+            tournament.teams,
+            False)
+
+        game = Game.find_one(team_id, opponent_id, tournament.id, venue)
+        return game if game else None
+
 
     def get_time(self, date_str):
         date = datetime.strptime(date_str, self.DATE_FORMAT)

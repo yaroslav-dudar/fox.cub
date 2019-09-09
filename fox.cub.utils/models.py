@@ -172,6 +172,11 @@ class Tournament(metaclass=BaseModel):
         tournament = cls.db_context.find_one({t_attr: t_name})
         return tournament
 
+    @classmethod
+    def get_many(cls, t_name_list: list, t_attr='name'):
+        tournaments = list(cls.db_context.find(
+            {t_attr: {"$in": t_name_list}}))
+        return tournaments
 
 class Team(metaclass=BaseModel):
 
@@ -273,3 +278,9 @@ class Game(metaclass=BaseModel):
     @classmethod
     def find_all(cls, tournament):
         return cls.db_context.find({ 'tournament': tournament })
+
+    @classmethod
+    def update(cls, game_id, with_data):
+        return cls.db_context.update({'_id': game_id},
+                                     {'$set': with_data},
+                                     upsert=False)

@@ -6,34 +6,55 @@ import urllib.request
 import pymongo
 import datetime
 from datetime import timezone
+from collections import namedtuple
 
 from config import Config
+from models import Team, Game, Tournament
+
+League = namedtuple("League",
+                    ["id", "teams", "games", "name", "range"],
+                    defaults=(None,) * 5)
 
 class FivethirtyeightParser:
 
-    leagues = []
-
-    DATE_FORMAT = "%Y-%m-%d"
-    DATA_SOURCE = "https://projects.fivethirtyeight.com/soccer-api/club/spi_matches.csv"
+    FIND_TOURN_BY = property(lambda self: 'name')
+    DATE_FORMAT =   property(lambda self: "%Y-%m-%d")
+    DATA_SOURCE =   property(lambda self: "https://projects.fivethirtyeight.com/soccer-api/club/spi_matches.csv")
 
     def __init__(self):
 
         self.global_conf = Config()
         self.config = self.global_conf['fivethirtyeight_parser']
-        self.db_conf = self.global_conf['database']
 
-        self.client = pymongo.MongoClient(
-            self.db_conf['host'],
-            self.db_conf['port']
-        )
-        self.db = self.client[self.db_conf['db_name']]
-
-        self.games = list(self.db[self.db_conf['collections']['game']].find())
-        self.teams = list(self.db[self.db_conf['collections']['team']].find())
+        self.leagues_list = {}
+        self.init_data()
 
         self.ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self.ssl_ctx.load_verify_locations(cafile='/etc/ssl/certs/ca-certificates.crt')
 
+        self.download_to = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)), "..", "data", "tmp"
+        )
+        self.file_path = os.path.join(self.download_to, 'spi_matches.csv')
+
+    def init_data(self):
+        # upload tournaments and teams from DB
+        for t_name in self.config['tournaments_list']:
+            tournament = Tournament.get(t_name, self.FIND_TOURN_BY)
+            tournament_config = self.config['tournaments_list'][t_name]
+            t_external_name = tournament_config['league']
+
+            date_range = self.season_date_range(tournament_config['range'])
+
+            if not tournament:
+                self.leagues_list[t_external_name] = None
+            else:
+                t_id = str(tournament['_id'])
+                self.leagues_list[t_external_name] = League(t_id,
+                                                            Team.find(t_id),
+                                                            Game.find_all(t_id),
+                                                            t_name,
+                                                            date_range)
 
     def download(self):
         """
@@ -41,22 +62,14 @@ class FivethirtyeightParser:
             https://github.com/fivethirtyeight/data/tree/master/soccer-spi
         """
 
-        self.download_to = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "..", "data", "tmp"
-        )
-        self.file_path = os.path.join(self.download_to, 'spi_matches.csv')
-
         print("Download file: {0}. Save to: {1}".format(self.DATA_SOURCE, self.file_path))
         with urllib.request.urlopen(self.DATA_SOURCE, context=self.ssl_ctx) as u, \
             open(self.file_path, 'wb') as f:
                 f.write(u.read())
 
-    def upload(self, tournament):
-        """ Parse input file and upload data to DB. """
 
-        tournament_id = str(self.db[self.db_conf['collections']['tournament']].\
-            find_one({"name": tournament})["_id"])
-
+    def find_dataset_fields(self):
+        """ Recognize dataset field names based on first row """
         with open(self.file_path, newline='') as csvfile:
             reader = csv.reader(csvfile, delimiter=',', quotechar='|')
 
@@ -74,30 +87,46 @@ class FivethirtyeightParser:
             self.LEAGUE = fields.index("league")
             self.DATE = fields.index("date")
 
+
+    def start(self):
+        """ Parse input file and upload data to DB. """
+
+        with open(self.file_path, newline='') as csvfile:
+            reader = csv.reader(csvfile, delimiter=',', quotechar='|')
+            # skip field names row
+            next(reader)
+
             for row in reader:
-                if row[self.LEAGUE] == self.config['tournaments_list'][tournament] and \
-                    row[self.DATE].startswith('2019') and self.is_game_has_info(row):
+                league = self.leagues_list.get(row[self.LEAGUE])
+                if league and \
+                    league.range['start'] < row[self.DATE] < league.range['end'] and \
+                    self.is_game_has_info(row):
 
-                    home_game = self.get_game_id(row[self.HOME_TEAM], row[self.AWAY_TEAM], 'home')
-                    if not home_game:
-                        self.add_game(
-                            row[self.HOME_TEAM], row[self.AWAY_TEAM],
-                            row[self.DATE], tournament_id, 'home',
-                            row[self.HOME_GOALS], row[self.AWAY_GOALS],
-                            row[self.XG_HOME], row[self.XG_AWAY])
-
-                    away_game = self.get_game_id(row[self.AWAY_TEAM], row[self.HOME_TEAM], 'away')
-                    if not away_game:
-                        self.add_game(
-                            row[self.AWAY_TEAM], row[self.HOME_TEAM],
-                            row[self.DATE], tournament_id, 'away',
-                            row[self.AWAY_GOALS], row[self.HOME_GOALS],
-                            row[self.XG_AWAY], row[self.XG_HOME])
+                    self.process_row(row, league)
 
 
-    def get_team_by_name(self, name):
-        """ Get team from DB by name """
-        return next(filter(lambda t: t.get(self.config["find_team_by"]) == name, self.teams))
+    def process_row(self, row, tournament):
+        home_game = self.get_game_id(row[self.HOME_TEAM],
+                                     row[self.AWAY_TEAM],
+                                     'home',
+                                     tournament)
+        if not home_game:
+            self.add_game(
+                row[self.HOME_TEAM], row[self.AWAY_TEAM],
+                row[self.DATE], tournament, 'home',
+                row[self.HOME_GOALS], row[self.AWAY_GOALS],
+                row[self.XG_HOME], row[self.XG_AWAY])
+
+        away_game = self.get_game_id(row[self.AWAY_TEAM],
+                                     row[self.HOME_TEAM],
+                                     'away',
+                                     tournament)
+        if not away_game:
+            self.add_game(
+                row[self.AWAY_TEAM], row[self.HOME_TEAM],
+                row[self.DATE], tournament, 'away',
+                row[self.AWAY_GOALS], row[self.HOME_GOALS],
+                row[self.XG_AWAY], row[self.XG_HOME])
 
 
     def is_game_finished(self, game_date):
@@ -112,18 +141,20 @@ class FivethirtyeightParser:
         return game_row[self.XG_AWAY] and game_row[self.XG_HOME]
 
 
-    def get_game_id(self, team_name, opponent_name, venue):
+    def get_game_id(self, team_name, opponent_name, venue, tournament: League):
         """ Get game from db by home team, away team """
-        team_id = str(self.get_team_by_name(team_name)['_id'])
-        opponent_id = str(self.get_team_by_name(opponent_name)['_id'])
 
-        game = self.db[self.db_conf['collections']['game']].\
-            find_one({
-                'team': team_id,
-                'opponent': opponent_id,
-                'venue': venue
-            })
+        team_id = Team.get_id(
+            team_name,
+            self.config["find_team_by"],
+            tournament.teams)
 
+        opponent_id = Team.get_id(
+            opponent_name,
+            self.config["find_team_by"],
+            tournament.teams)
+
+        game = Game.find_one(team_id, opponent_id, tournament.id, venue)
         return game['_id'] if game else None
 
 
@@ -133,34 +164,48 @@ class FivethirtyeightParser:
         return int(date.replace(tzinfo=timezone.utc).timestamp())
 
 
-    def add_game(self, team, opponent, date, tournament_id, venue,
+    def add_game(self, team, opponent, date, tournament: League, venue,
         goals_for, goals_against, xg_for, xg_against):
         """ Put game data to DB """
+        team_id = Team.get_id(
+            team,
+            self.config["find_team_by"],
+            tournament.teams,
+            False)
 
-        team_id = str(self.get_team_by_name(team)['_id'])
-        opponent_id = str(self.get_team_by_name(opponent)['_id'])
+        opponent_id = Team.get_id(
+            opponent,
+            self.config["find_team_by"],
+            tournament.teams,
+            False)
 
-        game_data = {
-            "team": team_id,
-            "opponent": opponent_id,
-            "tournament": tournament_id,
-            "date": self.get_time(date),
-            "venue": venue,
-            "goals_for": int(goals_for),
-            "goals_against": int(goals_against),
-            "xG_for": float(xg_for),
-            "xG_against": float(xg_against)
-        }
-
+        game_data = Game.get_document(team_id, opponent_id,
+                                      tournament.id, self.get_time(date),
+                                      venue, goals_for, goals_against,
+                                      xg_for, xg_against)
         print(game_data)
-        self.db[self.db_conf['collections']['game']].insert_one(game_data)
+        Game.insert(game_data)
+
+    def season_date_range(self, _range: dict):
+        """ Generate season start-end date range based on years. """
+        if _range['start'] == _range['end']:
+            # spring-to-autumn cycle
+            return {
+                "start": "%d-01-01" % _range['start'],
+                "end": "%d-12-31" % _range['end'],
+            }
+        elif _range['start'] + 1 == _range['end']:
+            # summer-to-spring cycle
+            return {
+                "start": "%d-07-01" % _range['start'],
+                "end": "%d-06-31" % _range['end'],
+            }
+        else:
+            raise Exception("Incorrect season range")
 
 
 if __name__ == "__main__":
     parser = FivethirtyeightParser()
     parser.download()
-
-    for tournament in parser.config['tournaments_list']:
-        parser.upload(tournament)
-
-    parser.client.close()
+    parser.find_dataset_fields()
+    parser.start()
