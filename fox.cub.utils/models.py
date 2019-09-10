@@ -111,10 +111,20 @@ class Fixture(metaclass=BaseModel):
     @classmethod
     def add(cls, document):
         """ Insert fixture record if it not existed before """
+
+        if document["home_id"] and document["away_id"]:
+            query = {
+                "home_id": document["home_id"],
+                "away_id": document["away_id"]
+            }
+        else:
+            query = {
+                "home_name": document["home_name"],
+                "away_name": document["away_name"]
+            }
+
         cls.db_context.update(
-            { "home_id": document["home_id"],
-              "away_id": document["away_id"]
-            },
+            query,
             {
                 '$addToSet': {'external_ids': document['external_id']},
                 '$set': {

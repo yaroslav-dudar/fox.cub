@@ -24,7 +24,7 @@ db.team.update({name: "New York City FC"}, {$set : {pinnacle_name: ["New York Ci
 db.team.update({name: "Atlanta United"}, {$set : {pinnacle_name: ["Atlanta United"]}}, { upsert: false });
 db.team.update({name: "Colorado"}, {$set : {pinnacle_name: ["Colorado Rapids"]}}, { upsert: false });
 db.team.update({name: "Portland"}, {$set : {pinnacle_name: ["Portland Timbers"]}}, { upsert: false });
-db.team.update({name: "FC Cincinnati"}, {$set : {pinnacle_name: ["FC Cincinnati"]}}, { upsert: false });
+db.team.update({name: "FC Cincinnati"}, {$set : {pinnacle_name: ["FC Cincinnati", "Fc Cincinnati"]}}, { upsert: false });
 db.team.update({name: "Vancouver"}, {$set : {pinnacle_name: ["Vancouver Whitecaps"]}}, { upsert: false });
 db.team.update({name: "Salt Lake"}, {$set : {pinnacle_name: ["Real Salt Lake"]}}, { upsert: false });
 db.team.update({name: "San Jose"}, {$set : {pinnacle_name: ["San Jose Earthquakes"]}}, { upsert: false });
