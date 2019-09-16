@@ -75,6 +75,11 @@ class InfogolSpider(scrapy.Spider):
         form['filterJson'] = str(form['filterJson'])
         return form
 
+    def get_team_id(self, tournament, external_id):
+        teams = filter(lambda t: t[self.config["find_team_by"]] == external_id,
+                      tournament.teams)
+        return str(next(teams)['_id'])
+
     def start_requests(self):
         """ Call API request for each tournament
         and team subscribed to infogol parser
@@ -124,6 +129,8 @@ class InfogolSpider(scrapy.Spider):
 
                 goals_for, goals_against = res['HomeTeamGoals'], res['AwayTeamGoals']
                 xg_for, xg_against = res[self.HOME_XG], res[self.AWAY_XG]
+                team_id = self.get_team_id(tournament, res['HomeTeamID'])
+                opponent_id = self.get_team_id(tournament, res['AwayTeamID'])
             else:
                 game = self.get_game(res['AwayTeamID'],
                                      res['HomeTeamID'],
@@ -132,12 +139,12 @@ class InfogolSpider(scrapy.Spider):
 
                 goals_for, goals_against = res['AwayTeamGoals'], res['HomeTeamGoals']
                 xg_for, xg_against = res[self.AWAY_XG], res[self.HOME_XG]
-
+                team_id = self.get_team_id(tournament, res['AwayTeamID'])
+                opponent_id = self.get_team_id(tournament, res['HomeTeamID'])
             # ignore result if game already exists
             if game:
                 continue
 
-            team_id, opponent_id = game['team'], game['opponent']
             game_data = Game.get_document(team_id, opponent_id,
                                           tournament.id,
                                           self.get_time(res['MatchDateTime']),

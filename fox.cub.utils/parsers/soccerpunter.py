@@ -1,4 +1,6 @@
 import scrapy
+
+import re
 from collections import defaultdict
 
 class Match(scrapy.Item):
@@ -34,6 +36,9 @@ class SoccerPunterSpider(scrapy.Spider):
         for year in range(2008, 2019)]
 
     efl_league1 = ["/England/League-One-{0}-{1}".format(year, year+1)
+        for year in range(1993, 2019)]
+
+    efl_league2 = ["/England/League-Two-{0}-{1}".format(year, year+1)
         for year in range(1993, 2019)]
 
     laliga = ["/Spain/La-Liga-{0}-{1}".format(year, year+1)
@@ -293,37 +298,109 @@ class SoccerPunterSpider(scrapy.Spider):
     open_cup = ["/USA/US-Open-Cup-{0}".format(year)
         for year in range(2007, 2019)]
 
-    tournaments = mls
-    base_url = "https://www.soccerpunter.com/soccer-statistics"
+    champions_league = [
+        "/season/12950/Europe-Champions-League-2018-2019",
+        "/season/7907/Europe-Champions-League-2017-2018",
+        "/season/718/Europe-Champions-League-2016-2017",
+        "/season/5321/Europe-Champions-League-2015-2016",
+        "/season/5322/Europe-Champions-League-2014-2015",
+        "/season/5315/Europe-Champions-League-2013-2014",
+        "/season/5318/Europe-Champions-League-2012-2013",
+        "/season/5313/Europe-Champions-League-2011-2012",
+        "/season/5312/Europe-Champions-League-2010-2011",
+        "/season/5311/Europe-Champions-League-2009-2010",
+        "/season/5310/Europe-Champions-League-2008-2009",
+        "/season/5309/Europe-Champions-League-2007-2008",
+        "/season/5308/Europe-Champions-League-2006-2007",
+        "/season/5307/Europe-Champions-League-2005-2006"
+    ]
+
+    europa_league = [
+        "/season/12945/Europe-Europa-League-2018-2019",
+        "/season/7908/Europe-Europa-League-2017-2018",
+        "/season/719/Europe-Europa-League-2016-2017",
+        "/season/5337/Europe-Europa-League-2015-2016",
+        "/season/5335/Europe-Europa-League-2014-2015",
+        "/season/5334/Europe-Europa-League-2013-2014",
+        "/season/5333/Europe-Europa-League-2012-2013",
+        "/season/5332/Europe-Europa-League-2011-2012",
+        "/season/5331/Europe-Europa-League-2010-2011",
+        "/season/5330/Europe-Europa-League-2009-2010",
+        "/season/5329/Europe-Europa-League-2008-2009",
+        "/season/5328/Europe-Europa-League-2007-2008",
+        "/season/5327/Europe-Europa-League-2006-2007",
+        "/season/5326/Europe-Europa-League-2005-2006"
+    ]
+
+    tournaments = europa_league
+
+    MODES = {
+        'default': {
+            "base_url": "https://www.soccerpunter.com/soccer-statistics",
+            "results_p": re.compile(r'$'),
+            "game_class": "data-match",
+            "games_path": "table.roundsResultDisplay",
+            "goal_code": "G"
+        },
+        'europe': {
+            "base_url": "https://www.soccerpunter.com",
+            "results_p": re.compile(r'/season/'),
+            "game_class": "data-matchid",
+            "games_path": "table.competitionRanking",
+            "goal_code": "goal"
+        }
+    }
+    SELECTED_MODE = 'europe'
 
     h_timings = defaultdict(list)
     a_timings = defaultdict(list)
 
-    GAME_CODE = "G"
-    SORT_BY_GROUP = False
-    IGNORE_NON_REGULAR_SEASON = True
+    SORT_BY_GROUP = True
+    IGNORE_NON_REGULAR_SEASON = False
     REGULAR_SEASON_NAMINGS = ["Group Stage", "Regular Season"]
     GROUPS = {}
 
-    proxy = "213.56.76.121:3128"
+    proxy = "104.236.248.219:3128"
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self.mode = self.MODES[self.SELECTED_MODE]
+        self.GOAL_CODE = self.get_goal_code()
+
+    def get_results_url(self, base_url):
+        return self.mode['results_p'].sub('/results/', base_url)
+
+    def get_game_class(self):
+        return self.mode['game_class']
+
+    def get_games_path(self):
+        return self.mode['games_path']
+
+    def get_goal_code(self):
+        return self.mode['goal_code']
 
     def start_requests(self):
-        urls = [self.base_url + t for t in self.tournaments]
-        for url in urls:
+        for t in self.tournaments:
             if self.SORT_BY_GROUP:
                 # add group label to each game
-                yield scrapy.Request(url=url, callback=self.parse_table, meta={'proxy': self.proxy})
+                group_url = self.mode['base_url'] + t
+                yield scrapy.Request(url=group_url,
+                                     callback=self.parse_table,
+                                     meta={'proxy': self.proxy})
             else:
                 # parse games
-                yield scrapy.Request(url=url + "/results", callback=self.parse, meta={'proxy': self.proxy})
+                results_url = self.get_results_url(t)
+                yield scrapy.Request(url=self.mode['base_url'] + results_url,
+                                     callback=self.parse,
+                                     meta={'proxy': self.proxy})
 
     def parse(self, response):
-        games = response.css("table.roundsResultDisplay")
+        games = response.css(self.get_games_path())
         season = self.get_season_year(response)
 
         matches = {}
 
-        for g in games.css("tr[data-match]:not([data-code])"):
+        for g in games.css("tr[%s]:not([data-code])" % self.get_game_class()):
             if self.IGNORE_NON_REGULAR_SEASON\
                 and not self.SORT_BY_GROUP\
                 and not self.is_regular_season_game(g):
@@ -354,7 +431,7 @@ class SoccerPunterSpider(scrapy.Spider):
             return
 
         ev_type = game.css("::attr(data-code)").extract_first()
-        if ev_type == self.GAME_CODE:
+        if ev_type == self.GOAL_CODE:
             home = game.css("td.evHome span.event_minute::text").extract_first()
             away = game.css("td.evAway span.event_minute::text").extract_first()
 
@@ -399,7 +476,7 @@ class SoccerPunterSpider(scrapy.Spider):
 
         print(groups)
         yield scrapy.Request(
-            url=response.url + "/results",
+            url=self.get_results_url(response.url),
             callback=self.parse,
             meta={'proxy': self.proxy, 'groups': groups})
 
@@ -433,5 +510,12 @@ class SoccerPunterSpider(scrapy.Spider):
         score = game.css("div.halfTimeScore::text").\
                          extract_first()
 
-        return score.replace(' ', '').\
-                             split("-") if score else [None, None]
+        if not score:
+            score = game.css("td[align='center']::text").\
+                         extract_first()
+
+        if score:
+            goals = score.replace(' ', '').split("-")
+            if len(goals) == 2: return goals
+
+        return [None, None]
