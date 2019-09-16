@@ -183,7 +183,7 @@ class FivethirtyeightParser:
                                       tournament.id, self.get_time(date),
                                       venue, goals_for, goals_against,
                                       xg_for, xg_against)
-        print(game_data)
+        print(game_data, team, opponent)
         Game.insert(game_data)
 
     def season_date_range(self, _range: dict):

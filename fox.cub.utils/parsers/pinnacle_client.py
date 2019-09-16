@@ -7,6 +7,7 @@ import json
 import ssl
 import sys
 import functools
+import argparse
 from collections import namedtuple
 
 from base64 import b64encode
@@ -71,15 +72,16 @@ class PinnacleApi:
     odds_v1 = '/v1/odds?sportId={0}&leagueIds={1}&oddsFormat={2}'
     fixtures_v1 = '/v1/fixtures?sportId={0}&leagueIds={1}'
 
-    def __init__(self, username, password):
+    def __init__(self, username, password, incremental_updates):
         self.username = username
         self.password = password
+        self.incremental_updates = incremental_updates
 
         self.leagues_list, self.last_since_id = {}, {}
         self.init_data()
 
 
-    LEAGUES       = property(lambda self: '1977, 1980, 2663, 1842, 2635')
+    LEAGUES       = property(lambda self: '1977, 1980, 2663, 1842, 2635, 2627, 2630, 1843, 1957')
     SPORT_ID      = property(lambda self: '29')
     FIND_TEAM_BY  = property(lambda self: 'pinnacle_name')
     FIND_TOURN_BY = property(lambda self: 'pinnacle_id')
@@ -200,6 +202,9 @@ class PinnacleApi:
 
 
     def close(self):
+        if self.incremental_updates:
+            pinnacle.update_last_requests()
+
         self.http.close()
 
 
@@ -215,8 +220,9 @@ class PinnacleApi:
                 t_id = str(tournament['_id'])
                 self.leagues_list[l_id] = League(t_id, Team.find(t_id))
 
-        # upload latest fixture and odds since ID
-        self.last_since_id = Pinnacle.get()
+        if self.incremental_updates:
+            # upload latest fixture and odds since ID
+            self.last_since_id = Pinnacle.get()
 
 
     def get_fixture_ids(self, league_id, fixture: Fixture):
@@ -278,15 +284,21 @@ class PinnacleApi:
         Pinnacle.insert(document)
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-u', required=True, type=str,
+                        help='Pinnacle user ID.')
+    parser.add_argument('-p', required=True, type=str,
+                        help='Pinnacle Password')
+    parser.add_argument('-incr', default=True, action='store_false',
+                        help='Disable incremental updates.')
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
+    args = parse_args()
 
-    if len(sys.argv) < 3:
-        raise Exception("Please, put your Pinnacle credentials!")
-
-    user_id = sys.argv[1]
-    user_pwd = sys.argv[2]
-
-    pinnacle = PinnacleApi(user_id, user_pwd)
+    pinnacle = PinnacleApi(args.u, args.p, args.incr)
     pool = gevent.pool.Pool(20)
 
     fixtures = pool.spawn(pinnacle.get_fixture,
@@ -304,5 +316,4 @@ if __name__ == '__main__':
     if odds.value:
         Odds.insert_many(odds.value)
 
-    pinnacle.update_last_requests()
     pinnacle.close()
