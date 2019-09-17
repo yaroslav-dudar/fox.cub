@@ -7,7 +7,7 @@
                 v-bind:value='t._id.$oid'> {{t.name}}
             </option>
         </select>
-        <h3>Tournament Odds:</h3>
+        <h3>Tournament Fixtures:</h3>
         <fixtures
             v-bind:fixtures="fixtures">
         </fixtures>

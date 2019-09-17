@@ -21,7 +21,8 @@ import fox.cub.router.{
     UserNotes => RouterUserNotes,
     StatisticalModel => RouterModel,
     Fixtures => RouterFixtures,
-    Odds => RouterOdds
+    Odds => RouterOdds,
+    Market => RouterMarket
 }
 
 /**
@@ -69,9 +70,16 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
         .handler(RouterModel.trainModel)
 
     router.get("/api/v1/fixtures")
-        .handler(RouterFixtures.getFixtures)
+        .handler(RouterFixtures.getUpcomingFixtures)
     router.get("/api/v1/fixtures/:tournament_id")
-        .handler(RouterFixtures.getFixtures)
+        .handler(RouterFixtures.getUpcomingFixtures)
+
+    router.get("/api/v1/market/tournaments")
+        .handler(RouterMarket.getTournaments)
+    router.get("/api/v1/market/teams")
+        .handler(RouterMarket.getTournamentTeams)
+    router.get("/api/v1/market/fixtures")
+        .handler(RouterMarket.getFixtures)
 
     router.get("/api/v2/odds")
         .handler(RouterOdds.getOddsValidator.handle)

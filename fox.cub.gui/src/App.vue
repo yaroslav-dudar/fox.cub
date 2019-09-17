@@ -1,9 +1,10 @@
 <template>
   <div id="app">
     <div id="nav">
-      <router-link to="/">Tournaments List</router-link> |
+      <router-link to="/">Upcoming fixtures</router-link> |
       <router-link to="/test">Manual Testing</router-link> |
       <router-link to="/howto">How To Manual</router-link> |
+      <router-link to="/market">Odds market</router-link> |
     </div>
     <router-view/>
   </div>

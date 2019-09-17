@@ -6,6 +6,8 @@ import Game from './views/Game.vue'
 import Team from './views/Team.vue'
 import ManualTest from './views/ManualTest.vue'
 import HowTo from './views/HowTo.vue'
+import OverallMarket from './views/OverallMarket.vue'
+import SingleMarket from './views/SingleMarket.vue'
 
 Vue.use(Router)
 
@@ -37,6 +39,16 @@ export default new Router({
       path: '/howto',
       name: 'how_to',
       component: HowTo
+    },
+    {
+      path: '/market',
+      name: 'market',
+      component: OverallMarket
+    },
+    {
+      path: '/single_market',
+      name: 'single_market',
+      component: SingleMarket
     }
   ]
 })

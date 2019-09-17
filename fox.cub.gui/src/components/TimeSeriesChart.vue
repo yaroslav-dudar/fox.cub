@@ -6,17 +6,9 @@
 </template>
 
 <script>
-import { mapGetters } from "vuex";
 import {Chart} from 'highcharts-vue'
-import {OddsMixin} from '@/mixins/OddsMixin'
-
 export default {
-    mixins: [OddsMixin],
-    computed: {
-        ...mapGetters([
-            "odds"
-        ])
-    },
+    props: ['data', 'title'],
     components: {
         highcharts: Chart
     },
@@ -24,33 +16,33 @@ export default {
         getChartData() {
             return {
                 title: {
-                    text: "Game odds"
+                    text: this.title
                 },
                 xAxis: {
                     type: 'datetime',
                 },
+                yAxis: {
+                    title: {
+                        text: 'Exchange rate'
+                    }
+                },
                 chart: {
+                    type: 'spline',
                     zoomType: 'x'
                 },
                 series: [{
-                    name: 'Home Win',
-                    data: this.getMoneylineSeries("home")
-                }, {
-                    name: 'Draw',
-                    data: this.getMoneylineSeries("draw")
-                }, {
-                    name: 'Away Win',
-                    data: this.getMoneylineSeries("away")
-                }, {
-                    name: 'Total Under',
-                    data: this.getTotalSeries("under")
-                }, {
-                    name: 'Total Over',
-                    data: this.getTotalSeries("over")
+                    name: 'Odds',
+                    data: this.data,
                 }],
 
                 plotOptions: {
-                    series: {
+                    area: {
+                        fillColor: {
+                            linearGradient: {
+                                x1: 0, y1: 0,
+                                x2: 0, y2: 1
+                            }
+                        },
                         marker: {
                             radius: 2,
                             enabled: true

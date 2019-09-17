@@ -3,7 +3,11 @@ import App from './App.vue'
 import router from './router'
 import store from './store/index'
 
-import { FETCH_TOURNAMENTS, FETCH_PPG_TABLE } from "./store/actions.type";
+import {
+  FETCH_TOURNAMENTS,
+  FETCH_PPG_TABLE,
+  FETCH_MARKET_TOURNAMENTS
+} from "./store/actions.type";
 
 import VueResource from 'vue-resource';
 import HighchartsVue from 'highcharts-vue'
@@ -20,6 +24,7 @@ new Vue({
   render: h => h(App),
 
   created: function () {
+    store.dispatch(FETCH_MARKET_TOURNAMENTS);
     store.dispatch(FETCH_TOURNAMENTS).then(tournaments => {
       tournaments.map(t => store.dispatch(FETCH_PPG_TABLE,
                                           t._id.$oid));

@@ -22,11 +22,11 @@ db.team.insertMany( [
     { name: "Holstein Kiel", news_feed: [], market_value: 0 , tournaments: [bundesiga2_19_20._id.valueOf()], fivethirtyeight_name: "Holstein Kiel", pinnacle_name: ["Holstein Kiel"]},
     { name: "St Pauli", news_feed: [], market_value: 0 , tournaments: [bundesiga2_19_20._id.valueOf()], fivethirtyeight_name: "FC St. Pauli", pinnacle_name: ["St Pauli"]},
     { name: "Hannover 96", news_feed: [], market_value: 0 , tournaments: [bundesiga2_19_20._id.valueOf()], fivethirtyeight_name: "Hannover 96", pinnacle_name: ["Hannover 96"]},
-    { name: "Nurnberg", news_feed: [], market_value: 0 , tournaments: [bundesiga2_19_20._id.valueOf()], fivethirtyeight_name: "1. FC N├╝rnberg", pinnacle_name: ["Nurnberg"]},
+    { name: "Nurnberg", news_feed: [], market_value: 0 , tournaments: [bundesiga2_19_20._id.valueOf()], fivethirtyeight_name: "1. FC Nürnberg", pinnacle_name: ["Nurnberg"]},
     { name: "Osnabruck", news_feed: [], market_value: 0 , tournaments: [bundesiga2_19_20._id.valueOf()], fivethirtyeight_name: "VfL Osnabruck", pinnacle_name: ["Osnabruck"]},
     { name: "Bochum", news_feed: [], market_value: 0 , tournaments: [bundesiga2_19_20._id.valueOf()], fivethirtyeight_name: "VfL Bochum", pinnacle_name: ["Bochum"]},
     { name: "SV Sandhausen 1916", news_feed: [], market_value: 0 , tournaments: [bundesiga2_19_20._id.valueOf()], fivethirtyeight_name: "SV Sandhausen", pinnacle_name: ["SV Sandhausen 1916"]},
     { name: "Erzgebirge Aue", news_feed: [], market_value: 0 , tournaments: [bundesiga2_19_20._id.valueOf()], fivethirtyeight_name: "Erzgebirge Aue", pinnacle_name: ["Erzgebirge Aue"]},
     { name: "Jahn Regensburg", news_feed: [], market_value: 0 , tournaments: [bundesiga2_19_20._id.valueOf()], fivethirtyeight_name: "Jahn Regensburg", pinnacle_name: ["Jahn Regensburg"]},
-    { name: "Greuther Furth", news_feed: [], market_value: 0 , tournaments: [bundesiga2_19_20._id.valueOf()], fivethirtyeight_name: "SpVgg Greuther F├╝rth", pinnacle_name: ["Greuther Furth"]}
+    { name: "Greuther Furth", news_feed: [], market_value: 0 , tournaments: [bundesiga2_19_20._id.valueOf()], fivethirtyeight_name: "SpVgg Greuther Fürth", pinnacle_name: ["Greuther Furth"]}
     ])

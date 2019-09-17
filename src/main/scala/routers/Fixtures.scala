@@ -14,7 +14,7 @@ import fox.cub.model
 
 object Fixtures {
 
-    def getFixtures(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
+    def getUpcomingFixtures(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
         var response = context.response
         var tournamentId = context.request.getParam("tournament_id")
         var query = model.Fixtures.getRecent(tournamentId)

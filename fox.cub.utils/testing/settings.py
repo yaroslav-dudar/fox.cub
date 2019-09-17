@@ -8,8 +8,11 @@ EPL = DatasetAggregator(ObservationDataset('leagues/epl.json'))
 MLS = DatasetAggregator(ObservationDataset('leagues/mls.json'))
 CHAMPIONSHIP = DatasetAggregator(ObservationDataset('leagues/efl_championship.json'))
 LEAGUE_1 = DatasetAggregator(ObservationDataset('leagues/efl_league1.json'))
+LEAGUE_2 = DatasetAggregator(ObservationDataset('leagues/efl_league2.json'))
 BUNDESLIGA = DatasetAggregator(ObservationDataset('leagues/bundesliga.json'))
 BUNDESLIGA2 = DatasetAggregator(ObservationDataset('leagues/bundesliga2.json'))
+CHAMPIONS_LEAGUE = DatasetAggregator(ObservationDataset('international/champions_league_group.json'))
+EUROPA_LEAGUE = DatasetAggregator(ObservationDataset('international/europa_league_group.json'))
 
 FA_CUP = DatasetAggregator(
     ObservationDataset('cups/fa_cup.json'),
@@ -40,7 +43,10 @@ CONFIG = {
     'bundesliga2': BUNDESLIGA2,
     "championship": CHAMPIONSHIP,
     "league1": LEAGUE_1,
+    "league2": LEAGUE_2,
     "fa_cup": FA_CUP,
     "league_cup": LEAGUE_CUP,
-    'eu_qualific': EU_QUALIFICATION
+    'eu_qualific': EU_QUALIFICATION,
+    'champions_league': CHAMPIONS_LEAGUE,
+    'europa_league': EUROPA_LEAGUE
 }

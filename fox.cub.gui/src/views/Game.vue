@@ -17,7 +17,7 @@
             </div>
             <div class="pure-u-1-3">
                 <h3>Game Odds History:</h3>
-                <game-odds v-bind:odds_history="odds"></game-odds>
+                <game-odds></game-odds>
             </div>
         </div>
         <br>
