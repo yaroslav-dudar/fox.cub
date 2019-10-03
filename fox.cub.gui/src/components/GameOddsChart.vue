@@ -37,16 +37,20 @@ export default {
                     data: this.getMoneylineSeries("home")
                 }, {
                     name: 'Draw',
-                    data: this.getMoneylineSeries("draw")
+                    data: this.getMoneylineSeries("draw"),
+                    visible: false
                 }, {
                     name: 'Away Win',
-                    data: this.getMoneylineSeries("away")
+                    data: this.getMoneylineSeries("away"),
+                    visible: false
                 }, {
                     name: 'Total Under',
-                    data: this.getTotalSeries("under")
+                    data: this.getTotalSeries("under"),
+                    visible: false
                 }, {
                     name: 'Total Over',
-                    data: this.getTotalSeries("over")
+                    data: this.getTotalSeries("over"),
+                    visible: false
                 }],
 
                 plotOptions: {

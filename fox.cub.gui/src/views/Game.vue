@@ -17,7 +17,7 @@
             </div>
             <div class="pure-u-1-3">
                 <h3>Game Odds History:</h3>
-                <game-odds></game-odds>
+                <game-odds-chart></game-odds-chart>
             </div>
         </div>
         <br>
@@ -90,7 +90,7 @@
 import { mapGetters } from "vuex";
 import router from '@/router'
 
-import GameOdds from '@/components/GameOdds.vue'
+import GameOddsChart from '@/components/GameOddsChart.vue'
 import TeamResults from '@/components/TeamResults.vue'
 import TeamStats from '@/components/TeamStats.vue'
 import AppSettings from '@/components/AppSettings.vue'
@@ -134,10 +134,10 @@ export default {
         }
     },
     components: {
-        GameOdds,
         TeamResults,
         TeamStats,
         AppSettings,
+        GameOddsChart,
         LastGamesChart,
         ScheduleChart,
         RollingTrendChart

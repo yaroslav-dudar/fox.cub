@@ -96,7 +96,12 @@ object Fixtures {
 
     def getAll(tournamentName: String): QueryEvent = {
         val filter = Json.obj(("tournament_name", tournamentName))
-        val query = new JsonObject().put("find", Collection).put("filter", filter)
+        val sort = Json.obj(("date", 1))
+
+        val query = new JsonObject().put("find", Collection)
+            .put("filter", filter)
+            .put("sort", sort)
+
         QueryEvent("find", query)
     }
 }

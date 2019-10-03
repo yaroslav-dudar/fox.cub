@@ -8,7 +8,7 @@
             </option>
         </select>
         <market-fixtures
-            v-bind:fixtures="fixtures">
+            v-bind:fixtures="fixture_groups">
         </market-fixtures>
     </div>
 </template>
@@ -17,12 +17,16 @@
 import { mapGetters } from "vuex";
 
 import MarketFixtures from '@/components/MarketFixtures.vue'
+import {FixtureMixin} from '@/mixins/FixtureMixin'
+
 import {
     FETCH_MARKET_FIXTURES
 } from '@/store/actions.type'
 
 export default {
     name: 'OverallMarket',
+
+    mixins: [FixtureMixin],
 
     computed: {
         ...mapGetters([
@@ -32,17 +36,31 @@ export default {
 
     data: function() {
         return {
-            tournament: ''
+            tournament: '',
+            fixture_groups: {}
         }
     },
     components: {
         MarketFixtures
     },
 
+    watch: {
+        'fixtures': {
+            handler: function() {
+                this.fixture_groups = this.groupByDate();
+            },
+            deep: true
+        }
+    },
+
     methods: {
         onChange() {
             this.$store.dispatch(FETCH_MARKET_FIXTURES, this.tournament);
         }
+    },
+
+    created() {
+        this.fixture_groups = this.groupByDate();
     }
 }
 </script>

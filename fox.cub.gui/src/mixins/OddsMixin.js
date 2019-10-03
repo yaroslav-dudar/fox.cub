@@ -1,8 +1,8 @@
 export const OddsMixin = {
     methods: {
         getOptimalTotalPoints() {
-          if (this.odds.length < 0) return;
-          return this.odds[0].totals[0].points;
+            if (this.odds.length < 0) return;
+            return this.odds[0].totals[0].points;
         },
         getTotalSeries(total = "over") {
             let optimal_points = this.getOptimalTotalPoints();

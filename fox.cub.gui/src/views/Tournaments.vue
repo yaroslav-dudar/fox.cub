@@ -9,7 +9,7 @@
         </select>
         <h3>Tournament Fixtures:</h3>
         <fixtures
-            v-bind:fixtures="fixtures">
+            v-bind:fixtures="fixture_groups">
         </fixtures>
     </div>
 </template>
@@ -18,6 +18,8 @@
 import { mapGetters } from "vuex";
 
 import Fixtures from '@/components/Fixtures.vue'
+import {FixtureMixin} from '@/mixins/FixtureMixin'
+
 import {
     SELECT_TOURNAMENT,
     FETCH_FIXTURES,
@@ -27,6 +29,7 @@ import {
 export default {
     name: 'Tournaments',
 
+    mixins: [FixtureMixin],
     computed: {
         ...mapGetters([
             "tournaments", "ppg_table",
@@ -37,11 +40,21 @@ export default {
 
     data: function() {
         return {
-            tournament: ''
+            tournament: '',
+            fixture_groups: {}
         }
     },
     components: {
         Fixtures
+    },
+
+    watch: {
+        'fixtures': {
+            handler: function() {
+                this.fixture_groups = this.groupByDate();
+            },
+            deep: true
+        }
     },
 
     methods: {
@@ -53,6 +66,10 @@ export default {
             this.$store.dispatch(FETCH_FIXTURES, this.selected_tournament);
             this.$store.dispatch(FETCH_TEAMS, this.selected_tournament);
         }
+    },
+
+    created() {
+        this.fixture_groups = this.groupByDate();
     }
 }
 </script>

@@ -20,7 +20,11 @@ object Odds {
         val filter = Json.obj(("fixture_id",
                                Json.obj(("$in", fixtureIds))))
 
-        val query = new JsonObject().put("find", Collection).put("filter", filter)
+        val query = new JsonObject()
+            .put("find", Collection)
+            .put("filter", filter)
+            .put("batchSize", 250)
+
         QueryEvent("find", query)
     }
 }

@@ -7,7 +7,7 @@ db.tournament.update({ name: "MLS 2019" }, { $set: { pinnacle_id: 2663 } });
 
 db.team.update({name: "Houston Dynamo"}, {$set : {pinnacle_name: ["Houston Dynamo"]}}, { upsert: false });
 db.team.update({name: "DC United"}, {$set : {pinnacle_name: ["D.C. United"]}}, { upsert: false });
-db.team.update({name: "Los Angeles FC"}, {$set : {pinnacle_name: ["Los Angeles FC"]}}, { upsert: false });
+db.team.update({name: "Los Angeles FC"}, {$set : {pinnacle_name: ["Los Angeles FC", "Los Angeles Fc"]}}, { upsert: false });
 db.team.update({name: "New York Red Bulls"}, {$set : {pinnacle_name: ["New York Red Bulls"]}}, { upsert: false });
 db.team.update({name: "L.A. Galaxy"}, {$set : {pinnacle_name: ["Los Angeles Galaxy"]}}, { upsert: false });
 db.team.update({name: "Chicago"}, {$set : {pinnacle_name: ["Chicago Fire"]}}, { upsert: false });
