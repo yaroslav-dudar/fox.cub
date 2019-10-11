@@ -155,16 +155,17 @@ class PinnacleApi:
                 event = Event(**ev)
                 period = self.get_full_game_period(event)
                 if not period: continue
+                period = self.modify_odds_moneyline(period)
                 # ignore special odds
                 if not all([period.spreads,
                             period.moneyline,
                             period.totals]): continue
 
                 document = Odds.get_document(event.id,
-                                                  datetime.utcnow(),
-                                                  period.spreads,
-                                                  period.moneyline,
-                                                  period.totals)
+                                             datetime.utcnow(),
+                                             period.spreads,
+                                             period.moneyline,
+                                             period.totals)
 
                 odds_list.append(document)
         except KeyError:
@@ -283,6 +284,13 @@ class PinnacleApi:
                                          self.last_since_id['last_odds'])
         Pinnacle.insert(document)
 
+    def modify_odds_moneyline(self, period):
+        """ Add dummy moneyline if missing. """
+        if not period.moneyline:
+            period = period._replace(moneyline = {"home" : 0,
+                                                  "away" : 0,
+                                                  "draw" : 0 })
+        return period
 
 def parse_args():
     parser = argparse.ArgumentParser()

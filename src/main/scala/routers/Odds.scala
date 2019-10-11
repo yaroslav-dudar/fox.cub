@@ -40,4 +40,30 @@ object Odds {
             }
         }
     }
+
+    /**
+     * Calculate difference between open and closing lines
+     */
+    def getDiff(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
+        var response = context.response
+        // fetching input list of fixture ids
+        var fixtureIds = context.request
+            .params()
+            .getAll("fixture_id")
+            .map(f => f.toInt)
+
+        var query = model.Odds.getDiff(fixtureIds)
+
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+            case Success(result) => {
+                val json = result.body.result
+                logger.info(context.request.path.get)
+                jsonResponse(response, json)
+            }
+            case Failure(cause) => {
+                logger.error(cause.getStackTraceString)
+                errorResponse(context.response, cause.toString, 500)
+            }
+        }
+    }
 }

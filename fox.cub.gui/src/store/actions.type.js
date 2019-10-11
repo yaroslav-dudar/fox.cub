@@ -6,6 +6,7 @@ export const SELECT_TOURNAMENT = "selectTournament";
 export const FETCH_PPG_TABLE = "fetchPPGTable";
 
 export const FETCH_ODDS = "fetchOdds";
+export const FETCH_ODDS_DIFF = "fetchOddsDiff";
 export const FETCH_GAMES = "fetchGames";
 
 export const FETCH_STATS = "fetchStats";

@@ -85,6 +85,10 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
         .handler(RouterOdds.getOddsValidator.handle)
         .handler(RouterOdds.getOdds)
 
+    router.get("/api/v2/odds/diff")
+        .handler(RouterOdds.getOddsValidator.handle)
+        .handler(RouterOdds.getDiff)
+
     def router = _router
 
     /**

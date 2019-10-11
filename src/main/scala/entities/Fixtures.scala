@@ -101,6 +101,7 @@ object Fixtures {
         val query = new JsonObject().put("find", Collection)
             .put("filter", filter)
             .put("sort", sort)
+            .put("batchSize", 250)
 
         QueryEvent("find", query)
     }
