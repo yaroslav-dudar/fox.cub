@@ -77,7 +77,7 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
     router.get("/api/v1/market/tournaments")
         .handler(RouterMarket.getTournaments)
     router.get("/api/v1/market/teams")
-        .handler(RouterMarket.getTournamentTeams)
+        .handler(RouterMarket.getTeams)
     router.get("/api/v1/market/fixtures")
         .handler(RouterMarket.getFixtures)
 

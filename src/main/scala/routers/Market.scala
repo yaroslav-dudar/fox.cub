@@ -14,7 +14,7 @@ import fox.cub.model
 
 object Market {
 
-    def getTournamentTeams(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
+    def getTeams(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
         var response = context.response
         var tournamentName = context.request.getParam("tournament")
         var query = model.Fixtures.getTeams(tournamentName.get)
@@ -35,7 +35,8 @@ object Market {
     def getFixtures(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
         var response = context.response
         var tournamentName = context.request.getParam("tournament")
-        var query = model.Fixtures.getAll(tournamentName.get)
+        var teamName = context.request.getParam("team")
+        var query = model.Fixtures.getAll(tournamentName.get, teamName)
 
         val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
             case Success(result) => {

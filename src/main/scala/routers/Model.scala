@@ -28,11 +28,8 @@ import fox.cub.net.MLPNet
 import fox.cub.internals.{QueryEvent, ResultEvent}
 
 object StatisticalModel {
-
-    val modelTypes = List("btts", "totals", "scoreline")
-
     val trainModelValidator = new HttpRequestValidator()
-        .addQueryParam("type", new EnumValidator(modelTypes))
+        .addQueryParam("type", new EnumValidator(model.TournamentModel.modelTypes))
         .addQueryParam("model_id", new MongoIdValidator)
         .addQueryParam("labels", new RegexValidator("^[0-9]+$"))
         .addQueryParam("inputs", new RegexValidator("^[0-9]+$"))
@@ -61,11 +58,11 @@ object StatisticalModel {
 
         val modelId = model.TournamentModel.getTournamentModel(tournamentId.get).get
         var totalDist = MLPNet.predict(teamsScoring,
-                                       model.TournamentModel.getTotalsModel(modelId))
+                                       model.TournamentModel.getModel(modelId, "totals"))
         var scorelineDist = MLPNet.predict(teamsScoring,
-                                           model.TournamentModel.getScorelineModel(modelId))
+                                           model.TournamentModel.getModel(modelId, "scoreline"))
         var bttsDist = MLPNet.predict(teamsScoring,
-                                      model.TournamentModel.getBttsModel(modelId))
+                                      model.TournamentModel.getModel(modelId, "btts"))
 
         var bEv = new BettingEvents(scorelineDist, totalDist, bttsDist)
         var statsJson = Json.obj(bEv.getEventsList: _*)

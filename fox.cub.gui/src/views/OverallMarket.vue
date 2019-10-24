@@ -1,9 +1,16 @@
 <template>
     <div>
         <h3>Select Tournament</h3>
-        <select v-model="tournament" @change="onChange()">
+        <select v-model="tournament" @change="onChangeTournament()">
             <option
                 v-for="t in market_tournaments" :key="t"
+                v-bind:value='t'> {{t}}
+            </option>
+        </select>
+        <hr>
+        <select v-model="team" @change="onChangeTeam()">
+            <option
+                v-for="t in market_teams" :key="t"
                 v-bind:value='t'> {{t}}
             </option>
         </select>
@@ -20,7 +27,8 @@ import MarketFixtures from '@/components/MarketFixtures.vue'
 import {FixtureMixin} from '@/mixins/FixtureMixin'
 
 import {
-    FETCH_MARKET_FIXTURES
+    FETCH_MARKET_FIXTURES,
+    FETCH_MARKET_TEAMS
 } from '@/store/actions.type'
 
 export default {
@@ -30,13 +38,15 @@ export default {
 
     computed: {
         ...mapGetters([
-            "market_tournaments", "fixtures"
+            "market_tournaments", "fixtures",
+            "market_teams"
         ])
     },
 
     data: function() {
         return {
             tournament: '',
+            team: '',
             fixture_groups: {}
         }
     },
@@ -54,8 +64,14 @@ export default {
     },
 
     methods: {
-        onChange() {
-            this.$store.dispatch(FETCH_MARKET_FIXTURES, this.tournament);
+        onChangeTournament() {
+            this.$store.dispatch(FETCH_MARKET_TEAMS, this.tournament);
+        },
+        onChangeTeam() {
+            this.$store.dispatch(FETCH_MARKET_FIXTURES, {
+                tournament: this.tournament,
+                team: this.team
+            });
         }
     },
 

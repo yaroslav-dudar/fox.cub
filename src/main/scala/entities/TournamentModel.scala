@@ -14,6 +14,8 @@ import java.util.Base64
 object TournamentModel {
     private val Collection = "tournament_model"
     private val logger = ScalaLogger.getLogger(this.getClass.getName)
+    val modelTypes = List("btts", "totals", "scoreline",
+                          "bttsLive", "totalsLive", "scorelineLive")
 
     // collection of tournament id and appropriate model id
     var tournamentModels = scala.collection.mutable.Map[String, String]()
@@ -36,13 +38,13 @@ object TournamentModel {
     */
     def setupModel(modelJson: JsonObject) {
         val modelId = modelJson.getJsonObject("_id").getString("$oid")
-        val bttsModel = modelJson.getJsonObject("btts").getString("$binary")
-        val totalModel = modelJson.getJsonObject("totals").getString("$binary")
-        val scorelineModel = modelJson.getJsonObject("scoreline").getString("$binary")
 
-        MLPNet.loadModel(getBttsModel(modelId), Base64.getDecoder().decode(bttsModel))
-        MLPNet.loadModel(getTotalsModel(modelId), Base64.getDecoder().decode(totalModel))
-        MLPNet.loadModel(getScorelineModel(modelId), Base64.getDecoder().decode(scorelineModel))
+        modelTypes.foreach(_type => {
+            if (!modelJson.containsKey(_type)) return;
+            val model = modelJson.getJsonObject(_type).getString("$binary")
+            MLPNet.loadModel(getModel(modelId, _type),
+                             Base64.getDecoder().decode(model))
+        })
     }
 
     /**
@@ -58,11 +60,7 @@ object TournamentModel {
         QueryEvent("update", query)
     }
 
-    def getBttsModel(modelId: String) = modelId + ".btts"
-
-    def getScorelineModel(modelId: String) = modelId + ".scoreline"
-
-    def getTotalsModel(modelId: String) = modelId + ".totals"
+    def getModel(modelId: String, modelType: String) = s"$modelId.$modelType"
 
     /**
      * Upload statistical model from DB to app memory

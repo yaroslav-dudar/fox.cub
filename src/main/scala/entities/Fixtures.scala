@@ -94,9 +94,15 @@ object Fixtures {
         QueryEvent("aggregate", query)
     }
 
-    def getAll(tournamentName: String): QueryEvent = {
+    def getAll(tournamentName: String, teamName: Option[String] = None): QueryEvent = {
         val filter = Json.obj(("tournament_name", tournamentName))
         val sort = Json.obj(("date", 1))
+
+        if (teamName != None) {
+            val nameQuery = Json.arr(Json.obj(("home_name", teamName.get)),
+                                     Json.obj(("away_name", teamName.get)))
+            filter.put("$or", nameQuery )
+        }
 
         val query = new JsonObject().put("find", Collection)
             .put("filter", filter)
