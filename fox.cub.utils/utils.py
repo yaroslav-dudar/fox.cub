@@ -86,8 +86,9 @@ class Season:
     def __init__(self, games: List[Game]):
         self.games = games
 
-    def get_teams(self):
-        return list(set([g.AwayTeam for g in self.games]))
+    def get_teams(self, games: List[Game] = None):
+        games = self.games if not games else games
+        return list(set([g.AwayTeam for g in games]))
 
     def is_empty(self):
         return len(self.games) == 0
@@ -124,6 +125,33 @@ class Season:
             table[t] = count
 
         return OrderedDict(sorted(table.items(), key=lambda t: t[1], reverse=True))
+
+    def get_group_tables(self, metric='points'):
+        groups = {}
+        print(self.get_groups())
+        for group in self.get_groups():
+            table = {}
+            group_games = self.get_group_games(group)
+            teams = self.get_teams()
+
+            for t in teams:
+                games = filter(lambda g: t in [g.HomeTeam, g.AwayTeam], group_games)
+                count = 0
+                for g in games:
+                    if metric == 'points':
+                        count += g.get_team_points(t)
+                    elif metric == 'scored':
+                        count += g.get_team_goals(t, True)
+                    elif metric == 'conceded':
+                        count += g.get_team_goals(t, False)
+
+                table[t] = count
+
+            groups[group] = OrderedDict(sorted(table.items(),
+                                               key=lambda t: t[1],
+                                               reverse=True))
+
+        return groups
 
     @functools.lru_cache(maxsize=32)
     def get_team_scores(self, team, include_home=True, include_away=True):

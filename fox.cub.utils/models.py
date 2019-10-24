@@ -278,12 +278,17 @@ class Game(metaclass=BaseModel):
 
     @classmethod
     def find_one(cls, team, opponent, tournament, venue):
-        return cls.db_context.find_one({
+        return cls.db_context.find_one(
+            cls.find_query(team, opponent, tournament, venue))
+
+    @classmethod
+    def find_query(cls, team, opponent, tournament, venue):
+        return {
             'team': team,
             'opponent': opponent,
             'venue': venue,
             'tournament': tournament
-        })
+        }
 
     @classmethod
     def find_all(cls, tournament):
@@ -294,3 +299,9 @@ class Game(metaclass=BaseModel):
         return cls.db_context.update({'_id': game_id},
                                      {'$set': with_data},
                                      upsert=False)
+
+    @classmethod
+    def upsert(cls, query, with_data):
+        return cls.db_context.update(query,
+                                     {'$set': with_data},
+                                     upsert=True)

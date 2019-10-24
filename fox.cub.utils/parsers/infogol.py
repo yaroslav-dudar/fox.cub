@@ -19,7 +19,6 @@ class InfogolSpider(scrapy.Spider):
         "(KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36"
     )
 
-    mode = 'create' # update or create
     FIND_TOURN_BY = property(lambda self: 'name')
     DATE_FORMAT   = property(lambda self: "%Y-%m-%dT%H:%M:%S")
 
@@ -85,8 +84,6 @@ class InfogolSpider(scrapy.Spider):
         and team subscribed to infogol parser
         """
 
-        callback = self.parse_and_update if self.mode == 'update' else self.parse_and_add
-
         for name, tournament in self.leagues_list.items():
             # fetch results for each team in a tournament
             for team in tournament.teams:
@@ -97,7 +94,7 @@ class InfogolSpider(scrapy.Spider):
 
                 yield scrapy.http.FormRequest(
                     url=team_url,
-                    callback=callback,
+                    callback=self.parse_and_add,
                     headers={
                         'User-Agent': self.user_agent,
                         'Content-Type': 'application/x-www-form-urlencoded'
@@ -122,70 +119,25 @@ class InfogolSpider(scrapy.Spider):
             venue = 'home' if res['HomeTeamID'] == infogol_team_id else 'away'
 
             if venue == 'home':
-                game = self.get_game(res['HomeTeamID'],
-                                        res['AwayTeamID'],
-                                        venue,
-                                        tournament)
-
                 goals_for, goals_against = res['HomeTeamGoals'], res['AwayTeamGoals']
                 xg_for, xg_against = res[self.HOME_XG], res[self.AWAY_XG]
                 team_id = self.get_team_id(tournament, res['HomeTeamID'])
                 opponent_id = self.get_team_id(tournament, res['AwayTeamID'])
+                query = Game.find_query(team_id, opponent_id, tournament.id, venue)
             else:
-                game = self.get_game(res['AwayTeamID'],
-                                     res['HomeTeamID'],
-                                     venue,
-                                     tournament)
-
                 goals_for, goals_against = res['AwayTeamGoals'], res['HomeTeamGoals']
                 xg_for, xg_against = res[self.AWAY_XG], res[self.HOME_XG]
                 team_id = self.get_team_id(tournament, res['AwayTeamID'])
                 opponent_id = self.get_team_id(tournament, res['HomeTeamID'])
-            # ignore result if game already exists
-            if game:
-                continue
+                query = Game.find_query(team_id, opponent_id, tournament.id, venue)
 
-            game_data = Game.get_document(team_id, opponent_id,
+            upd_data = Game.get_document(team_id, opponent_id,
                                           tournament.id,
                                           self.get_time(res['MatchDateTime']),
                                           venue, goals_for, goals_against,
                                           xg_for, xg_against)
-            Game.insert(game_data)
 
-
-    def parse_and_update(self, response):
-        """ Find all games in db and update them """
-
-        results = json.loads(response.body.decode("utf-8"))
-        team_id = response.request.meta['team_id']
-        tournament = response.request.meta['tournament']
-
-        for res in results:
-            venue = 'home' if res['HomeTeamID'] == team_id else 'away'
-            if venue == 'home':
-                game = self.get_game(res['HomeTeamID'],
-                                        res['AwayTeamID'],
-                                        venue,
-                                        tournament)
-                upd_with = {
-                    'xG_for': res[self.HOME_XG],
-                    'xG_against': res[self.AWAY_XG]
-                }
-            else:
-                game = self.get_game(res['AwayTeamID'],
-                                        res['HomeTeamID'],
-                                        venue,
-                                        tournament)
-                upd_with = {
-                    'xG_for': res[self.AWAY_XG],
-                    'xG_against': res[self.HOME_XG]
-                }
-
-            # ignore result if game not found
-            if not game:
-                continue
-
-            Game.update(str(game['_id']), upd_with)
+            Game.upsert(query, upd_data)
 
 
     def get_team_by_id(self, id, tournament: League):
@@ -193,23 +145,6 @@ class InfogolSpider(scrapy.Spider):
             lambda t: t.get(self.config["find_team_by"]) == id,
             tournament.teams)
         )
-
-
-    def get_game(self, team_value, opponent_value, venue, tournament: League):
-        team_id = Team.get_id(
-            team_value,
-            self.config["find_team_by"],
-            tournament.teams,
-            False)
-
-        opponent_id = Team.get_id(
-            opponent_value,
-            self.config["find_team_by"],
-            tournament.teams,
-            False)
-
-        game = Game.find_one(team_id, opponent_id, tournament.id, venue)
-        return game if game else None
 
 
     def get_time(self, date_str):
