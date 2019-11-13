@@ -17,6 +17,7 @@ div.content ul {
                 <li>Review player injuries and suspensions</li>
                 <li>Define teams motivation and fatigue</li>
                 <li>Easy or Hard matchup. Compare team styles</li>
+                <li>Betting market behavior for each team</li>
                 <li>Review trends for each team</li>
                 <li>Predict how managers will approach the game</li>
                 <li>Review weather forecast</li>

@@ -4,6 +4,7 @@ export const SELECT_FIXTURE = "selectFixture";
 export const FETCH_TOURNAMENTS = "fetchTournaments";
 export const SELECT_TOURNAMENT = "selectTournament";
 export const FETCH_PPG_TABLE = "fetchPPGTable";
+export const FETCH_HOME_ADV = "fetchHomeAdv";
 
 export const FETCH_ODDS = "fetchOdds";
 export const FETCH_ODDS_DIFF = "fetchOddsDiff";

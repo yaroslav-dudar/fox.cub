@@ -4,9 +4,11 @@
 
 <script>
 import {Chart} from 'highcharts-vue'
+import {TournamentMixin} from '@/mixins/TournamentMixin'
 
 export default {
     props: ['games', 'size', 'ppg_table'],
+    mixins: [TournamentMixin],
     components: {
         highcharts: Chart
     },
@@ -15,8 +17,9 @@ export default {
             var points = this.games.map(
                 (v, i) => this.games.slice(0,i+1).slice(-this.size));
 
-            var opponents_schedule = points.map(batch => batch.reduce(
-                (a, b) => +a + +this.getTeamPPG(b.opponent[0]._id.$oid,
+            var opponents_strength = points.map(batch => batch.reduce(
+                (a, b) => +a + +this.getTeamPPG(this.ppg_table,
+                                                b.opponent[0]._id.$oid,
                                                 b.tournament), 0) / batch.length)
 
             return {
@@ -27,22 +30,12 @@ export default {
                 },
                 series: [{
                     name: 'Opoonents point per game',
-                    data: opponents_schedule
+                    data: opponents_strength
                 }]
             }
         },
 
-        /**
-         * Return teams points per game from a specific tournament
-         * @return {number}
-         */
-        getTeamPPG(team_id, tournament_id) {
-            var filtered = this.ppg_table[tournament_id]
-                .filter(team => team.team_id == team_id);
 
-            if (filtered.length > 0) return filtered[0].ppg;
-            return 0;
-        }
     }
 }
 </script>

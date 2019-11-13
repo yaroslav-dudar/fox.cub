@@ -237,4 +237,28 @@ object GameStats {
 
         QueryEvent("aggregate", query)
     }
+
+    def getHomeAdvantage(tournamentId: String): QueryEvent = {
+        val aggMatch = Json.obj(
+            ("$match", Json.obj(
+                ("tournament", tournamentId),
+                ("venue", "home"))
+            ))
+
+        val group = Json.obj(("$group", Json.obj(
+            ("_id", null),
+            ("avgGoalsHome", Json.obj(("$avg", "$goals_for"))),
+            ("avgGoalsAway", Json.obj(("$avg", "$goals_against"))),
+            ("avgxGHome", Json.obj(("$avg", "$xG_for"))),
+            ("avgxGAway", Json.obj(("$avg", "$xG_against")))
+            )))
+
+        var pipeline = Json.arr(aggMatch, group)
+        // cursor with the default batch size
+        var cursor = Json.obj()
+        val query = new JsonObject().put("aggregate", Collection).
+            put("pipeline", pipeline).put("cursor", cursor)
+
+        QueryEvent("aggregate", query)
+    }
 }

@@ -5,6 +5,7 @@
       <router-link to="/test">Manual Testing</router-link> |
       <router-link to="/howto">How To Manual</router-link> |
       <router-link to="/market">Odds market</router-link> |
+      <router-link to="/team">Team Report</router-link>
     </div>
     <router-view/>
   </div>

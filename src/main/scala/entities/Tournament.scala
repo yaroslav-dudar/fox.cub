@@ -32,6 +32,8 @@ object Tournament {
 
         data.forEach(team => {
             var teamPoints = 0f
+            var teamScored = 0f
+            var teamConceded = 0f
             val teamData = team.asInstanceOf[JsonObject]
             val teamId = teamData.getString("_id")
 
@@ -43,11 +45,17 @@ object Tournament {
 
                 if (goalsDiff == 0) teamPoints += 1
                 else if (goalsDiff > 0) teamPoints += 3
+
+                teamScored += gameData.getInteger("goals_for")
+                teamConceded += gameData.getInteger("goals_against")
             })
 
+            val games_count = teamData.getJsonArray("games").size
             val teamRes = Json.obj(
                 ("team_id", teamId),
-                ("ppg", teamPoints / teamData.getJsonArray("games").size))
+                ("ppg", teamPoints / games_count),
+                ("spg", teamScored / games_count),
+                ("cpg", teamConceded / games_count))
 
             teams.append(teamRes)
         })

@@ -50,7 +50,10 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
     router.get("/api/v1/game").handler(RouterTeam.getGames)
     router.get("/api/v1/team/:tournament_id").handler(RouterTournament.getTournamentTeams)
     router.get("/api/v1/tournament").handler(RouterTournament.getTournamentsList)
-    router.get("/api/v1/tournament/:tournament_id").handler(RouterTournament.getTournamentTable)
+    router.get("/api/v1/tournament/home_adv/:tournament_id")
+        .handler(RouterTournament.getTournamentHomeAdvanatage)
+    router.get("/api/v1/tournament/:tournament_id")
+        .handler(RouterTournament.getTournamentTable)
 
     router.get("/api/v1/stats/:tournament_id")
         .handler(RouterGameStats.getGameStatsValidator.handle)

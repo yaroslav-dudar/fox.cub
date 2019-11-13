@@ -4,6 +4,7 @@ export const SET_SELECTED_FIXTURE = "setSelectedFixture";
 export const SET_TOURNAMENTS = "setTournaments";
 export const SET_SELECTED_TOURNAMENT = "setSelectedTournament";
 export const SET_PPG_TABLE = "setPPGTable";
+export const SET_HOME_ADV = "setHomeAdv";
 
 export const SET_ODDS = "setOdds";
 export const SET_ODDS_DIFF = "setOddsDiff";

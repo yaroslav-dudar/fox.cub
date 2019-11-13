@@ -73,4 +73,25 @@ object Tournament {
             }
         }
     }
+
+    def getTournamentHomeAdvanatage(context: RoutingContext)
+        (implicit eb: EventBus, logger: ScalaLogger) {
+
+        var response = context.response
+        var tournament = context.request.getParam("tournament_id")
+        var query = model.GameStats.getHomeAdvantage(tournament.get)
+
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+            case Success(result) => {
+                val json = result.body.result
+                logger.info(context.request.path.get)
+                jsonResponse(response, json)
+            }
+            case Failure(cause) => {
+                logger.error(cause.toString)
+                context.fail(500)
+            }
+        }
+
+    }
 }
