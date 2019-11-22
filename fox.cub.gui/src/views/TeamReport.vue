@@ -4,51 +4,63 @@
             <team-results v-bind:games="home_games"></team-results>
         </div>
         <div class="pure-u-1-2">
-            <h3>Select Tournament</h3>
-            <select v-model="tournament" @change="onChangeTournament()">
-                <option
-                    v-for="t in tournaments" :key="t._id.$oid"
-                    v-bind:value='t._id.$oid'> {{t.name}}
-                </option>
-            </select>
-            <br>
-            <select v-model="team_id" @change="onChangeTeam()">
-                <option
-                    v-for="t in teams" :key="t._id.$oid"
-                    v-bind:value='t._id.$oid'> {{t.name}}
-                </option>
-            </select>
+
+            <form class="pure-form pure-form-stacked" style="text-align:left;">
+                <label for="select_league">Select Tournament</label>
+                <select
+                    v-model="tournament"
+                    @change="onChangeTournament()"
+                    id="select_league">
+
+                    <option
+                        v-for="t in tournaments" :key="t._id.$oid"
+                        v-bind:value='t._id.$oid'> {{t.name}}
+                    </option>
+                </select>
+
+                <label for="select_team">Select Team</label>
+                <select
+                    v-model="team_id"
+                    @change="onChangeTeam()"
+                    id="select_team">
+
+                    <option
+                        v-for="t in teams" :key="t._id.$oid"
+                        v-bind:value='t._id.$oid'> {{t.name}}
+                    </option>
+                </select>
+            </form>
 
             <detailed-team-stats v-bind:games="home_games"
                 v-bind:home_adv="home_adv">
             </detailed-team-stats>
 
-            <form class="pure-form pure-form-aligned">
-            <fieldset>
-                <legend>Add New Team Note</legend>
-                <div class="pure-control-group">
-                    <label for="name">Note Text</label>
-                    <textarea v-model="new_note.note_text" placeholder="Add some text" rows="4" cols="50"></textarea>
-                </div>
+            <form class="pure-form pure-form-stacked" style="text-align:left;">
+                <fieldset>
+                    <legend>Add New Team Note</legend>
+                    <div class="pure-control-group">
+                        <label for="name">Note Text</label>
+                        <textarea v-model="new_note.note_text" placeholder="Add some text" rows="4" cols="50"></textarea>
+                    </div>
 
-                <div class="pure-control-group">
-                    <label for="password">Note Category</label>
-                    <select v-model="new_note.note_type">
-                        <option
-                            v-for="(type,i) in note_types"
-                            :key="i" v-bind:value="type">
-                            {{ type }}
-                        </option>
-                    </select>
-                </div>
+                    <div class="pure-control-group">
+                        <label for="password">Note Category</label>
+                        <select v-model="new_note.note_type">
+                            <option
+                                v-for="(type,i) in note_types"
+                                :key="i" v-bind:value="type">
+                                {{ type }}
+                            </option>
+                        </select>
+                    </div>
 
-                <div class="pure-controls">
-                    <button
-                        type="submit"
-                        class="pure-button pure-button-primary"
-                        v-on:click="addUserNote()">Submit</button>
-                </div>
-            </fieldset>
+                    <div class="pure-controls">
+                        <button
+                            type="submit"
+                            class="pure-button pure-button-primary"
+                            v-on:click="addUserNote()">Submit</button>
+                    </div>
+                </fieldset>
             </form>
 
             <ul>

@@ -69,8 +69,8 @@
             </thead>
             <tr>
                 <td>{{getOpponentsStrength()}} ({{getTournamentStats()}})</td>
-                <td>{{getOpponentsStrength("spg")}}</td>
-                <td>{{getOpponentsStrength("cpg")}}</td>
+                <td>{{getOpponentsStrength("spg")}} ({{getTournamentStats("spg")}})</td>
+                <td>{{getOpponentsStrength("cpg")}} ({{getTournamentStats("cpg")}})</td>
             </tr>
         </table>
 

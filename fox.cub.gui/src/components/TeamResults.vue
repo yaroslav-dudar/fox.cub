@@ -14,12 +14,53 @@
     tr.unselected {
         opacity: 0.4;
     }
+
+    .toggle {
+        /* opacity 0 so that it can be read by screen readers */
+        opacity: 0;
+    }
+
+    .label {
+        display: inline-block;
+        background: #2c3e50;
+        width: 2em;
+        height: 1em;
+        border-radius: 0.5em;
+        position: relative;
+        cursor: pointer;
+        background: #2c3e50;
+    }
+
+    .switch {
+        position: absolute;
+        width: 0.9em;
+        height: 0.9em;
+        margin-top: 0.05em;
+        margin-left: -0.75em;
+        border-radius: 1em;
+        background: #c0392b;
+        box-shadow: 5px 0px 28px -9px rgba(0, 0, 0, 0.75);
+        transition: transform 0.2s ease-in;
+    }
+
+    .label .toggle:checked + .switch {
+        background: #2ecc71;
+        transform: translatex(1em);
+        transition: transform 0.2s ease-in;
+    }
 </style>
+
 <template>
     <table class="pure-table pure-table-bordered">
         <thead>
             <tr>
-                <th>Selected</th>
+                <th>Selected
+                    <label class="label">
+                        <input class="toggle" type="checkbox"
+                            v-on:click="toggleHandler($event)" checked/>
+                        <span class="switch"></span>
+                    </label>
+                </th>
                 <th>Home Team</th>
                 <th>Score</th>
                 <th>Away Team</th>
@@ -60,6 +101,13 @@ export default {
         },
         isSelected(game) {
             return game.selected ? '' : 'unselected';
+        },
+        toggleHandler(ev) {
+            console.log(this);
+            var elmts = this.$el.querySelectorAll("tr.unselected");
+
+            let display = ev.target.checked ? "": "none";
+            elmts.forEach(el => el.style.display = display);
         }
     }
 }
