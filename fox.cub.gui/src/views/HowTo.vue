@@ -67,6 +67,17 @@ div.content section {
                 <li>Sacrifice for the result of the game</li>
             </ul>
         </section>
+
+        <section>
+            <h2>Notes about BTTS and OVERs:</h2>
+            <ul>
+                <li>Prefer teams with lack of control</li>
+                <li>Teams with good attacking numbers</li>
+                <li>Teams that can break down good positional defence</li>
+                <li>Teams with bad defensive numbers</li>
+                <li>Unbalanced teams with talented attack and not good enough personnel in defence</li>
+            </ul>
+        </section>
     </div>
 
 </template>
