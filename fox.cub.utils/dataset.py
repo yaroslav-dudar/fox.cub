@@ -122,6 +122,9 @@ class FeatureDataset:
         """ Storing team stats and seasons """
         season = Season.get(dataset.data, season_name)
         dataset_stats = Season.collect_stats(season.games)
+        season.league_avg = (dataset_stats['avgScoredHome'] +\
+                             dataset_stats['avgScoredAway'])
+        self._seasons[season_name] = season
 
         for team in season.get_teams():
             self.collect_team_features(team,
@@ -154,15 +157,12 @@ class FeatureDataset:
                               season, league_strength):
 
         team_scores = season.get_team_scores(team)
-
-        self._seasons[season_name].append(season)
         self._stats[season_name][team] = {
             'season': season,
             'attack_strength': mean(team_scores['scored_xg']),
             'defence_strength': mean(team_scores['conceded_xg']),
             'league_strength': league_strength,
-            'league_avg': (dataset_stats['avgScoredHome'] +\
-                           dataset_stats['avgScoredAway'])
+            'league_avg': season.league_avg
         }
 
 
@@ -249,7 +249,7 @@ class DatasetAggregator:
         self.check_features()
         return self.feat_dataset._stats[season]
 
-    def get_seasons(self, season) -> list:
+    def get_season(self, season) -> Season:
         """ Returns list of seasons with a given name """
         self.check_features()
         return self.feat_dataset._seasons[season]

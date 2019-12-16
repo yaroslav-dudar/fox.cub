@@ -122,6 +122,7 @@ class MasterFoxCubTest:
 
     def print_test_results(self):
         print("Tested games:", len(self.results.actual_results_team1))
+        print("League goals avg:", mean(self.results.league_goals_avg))
         print("Scored avg team1:", mean(self.results.scored_1))
         print("Conceded avg team1:", mean(self.results.conceded_1))
         print("Scored avg team2:", mean(self.results.scored_2))
@@ -133,6 +134,8 @@ class MasterFoxCubTest:
         print("Real results Total Under 2.5:", self.get_percentage(self.results.totals_2_5, True))
         print("Real results Total Under 3.5:", self.get_percentage(self.results.totals_3_5, True))
         print("Real results BTTS:", self.get_percentage(self.results.btts, True))
+        print("Real results Home Score:", self.get_percentage(self.results.home_scored, True))
+        print("Real results Away Score:", self.get_percentage(self.results.away_scored, True))
         print('='*25)
         print("Fox.cub results Team1 Win:", self.get_fox_cub_scoreline('Win', 'Team1'))
         print("Fox.cub results Team2 Win:", self.get_fox_cub_scoreline('Win', 'Team2'))

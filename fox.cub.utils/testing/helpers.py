@@ -28,7 +28,10 @@ class TestSessionResult():
         self.model_results = []
         self.scored_1, self.conceded_1 = [], []
         self.scored_2, self.conceded_2 = [], []
+        self.league_goals_avg = []
         self.btts = []
+        self.home_scored = []
+        self.away_scored = []
 
         self.teams_1, self.teams_2 = teams_1, teams_2
 
@@ -46,6 +49,9 @@ class TestSessionResult():
         self.conceded_2 += other_session.conceded_2
         self.model_results += other_session.model_results
         self.btts += other_session.btts
+        self.home_scored += other_session.home_scored
+        self.away_scored += other_session.away_scored
+        self.league_goals_avg += other_session.league_goals_avg
 
         return self
 
@@ -56,6 +62,7 @@ class TestSessionResult():
         self.scored_1, self.conceded_1 = [], []
         self.scored_2, self.conceded_2 = [], []
         self.btts = []
+        self.league_goals_avg = []
 
     def set_scoring_results(self, season: Season):
         scoring_table = season.get_table(metric='scored')
@@ -90,6 +97,8 @@ class TestSessionResult():
                 append(game.FTAG - game.FTHG)
 
         self.btts.append(game.FTHG > 0 and game.FTAG > 0)
+        self.home_scored.append(game.FTHG > 0)
+        self.away_scored.append(game.FTAG > 0)
 
     def set_model_results(self, prediction):
         if prediction['HomeTeam'] in self.teams_1:
