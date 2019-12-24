@@ -40,7 +40,7 @@ class SlaveFoxCubTest:
         results = TestSessionResult(teams_1, teams_2)
         results.set_scoring_results(testing_season)
         results.league_goals_avg.append(
-            dataset.get_season(season).league_avg)
+            dataset.get_season_goals_avg(season))
 
         session_id = test_fox_cub(games,
                                   dataset,

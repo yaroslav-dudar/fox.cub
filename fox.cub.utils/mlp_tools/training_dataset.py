@@ -14,7 +14,7 @@ from mlp_tools.settings import CONFIG
 class TrainDataset:
 
     def __init__(self, group_by: str, model_type: ModelType,
-                 is_reshuffle: bool):
+                 is_reshuffle: bool, is_live: bool):
         """
         Args:
             group_by: define how to group teams inside a season
@@ -23,6 +23,7 @@ class TrainDataset:
         self.label_def = model_type.get_label_def()
         self.group_by = Group(group_by)
         self.is_reshuffle = is_reshuffle
+        self.is_live = is_live
 
 
     def filter_by_month(self, min_month, max_month):
@@ -60,7 +61,7 @@ class TrainDataset:
             Away team division [0 - higher 1 - lower],
             Home team attack,
             Home team defence,
-            Away Team attack,
+            Away team attack,
             Away team defence
         """
 
@@ -75,19 +76,98 @@ class TrainDataset:
             feature.defence_strength_away_team
         ]
 
+    def dataset_v3(self, feature: FeatureVector,
+                   minute: int, htg: int, atg: int):
+        """
+            League avg goals,
+            Home team attack,
+            Home team defence,
+            Away team attack,
+            Away team defence,
+            Home team score
+            Away team score,
+            Minute of play
+        """
+
+        return [
+            feature.get_avg_goals(),
+            feature.attack_strength_home_team,
+            feature.defence_strength_home_team,
+            feature.attack_strength_away_team,
+            feature.defence_strength_away_team,
+            htg,
+            atg,
+            minute
+        ]
+
 
     def prepare_data_group(self, games, dataset):
+        if self.is_live:
+            return self.prepare_in_paly(games, dataset)
+        else:
+            return self.prepare_pre_game(games, dataset)
+
+
+    def prepare_pre_game(self, games, dataset):
         data_group = []
 
         for game in games:
             label_class, features = dataset.prepare_observation(game,
-                                                               self.label_def)
+                                                                self.label_def)
 
             if not features: continue
             if self.is_reshuffle: features.reshuffle()
             data_group.append([label_class] + self.dataset_v1(features))
 
         return data_group
+
+
+    def prepare_in_paly(self, games, dataset):
+        data_group = []
+        timestamps = [5*i for i in range(1,20)]
+
+        for game in games:
+            if not self.in_play_validate(game): continue
+
+            for minute in timestamps:
+                label_class, features = dataset.prepare_observation(game,
+                                                                    self.label_def)
+
+                if not features: continue
+                # TODO: reshuffle feature
+                #if self.is_reshuffle: features.reshuffle()
+
+                htg, atg = self.get_in_play_score(game, minute)
+                data_group.append([label_class] +\
+                                  self.dataset_v3(features, minute, htg, atg))
+
+        return data_group
+
+    def in_play_validate(self, game):
+        if game.FTHG != 0 and game.HomeGoalsTiming == '':
+            return False
+
+        if game.FTAG != 0 and game.AwayGoalsTiming == '':
+            return False
+
+        return True
+
+
+    def get_in_play_score(self, game: Game, minute: int):
+        home = game.HomeGoalsTiming.split(' ')
+        away = game.AwayGoalsTiming.split(' ')
+
+        if home[0] != '':
+            htg = sum(int(g) <= minute for g in home)
+        else:
+            htg = 0
+
+        if away[0] != '':
+            atg = sum(int(g) <= minute for g in away)
+        else:
+            atg = 0
+
+        return htg, atg
 
 
     def sort_by_date(self, games):
@@ -145,9 +225,11 @@ def parse_args():
                         help='Grouping pattern.')
     parser.add_argument('-datasetType', required=True, type=str,
                         help='Type of generated dataset')
+    parser.add_argument('-live', default=False, action='store_true',
+                        help='Generate dataset for in-play model.')
     parser.add_argument('-out', default="out.csv", type=str,
                         help='Output csv file with training data')
-    parser.add_argument('-reshuffle', default=False, type=bool,
+    parser.add_argument('-reshuffle', default=False, action='store_true',
                         help='Reshuffling home and away teams between each other')
     parser.add_argument('-seasons', default=100, type=int,
                         help='Amount of seasons to use to generate training dataset')
@@ -160,7 +242,10 @@ if __name__ == '__main__':
 
     dataset = CONFIG[args.datasetName]
     model_type = ModelType(args.datasetType)
-    train_dataset = TrainDataset(args.groupBy, model_type, args.reshuffle)
+    train_dataset = TrainDataset(args.groupBy,
+                                 model_type,
+                                 args.reshuffle,
+                                 args.live)
 
     reverse = True if args.seasons < 0 else False
     seasons_num = abs(args.seasons)
@@ -168,6 +253,7 @@ if __name__ == '__main__':
     for d in dataset[model_type]:
         seasons = Season.get_seasons(d.observations,
                                      reverse=reverse)
+        print("Seasons: ", seasons[:seasons_num])
         result_dataset.extend(train_dataset.execute(d, seasons[:seasons_num]))
 
     train_dataset.to_csv(args.out, result_dataset)

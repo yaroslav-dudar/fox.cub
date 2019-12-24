@@ -9,6 +9,8 @@ EPL = [DatasetAggregator(ObservationDataset('leagues/epl.json'))]
 MLS = [DatasetAggregator(ObservationDataset('leagues/mls.json'))]
 CHAMPIONSHIP = [DatasetAggregator(ObservationDataset('leagues/efl_championship.json'))]
 BUNDESLIGA = [DatasetAggregator(ObservationDataset('leagues/bundesliga.json'))]
+BUNDESLIGA2 = [DatasetAggregator(ObservationDataset('leagues/bundesliga2.json'))]
+LA_LIGA = [DatasetAggregator(ObservationDataset('leagues/laliga.json'))]
 
 INT_FINAL = [
     DatasetAggregator(ObservationDataset('international/africa_cup.json')),
@@ -125,5 +127,15 @@ CONFIG = {
         ModelType.Score: CHAMPIONSHIP,
         ModelType.Total: CHAMPIONSHIP,
         ModelType.Btts: CHAMPIONSHIP
+    },
+    "bundesliga2": {
+        ModelType.Score: BUNDESLIGA2,
+        ModelType.Total: BUNDESLIGA2,
+        ModelType.Btts: BUNDESLIGA2
+    },
+    "laliga": {
+        ModelType.Score: LA_LIGA,
+        ModelType.Total: LA_LIGA,
+        ModelType.Btts: LA_LIGA
     }
 }

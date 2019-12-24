@@ -124,7 +124,7 @@ class FeatureDataset:
         dataset_stats = Season.collect_stats(season.games)
         season.league_avg = (dataset_stats['avgScoredHome'] +\
                              dataset_stats['avgScoredAway'])
-        self._seasons[season_name] = season
+        self._seasons[season_name].append(season)
 
         for team in season.get_teams():
             self.collect_team_features(team,
@@ -249,10 +249,13 @@ class DatasetAggregator:
         self.check_features()
         return self.feat_dataset._stats[season]
 
-    def get_season(self, season) -> Season:
+    def get_seasons(self, season) -> Season:
         """ Returns list of seasons with a given name """
         self.check_features()
         return self.feat_dataset._seasons[season]
+
+    def get_season_goals_avg(self, season):
+        return mean([s.league_avg for s in self.get_seasons(season)])
 
     def check_features(self):
         if not self.feat_dataset.is_ready:
