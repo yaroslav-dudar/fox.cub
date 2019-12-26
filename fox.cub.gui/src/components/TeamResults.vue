@@ -103,7 +103,6 @@ export default {
             return game.selected ? '' : 'unselected';
         },
         toggleHandler(ev) {
-            console.log(this);
             var elmts = this.$el.querySelectorAll("tr.unselected");
 
             let display = ev.target.checked ? "": "none";

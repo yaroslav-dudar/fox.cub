@@ -8,6 +8,7 @@ import ManualTest from './views/ManualTest.vue'
 import HowTo from './views/HowTo.vue'
 import OverallMarket from './views/OverallMarket.vue'
 import SingleMarket from './views/SingleMarket.vue'
+import DataVisualizer from './views/DataVisualizer.vue'
 
 Vue.use(Router)
 
@@ -49,6 +50,11 @@ export default new Router({
       path: '/single_market',
       name: 'single_market',
       component: SingleMarket
+    },
+    {
+      path: '/visualizer',
+      name: 'visualizer',
+      component: DataVisualizer
     }
   ]
 })
