@@ -10,8 +10,8 @@
   "dependencies": {
     "browserslist": "^4.6.3",
     "caniuse-lite": "^1.0.30000980",
-    "highcharts": "^7.0.1",
-    "highcharts-vue": "^1.2.0",
+    "highcharts": "^7.2.1",
+    "highcharts-vue": "^1.3.5",
     "purecss": "^1.0.0",
     "read-excel-file": "^4.0.5",
     "vue": "^2.5.17",

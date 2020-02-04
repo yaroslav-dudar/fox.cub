@@ -11,7 +11,15 @@
         </select>
         <hr>
 
-        <highcharts :options="chart_options"></highcharts>
+        <div class="pure-g">
+            <div class="pure-u-2-5">
+                <team-results v-bind:games="results_set"></team-results>
+            </div>
+            <div class="pure-u-3-5" >
+                <highcharts :options="chart_options" style="height: 400px;"></highcharts>
+            </div>
+        </div>
+
     </div>
 </template>
 
@@ -19,6 +27,12 @@
 
 import readXlsxFile  from 'read-excel-file';
 import {Chart} from 'highcharts-vue';
+import TeamResults from '@/components/TeamResults.vue'
+
+import exporting from "highcharts/modules/exporting"
+import Highcharts from "highcharts";
+
+exporting(Highcharts);
 
 export default {
     name: 'Visualizer',
@@ -31,17 +45,20 @@ export default {
             data_field: -1,
             size: 6,
             chart_options: {},
+            results_set: []
         }
     },
     components: {
-        highcharts: Chart
+        highcharts: Chart,
+        TeamResults
     },
 
     watch: {
-        'picked_side': {
+        'results_set': {
             handler: function() {
                 this.redraw();
-            }
+            },
+            deep: true
         }
     },
 
@@ -59,6 +76,7 @@ export default {
                 this.import_data = rows.slice(3);
 
                 this.prepareDataFields();
+                this.prepareTeamResults();
             })
         },
 
@@ -68,12 +86,14 @@ export default {
 
         getChartOptions() {
             var team_data = this.import_data
-                .filter((r,i) => i % 2 == 0)
-                .reverse();
+                .filter((_,i) => i % 2 == 0)
+                .reverse()
+                .filter((_, i) => this.isGameSelected(this.results_set[i]));
 
             var opponent_data = this.import_data
                 .filter((r,i) => i % 2 == 1)
-                .reverse();
+                .reverse()
+                .filter((_, i) => this.isGameSelected(this.results_set[i]));
 
             var date = team_data.map(row => row[0]);
 
@@ -89,7 +109,15 @@ export default {
                 }, {
                     name: 'Opponent',
                     data: this.getChartPoints(opponent_data)
-                }]
+                }],
+
+                exporting: {
+                    buttons: {
+                        contextButton: {
+                            menuItems: ['viewFullscreen', 'downloadPDF']
+                        }
+                    }
+                }
             }
         },
 
@@ -102,6 +130,50 @@ export default {
 
             return point_cluster.map(batch => batch.reduce(
                 (a, b) => +a + +b, 0) / batch.length)
+        },
+
+        prepareTeamResults() {
+            var team_data = this.import_data
+                .filter((r,i) => i % 2 == 0)
+                .reverse();
+
+            var opponent_data = this.import_data
+                .filter((r,i) => i % 2 == 1)
+                .reverse();
+
+            let goal_field = this.parsed_fields
+                .findIndex((f) => f == "Goals");
+            let team_field = this.parsed_fields
+                .findIndex((f) => f == "Team");
+
+            var res = [];
+            let team_name = team_data[0][team_field];
+
+            team_data.forEach((_, i) => {
+                res.push({
+                    _id: {$oid: i},
+                    venue: this.getVenue(team_data[i], team_name),
+                    selected: true,
+                    goals_for: team_data[i][goal_field],
+                    goals_against: opponent_data[i][goal_field],
+                    team: [{name: team_name}],
+                    opponent: [{name: opponent_data[i][team_field]}]
+                })
+            });
+
+            this.results_set = res;
+
+        },
+
+        getVenue(row, team) {
+            let match_field = this.parsed_fields
+                .findIndex((f) => f == "Match");
+
+            return row[match_field].startsWith(team) ? "home": "away";
+        },
+
+        isGameSelected(game) {
+            return game ? game.selected : true;
         },
 
         prepareDataFields() {
