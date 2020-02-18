@@ -96,6 +96,8 @@ export default {
                 .filter((_, i) => this.isGameSelected(this.results_set[i]));
 
             var date = team_data.map(row => row[0]);
+            const [team_avg, team_set] = this.getChartData(team_data)
+            const [opponent_avg, opponent_set] = this.getChartData(opponent_data)
 
             return {
                 title: { text: this.parsed_fields[this.data_field] },
@@ -104,11 +106,11 @@ export default {
                     categories: date
                 },
                 series: [{
-                    name: 'Team',
-                    data: this.getChartPoints(team_data)
+                    name: `Team (${team_avg})`,
+                    data: team_set
                 }, {
-                    name: 'Opponent',
-                    data: this.getChartPoints(opponent_data)
+                    name: `Opponent (${opponent_avg})`,
+                    data: opponent_set
                 }],
 
                 exporting: {
@@ -121,15 +123,18 @@ export default {
             }
         },
 
-        getChartPoints(data) {
+        getChartData(data) {
             var points = data.map(row => row[this.data_field]);
 
             var point_cluster = points
                 .map((v, i) => points.slice(0,i+1)
                 .slice(-this.size));
 
-            return point_cluster.map(batch => batch.reduce(
+            let arr = point_cluster.map(batch => batch.reduce(
                 (a, b) => +a + +b, 0) / batch.length)
+
+            let avg = points.reduce((pr, cr) => pr + cr) / points.length;
+            return [avg.toFixed(3), arr];
         },
 
         prepareTeamResults() {
@@ -143,6 +148,8 @@ export default {
 
             let goal_field = this.parsed_fields
                 .findIndex((f) => f == "Goals");
+            let xG_field = this.parsed_fields
+                .findIndex((f) => f == "xG");
             let team_field = this.parsed_fields
                 .findIndex((f) => f == "Team");
 
@@ -156,6 +163,8 @@ export default {
                     selected: true,
                     goals_for: team_data[i][goal_field],
                     goals_against: opponent_data[i][goal_field],
+                    xG_for: team_data[i][xG_field],
+                    xG_against: opponent_data[i][xG_field],
                     team: [{name: team_name}],
                     opponent: [{name: opponent_data[i][team_field]}]
                 })
@@ -177,6 +186,8 @@ export default {
         },
 
         prepareDataFields() {
+            this.parsed_fields = [];
+
             this.raw_fields.forEach(field => {
                 if (field == null) return;
                 var sub_fields = field.split("/");

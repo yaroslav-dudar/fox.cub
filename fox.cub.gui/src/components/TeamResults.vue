@@ -1,4 +1,5 @@
 <style>
+
     tr.win {
         background-color: #90EE90;
     }
@@ -54,7 +55,7 @@
     <table class="pure-table pure-table-bordered">
         <thead>
             <tr>
-                <th>Selected
+                <th>
                     <label class="label">
                         <input class="toggle" type="checkbox"
                             v-on:click="toggleHandler($event)" checked/>
@@ -76,8 +77,14 @@
             <td v-if="g.venue == 'home'"><strong>{{g.team[0].name}}</strong></td>
             <td v-else>{{g.opponent[0].name}}</td>
 
-            <td v-if="g.venue == 'home'">{{g.goals_for}} - {{g.goals_against}}</td>
-            <td v-else>{{g.goals_against}} - {{g.goals_for}}</td>
+            <td v-if="g.venue == 'home'">
+                {{g.goals_for}}<small>({{g.xG_for}})</small> -
+                {{g.goals_against}}<small>({{g.xG_against}})</small>
+            </td>
+            <td v-else>
+                {{g.goals_against}}<small>({{g.xG_against}})</small> -
+                {{g.goals_for}}<small>({{g.xG_for}})</small>
+            </td>
 
             <td v-if="g.venue == 'home'">{{g.opponent[0].name}}</td>
             <td v-else><strong>{{g.team[0].name}}</strong>
