@@ -59,7 +59,7 @@ db.team.update({name: "West Ham United"}, {$set : {pinnacle_name: ["West Ham Uni
 db.team.update({name: "Southampton"}, {$set : {pinnacle_name: ["Southampton"]}, $push: {tournaments: epl19_20._id.valueOf()}}, { upsert: false });
 db.team.update({name: "Aston Villa"}, {$set : {pinnacle_name: ["Aston Villa"]}, $push: {tournaments: epl19_20._id.valueOf()}}, { upsert: false });
 db.team.update({name: "Crystal Palace"}, {$set : {pinnacle_name: ["Crystal Palace"]}, $push: {tournaments: epl19_20._id.valueOf()}}, { upsert: false });
-db.team.update({name: "Wolverhampton"}, {$set : {pinnacle_name: ["Wolverhampton Wanderers"]}, $push: {tournaments: epl19_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Wolverhampton"}, {$set : {pinnacle_name: ["Wolverhampton Wanderers", "Wolves"]}, $push: {tournaments: epl19_20._id.valueOf()}}, { upsert: false });
 db.team.update({name: "Burnley"}, {$set : {pinnacle_name: ["Burnley"]}, $push: {tournaments: epl19_20._id.valueOf()}}, { upsert: false });
 db.team.update({name: "Brighton"}, {$set : {pinnacle_name: ["Brighton and Hove Albion"]}, $push: {tournaments: epl19_20._id.valueOf()}}, { upsert: false });
 db.team.update({name: "Newcastle United"}, {$set : {pinnacle_name: ["Newcastle United"]}, $push: {tournaments: epl19_20._id.valueOf()}}, { upsert: false });

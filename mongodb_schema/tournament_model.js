@@ -21,7 +21,19 @@ db.createCollection("tournament_model", {
                 btts: {
                     bsonType: "binData",
                     description: "must be a binary data and is required"
-                }
+                },
+                scorelineLive: {
+                    bsonType: "binData",
+                    description: "must be a binary data"
+                },
+                totalsLive: {
+                    bsonType: "binData",
+                    description: "must be a binary data"
+                },
+                bttsLive: {
+                    bsonType: "binData",
+                    description: "must be a binary data"
+                },
             }
         }
     }

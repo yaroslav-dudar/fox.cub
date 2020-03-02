@@ -3,11 +3,45 @@ db = db.getSiblingDB('fox_cub');
 var emptyBinart = new BinData(0,"AQAAAAEBAAVlbl9VSwAAAAAAAAhv");
 db.tournament_model.insert({ name: "Bundesliga 2", scoreline: emptyBinart, btts: emptyBinart, totals: emptyBinart });
 
-bundesliga2 = db.tournament_model.findOne({"name": "Bundesliga 2"})
 
+mls = db.tournament_model.findOne({"name": "MLS"})
 db.tournament.insert({ name: "Bundesliga 2 2019/2020", tournament_model: bundesliga2._id.valueOf(), pinnacle_id: 1843 });
+db.tournament.insert({ name: "MLS 2020", tournament_model: mls._id.valueOf(), pinnacle_id: 2663 });
+// deactivate fixture update on MLS 2019
+db.tournament.update({ name: "MLS 2019" }, { $set: { pinnacle_id: -1 } });
 
 bundesiga2_19_20 = db.tournament.findOne({"name": "Bundesliga 2 2019/2020"});
+mls_20 = db.tournament.findOne({"name": "MLS 2020"});
+
+db.team.update({name: "Houston Dynamo"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "DC United"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Los Angeles FC"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "New York Red Bulls"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "L.A. Galaxy"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Chicago"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Seattle"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Philadelphia"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Columbus"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Toronto"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "FC Dallas"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Montreal"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Minnesota United"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Orlando City"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "New England"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "New York City FC"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Atlanta United"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Colorado"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Portland"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "FC Cincinnati"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Vancouver"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Salt Lake"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "San Jose"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+db.team.update({name: "Kansas City"}, {$push: {tournaments: mls_20._id.valueOf()}}, { upsert: false });
+
+db.team.insertMany( [
+    { name: "Inter Miami", news_feed: [], market_value: 0 , tournaments: [mls_20._id.valueOf()], fivethirtyeight_name: "Inter Miami CF", pinnacle_name: ["Inter Miami"]},
+    { name: "Nashville SC", news_feed: [], market_value: 0 , tournaments: [mls_20._id.valueOf()], fivethirtyeight_name: "Nashville SC", pinnacle_name: ["Nashville SC"]},
+])
 
 db.team.insertMany( [
     // Bundesliga 2
