@@ -14,7 +14,22 @@ BUNDESLIGA2 = DatasetAggregator(ObservationDataset('leagues/bundesliga2.json'))
 CHAMPIONS_LEAGUE = DatasetAggregator(ObservationDataset('international/champions_league_group.json'))
 EUROPA_LEAGUE = DatasetAggregator(ObservationDataset('international/europa_league_group.json'))
 LALIGA = DatasetAggregator(ObservationDataset('leagues/laliga.json'))
+SEGUNDA = DatasetAggregator(ObservationDataset('leagues/segunda.json'))
 SERIE_A = DatasetAggregator(ObservationDataset('leagues/serie_a.json'))
+SERIE_B = DatasetAggregator(ObservationDataset('leagues/serie_b.json'))
+LIGUE1 = DatasetAggregator(ObservationDataset('leagues/ligue1.json'))
+LIGUE2 = DatasetAggregator(ObservationDataset('leagues/ligue2.json'))
+JUPILER_LEAGUE = DatasetAggregator(ObservationDataset('leagues/jupiler.json'))
+BELGIUM_B = DatasetAggregator(ObservationDataset('leagues/belgium_b.json'))
+J1_LEAGUE = DatasetAggregator(ObservationDataset('leagues/j1_league.json'))
+SUPER_LIG = DatasetAggregator(ObservationDataset('leagues/super_lig.json'))
+TURKEY_1LEAGUE = DatasetAggregator(ObservationDataset('leagues/turkey_1lig.json'))
+EREDIVISIE = DatasetAggregator(ObservationDataset('leagues/eredivisie.json'))
+DEN_SUPERLIG = DatasetAggregator(ObservationDataset('leagues/denmark_superlig.json'))
+A_LEAGUE = DatasetAggregator(ObservationDataset('leagues/a_league.json'))
+EKSTRAKLASA = DatasetAggregator(ObservationDataset('leagues/ekstraklasa.json'))
+POL_1LIGA = DatasetAggregator(ObservationDataset('leagues/poland_1liga.json'))
+UKR_PRM_LEAGUE = DatasetAggregator(ObservationDataset('leagues/ukr_prm_league.json'))
 
 FA_CUP = DatasetAggregator(
     ObservationDataset('cups/fa_cup.json'),
@@ -52,5 +67,20 @@ CONFIG = {
     'champions_league': CHAMPIONS_LEAGUE,
     'europa_league': EUROPA_LEAGUE,
     'laliga': LALIGA,
-    'serie_a': SERIE_A
+    'segunda': SEGUNDA,
+    'serie_a': SERIE_A,
+    'serie_b': SERIE_B,
+    'ligue1': LIGUE1,
+    'ligue2': LIGUE2,
+    'jupiler': JUPILER_LEAGUE,
+    'belgium_b': BELGIUM_B,
+    'j1_league': J1_LEAGUE,
+    'super_lig': SUPER_LIG,
+    'turkey_1lig': TURKEY_1LEAGUE,
+    'eredivisie': EREDIVISIE,
+    'denmark_superlig': DEN_SUPERLIG,
+    'a_league': A_LEAGUE,
+    'ekstraklasa': EKSTRAKLASA,
+    'poland_1liga': POL_1LIGA,
+    'ukr_prm_league': UKR_PRM_LEAGUE
 }

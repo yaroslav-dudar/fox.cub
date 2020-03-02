@@ -101,6 +101,62 @@ class SoccerPunterSpider(scrapy.Spider):
     scotland_premiership = ["/Scotland/Premiership-{0}-{1}".format(year, year+1)
         for year in range(1994, 2019)]
 
+    turkey_1lig = ["/Turkey/1.-Lig-{0}-{1}".format(year, year+1)
+        for year in range(2005, 2019)]
+
+    denmark_superlig = [
+        "/season/16020/Denmark-Superliga-2019-2020",
+        "/season/12919/Denmark-Superliga-2018-2019",
+        "/season/6361/Denmark-Superliga-2017-2018",
+        "/season/759/Denmark-Superliga-2016-2017",
+        "/season/1286/Denmark-Superliga-2015-2016",
+        "/season/1282/Denmark-Superliga-2014-2015",
+        "/season/1281/Denmark-Superliga-2013-2014",
+        "/season/1280/Denmark-Superliga-2012-2013",
+        "/season/1279/Denmark-Superliga-2011-2012",
+        "/season/1278/Denmark-Superliga-2010-2011",
+        "/season/1277/Denmark-Superliga-2009-2010",
+        "/season/1276/Denmark-Superliga-2008-2009",
+        "/season/1275/Denmark-Superliga-2007-2008",
+        "/season/1274/Denmark-Superliga-2006-2007",
+        "/season/1273/Denmark-Superliga-2005-2006"
+    ]
+
+    super_lig = [
+        "/season/13056/Turkey-Super-Lig-2018-2019",
+        "/season/8243/Turkey-Super-Lig-2017-2018",
+        "/season/882/Turkey-Super-Lig-2016-2017",
+        "/season/2160/Turkey-Super-Lig-2015-2016",
+        "/season/2159/Turkey-Super-Lig-2014-2015",
+        "/season/2158/Turkey-Super-Lig-2013-2014",
+        "/season/2157/Turkey-Super-Lig-2012-2013",
+        "/season/2156/Turkey-Super-Lig-2011-2012",
+        "/season/2155/Turkey-Super-Lig-2010-2011",
+        "/season/2154/Turkey-Super-Lig-2009-2010",
+        "/season/2153/Turkey-Super-Lig-2008-2009",
+        "/season/2152/Turkey-Super-Lig-2007-2008",
+        "/season/2151/Turkey-Super-Lig-2006-2007",
+        "/season/2150/Turkey-Super-Lig-2005-2006"
+    ]
+
+    j_league = [
+        "/season/15675/Japan-J-League-2019",
+        "/season/12144/Japan-J-League-2018",
+        "/season/977/Japan-J-League-2017",
+        "/season/3112/Japan-J-League-2016",
+        "/season/3108/Japan-J-League-2015",
+        "/season/3107/Japan-J-League-2014",
+        "/season/3106/Japan-J-League-2013",
+        "/season/3105/Japan-J-League-2012",
+        "/season/3104/Japan-J-League-2011",
+        "/season/3103/Japan-J-League-2010",
+        "/season/3102/Japan-J-League-2009",
+        "/season/3101/Japan-J-League-2008",
+        "/season/3100/Japan-J-League-2007",
+        "/season/3099/Japan-J-League-2006",
+        "/season/3098/Japan-J-League-2005"
+    ]
+
     eu_qualification = [
         "/Europe/EC-Qualification-2012-Poland-Ukraine/results",
         "/Europe/EC-Qualification-2016-France",
@@ -332,7 +388,7 @@ class SoccerPunterSpider(scrapy.Spider):
         "/season/5326/Europe-Europa-League-2005-2006"
     ]
 
-    tournaments = europa_league
+    tournaments = denmark_superlig
 
     MODES = {
         'default': {
@@ -355,12 +411,12 @@ class SoccerPunterSpider(scrapy.Spider):
     h_timings = defaultdict(list)
     a_timings = defaultdict(list)
 
-    SORT_BY_GROUP = True
+    SORT_BY_GROUP = False
     IGNORE_NON_REGULAR_SEASON = False
     REGULAR_SEASON_NAMINGS = ["Group Stage", "Regular Season"]
     GROUPS = {}
 
-    proxy = "104.236.248.219:3128"
+    proxy = "200.105.215.18:33630"
 
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
