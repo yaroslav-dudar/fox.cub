@@ -1,5 +1,6 @@
 from dataset import (
     DatasetAggregator,
+    EObservationDataset,
     ObservationDataset,
     FeatureDataset,
     BaseDataset,
@@ -19,6 +20,19 @@ INT_FINAL = [
     DatasetAggregator(ObservationDataset('international/eu_championship.json')),
     DatasetAggregator(ObservationDataset('international/world_cup.json')),
     DatasetAggregator(ObservationDataset('international/gold_cup.json'))
+]
+
+CSGO = [DatasetAggregator(EObservationDataset('esport/csgo_big_events.json'))]
+
+GENERAL = [
+    DatasetAggregator(ObservationDataset('leagues/j1_league.json')),
+    DatasetAggregator(ObservationDataset('leagues/turkey_1lig.json')),
+    DatasetAggregator(ObservationDataset('leagues/laliga.json')),
+    DatasetAggregator(ObservationDataset('leagues/allsvenskan.json')),
+    DatasetAggregator(ObservationDataset('leagues/bundesliga2.json')),
+    DatasetAggregator(ObservationDataset('leagues/epl.json')),
+    DatasetAggregator(ObservationDataset('leagues/efl_championship.json')),
+    DatasetAggregator(ObservationDataset('leagues/den_1div.json')),
 ]
 
 INT_QUALIFICATION = [
@@ -137,5 +151,15 @@ CONFIG = {
         ModelType.Score: LA_LIGA,
         ModelType.Total: LA_LIGA,
         ModelType.Btts: LA_LIGA
+    },
+    "general": {
+        ModelType.Score: GENERAL,
+        ModelType.Total: GENERAL,
+        ModelType.Btts: GENERAL
+    },
+    'csgo': {
+        ModelType.Score: CSGO,
+        ModelType.Total: CSGO,
+        ModelType.Btts: CSGO
     }
 }
