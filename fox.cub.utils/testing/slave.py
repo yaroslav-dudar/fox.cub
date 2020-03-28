@@ -53,6 +53,7 @@ class SlaveFoxCubTest:
             model_result = self.fox_cub_client.results[session_id][i]
             results.set_model_results(model_result)
 
+        results.set_test_scoring_results(games)
         self.fox_cub_client.clear_results(session_id)
         return results
 

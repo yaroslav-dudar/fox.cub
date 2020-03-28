@@ -51,10 +51,10 @@ class BasePattern(metaclass=ABCMeta):
         sorted_dateset = sorted(dataset, reverse=is_reversed,
                                 key=self.str_to_datetime)[:abs(games_to_test)]
 
-        a = list(filter(
+        results = list(filter(
                     self.get_venue_def(teams_1, teams_2),
                     sorted_dateset))
-        return a
+        return results
 
     @abstractmethod
     def get_teams(self) -> Tuple[set, set]:
@@ -213,16 +213,17 @@ class StrongWithWeakPattern(ScoringPattern):
     @property
     def team_1(self):
         return {
-            'attack': { 'min': 1.3, 'max': 3.5 },
-            'defence': { 'min': 0.3, 'max': 1.3 }
+            'attack': { 'min': 1.1, 'max': 1.8 },
+            'defence': { 'min': 0.9, 'max': 1.55 }
         }
 
     @property
     def team_2(self):
         return {
-            'attack': { 'min': 0.5, 'max': 1.3 },
-            'defence': { 'min': 1.4, 'max': 2.7 }
+            'attack': { 'min': 1.0 , 'max': 1.8 },
+            'defence': { 'min': 1.5, 'max': 2.95 }
         }
+
 
 
 class StrongWithStrongPattern(ScoringPattern):
@@ -232,16 +233,18 @@ class StrongWithStrongPattern(ScoringPattern):
     @property
     def team_1(self):
         return {
-            'attack': { 'min': 1.4, 'max': 3.45 },
-            'defence': { 'min': 0.5, 'max': 1.35 }
+            'attack': { 'min': 0.9, 'max': 1.6 },
+            'defence': { 'min': 0.95, 'max': 1.6 }
         }
 
     @property
     def team_2(self):
         return {
-            'attack': { 'min': 1.4, 'max': 3.45 },
-            'defence': { 'min': 0.5, 'max': 1.35 }
+            'attack': { 'min': 1.1, 'max': 1.75 },
+            'defence': { 'min': 0.75, 'max': 1.5 }
         }
+
+
 
 
 class StrongAttVsWeakDefPattern(ScoringPattern):
@@ -251,15 +254,15 @@ class StrongAttVsWeakDefPattern(ScoringPattern):
     @property
     def team_1(self):
         return {
-            'attack': { 'min': 1.5, 'max': 3.45 },
-            'defence': { 'min': 0, 'max': 3.45 }
+            'attack': { 'min': 0.8, 'max': 1.5 },
+            'defence': { 'min': 0.0, 'max': 1.2 }
         }
 
     @property
     def team_2(self):
         return {
-            'attack': { 'min': 0, 'max': 3.45 },
-            'defence': { 'min': 1.5, 'max': 3.45 }
+            'attack': { 'min': 1.0, 'max': 1.6 },
+            'defence': { 'min': 0.8, 'max': 1.55 }
         }
 
 
@@ -270,15 +273,15 @@ class StrongAttVsStrongDefPattern(ScoringPattern):
     @property
     def team_1(self):
         return {
-            'attack': { 'min': 1.4, 'max': 3.45 },
-            'defence': { 'min': 0, 'max': 2.0 }
+            'attack': { 'min': 1.3, 'max': 2.1 },
+            'defence': { 'min': 0.0, 'max': 1.5 }
         }
 
     @property
     def team_2(self):
         return {
-            'attack': { 'min': 1.0, 'max': 2.0 },
-            'defence': { 'min': 0.5, 'max': 1.5 }
+            'attack': { 'min': 1.0, 'max': 1.7 },
+            'defence': { 'min': 1.1, 'max': 1.8 }
         }
 
 
@@ -289,15 +292,16 @@ class WeakDefWithWeakDefPattern(ScoringPattern):
     @property
     def team_1(self):
         return {
-            'attack': { 'min': 1.2, 'max': 1.6 },
-            'defence': { 'min': 1.25, 'max': 1.6 }
+            'attack': { 'min':  0.8, 'max': 1.65 },
+            'defence': { 'min': 0.8, 'max': 1.6 }
         }
+
 
     @property
     def team_2(self):
         return {
-            'attack': { 'min': 1.2, 'max': 1.6 },
-            'defence': { 'min': 1.25, 'max': 1.6 }
+            'attack': { 'min':  1.6, 'max': 3.1 },
+            'defence': { 'min': 0.7, 'max': 1.5 }
         }
 
 
@@ -308,15 +312,15 @@ class StrongVsAveragePattern(ScoringPattern):
     @property
     def team_1(self):
         return {
-            'attack': { 'min': 1.4, 'max': 3.45 },
-            'defence': { 'min': 0.5, 'max': 1.35 }
+            'attack': { 'min':  12, 'max': 17 },
+            'defence': { 'min': 12, 'max': 17 }
         }
 
     @property
     def team_2(self):
         return {
-            'attack': { 'min': 0.5, 'max': 2.0 },
-            'defence': { 'min': 0.9, 'max': 2.5 }
+            'attack': { 'min':  12, 'max': 17 },
+            'defence': { 'min': 12, 'max': 17 }
         }
 
 
@@ -358,11 +362,11 @@ class LeadersVsDogsPattern(StandingsPattern):
 
     @property
     def team_1(self):
-        return { 'standings': { 'min': 0, 'max': 2 } }
+        return { 'standings': { 'min': 4, 'max': 10 } }
 
     @property
     def team_2(self):
-        return { 'standings': { 'min': 14, 'max': 20 } }
+        return { 'standings': { 'min': 8, 'max': 14 } }
 
 
 class LeadersVsMidtablePattern(StandingsPattern):
@@ -370,11 +374,11 @@ class LeadersVsMidtablePattern(StandingsPattern):
 
     @property
     def team_1(self):
-        return { 'standings': { 'min': 0, 'max': 3 } }
+        return { 'standings': { 'min': 8, 'max': 18 } }
 
     @property
     def team_2(self):
-        return { 'standings': { 'min': 7, 'max': 13 } }
+        return { 'standings': { 'min': 25, 'max': 45 } }
 
 
 class MidtableVsDogsPattern(StandingsPattern):
@@ -382,11 +386,11 @@ class MidtableVsDogsPattern(StandingsPattern):
 
     @property
     def team_1(self):
-        return { 'standings': { 'min': 8, 'max': 15 } }
+        return { 'standings': { 'min': 10, 'max': 20 } }
 
     @property
     def team_2(self):
-        return { 'standings': { 'min': 15, 'max': 25 } }
+        return { 'standings': { 'min': 0, 'max': 100 } }
 
 
 class MidtableVsMidtablePattern(StandingsPattern):
@@ -394,11 +398,11 @@ class MidtableVsMidtablePattern(StandingsPattern):
 
     @property
     def team_1(self):
-        return { 'standings': { 'min': 7, 'max': 15 } }
+        return { 'standings': { 'min': 0, 'max': 3 } }
 
     @property
     def team_2(self):
-        return { 'standings': { 'min': 7, 'max': 15 } }
+        return { 'standings': { 'min': 3, 'max': 6 } }
 
 
 class MidweekGamesPattern(AllPattern):
@@ -418,19 +422,19 @@ class SingleTeamPattern(AllPattern):
 
     @property
     def team_1(self):
-        return "Arsenal"
+        return ["MAD Lions"]#["Liquid", "fnatic", "Evil Geniuses", "FaZe", "Natus Vincere"]
 
     @property
     def team_2(self):
-        return "Arsenal"
+        return []#["MIBR", "Copenhagen Flames"]
 
     @functools.lru_cache(maxsize=None)
     def get_teams(self) -> Tuple[set, set]:
-        teams_1, teams_2 = [self.team_1], []
+        teams_1, teams_2 = self.team_1, self.team_2
 
         for season in self.dataset.get_seasons(self.season):
             points_table = season.get_table(metric='points')
-            teams_2.extend(list(points_table)[0:4])
+            teams_2.extend(list(points_table)[0:25])
 
         return set(teams_1), set(teams_2)
 
@@ -445,4 +449,4 @@ class TopLeagueVsRestPattern(LeagueStrengthPattern):
 
     @property
     def team_2(self):
-        return { 'strength': { 'min': 1, 'max': 10 } }
+        return { 'strength': { 'min': 1, 'max': 2 } }

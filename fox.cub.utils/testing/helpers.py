@@ -2,8 +2,14 @@
 
 from enum import Enum
 import importlib
+from typing import List
 
 from utils import *
+
+
+class FormatType(Enum):
+    Goals = "goals"
+    Points = "points"
 
 
 class VenueFilter(Enum):
@@ -22,57 +28,41 @@ class ImmutableProperty():
 
 class TestSessionResult():
 
-    def __init__(self, teams_1: list = None, teams_2: list = None):
-        self.totals_2_5, self.totals_3_5 = [], []
-        self.actual_results_team1, self.actual_results_team2 = [], []
-        self.model_results = []
-        self.scored_1, self.conceded_1 = [], []
-        self.scored_2, self.conceded_2 = [], []
-        self.league_goals_avg = []
-        self.btts = []
-        self.home_scored = []
-        self.away_scored = []
+    LIST_FIELDS = ['totals_2_5', 'totals_3_5', 'actual_results_team1',
+                   'actual_results_team2', 'model_results', 'scored_1',
+                   'conceded_1', 'scored_2', 'conceded_2', 'test_scored_1',
+                   'test_conceded_1', 'test_scored_2', 'test_conceded_2',
+                   'points_1', 'points_2', 'test_points_1', 'test_points_2',
+                   'home_scored', 'away_scored', 'league_goals_avg', 'btts']
 
+    def __init__(self, teams_1: list = None, teams_2: list = None):
         self.teams_1, self.teams_2 = teams_1, teams_2
+        for f in self.LIST_FIELDS:
+            setattr(self, f, [])
+
 
     def __iadd__(self, other_session):
-        self.totals_2_5 += other_session.totals_2_5
-        self.totals_3_5 += other_session.totals_3_5
-
-        self.actual_results_team1 += other_session.actual_results_team1
-        self.actual_results_team2 += other_session.actual_results_team2
-
-        self.scored_1 += other_session.scored_1
-        self.conceded_1 += other_session.conceded_1
-
-        self.scored_2 += other_session.scored_2
-        self.conceded_2 += other_session.conceded_2
-        self.model_results += other_session.model_results
-        self.btts += other_session.btts
-        self.home_scored += other_session.home_scored
-        self.away_scored += other_session.away_scored
-        self.league_goals_avg += other_session.league_goals_avg
+        for f in self.LIST_FIELDS:
+            new_value = getattr(self, f) + getattr(other_session, f)
+            setattr(self, f, new_value)
 
         return self
 
     def cleanup(self):
-        self.totals_2_5, self.totals_3_5 = [], []
-        self.actual_results_team1, self.actual_results_team2 = [], []
-        self.model_results = []
-        self.scored_1, self.conceded_1 = [], []
-        self.scored_2, self.conceded_2 = [], []
-        self.btts = []
-        self.league_goals_avg = []
+        for f in self.LIST_FIELDS:
+            setattr(self, f, [])
 
     def set_scoring_results(self, season: Season):
         scoring_table = season.get_table(metric='scored')
         cons_table = season.get_table(metric='conceded')
+        points_table = season.get_table(metric='points')
 
         for t in self.teams_1:
             number_of_games = season.get_team_games(t)
             try:
                 self.scored_1.append(scoring_table[t] / number_of_games)
                 self.conceded_1.append(cons_table[t] / number_of_games)
+                self.points_1.append(points_table[t] / number_of_games)
             except KeyError:
                 pass
 
@@ -81,8 +71,32 @@ class TestSessionResult():
             try:
                 self.scored_2.append(scoring_table[t] / number_of_games)
                 self.conceded_2.append(cons_table[t] / number_of_games)
+                self.points_2.append(points_table[t] / number_of_games)
             except KeyError:
                 pass
+
+    def set_test_scoring_results(self, games: List[Game]):
+        for g in games:
+            try:
+                if g.AwayTeam in self.teams_1 and g.HomeTeam in self.teams_2:
+                    self.test_scored_1.append(g.FTAG)
+                    self.test_conceded_1.append(g.FTHG)
+                    self.test_scored_2.append(g.FTHG)
+                    self.test_conceded_2.append(g.FTAG)
+
+                    self.test_points_1.append(g.get_team_points(g.AwayTeam))
+                    self.test_points_2.append(g.get_team_points(g.HomeTeam))
+                elif g.AwayTeam in self.teams_2 and g.HomeTeam in self.teams_1:
+                    self.test_scored_2.append(g.FTAG)
+                    self.test_conceded_2.append(g.FTHG)
+                    self.test_scored_1.append(g.FTHG)
+                    self.test_conceded_1.append(g.FTAG)
+
+                    self.test_points_2.append(g.get_team_points(g.AwayTeam))
+                    self.test_points_1.append(g.get_team_points(g.HomeTeam))
+            except TypeError:
+                pass
+
 
     def set_actual_results(self, game: Game):
         if game.HomeTeam in self.teams_1:
@@ -97,8 +111,8 @@ class TestSessionResult():
                 append(game.FTAG - game.FTHG)
 
         self.btts.append(game.FTHG > 0 and game.FTAG > 0)
-        self.home_scored.append(game.FTHG > 0)
-        self.away_scored.append(game.FTAG > 0)
+        self.home_scored.append(game.FTHG)
+        self.away_scored.append(game.FTAG)
 
     def set_model_results(self, prediction):
         if prediction['HomeTeam'] in self.teams_1:

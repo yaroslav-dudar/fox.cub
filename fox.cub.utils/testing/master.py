@@ -23,6 +23,7 @@ from testing.settings import CONFIG
 from testing.helpers import (
     TestSessionResult,
     VenueFilter,
+    FormatType,
     import_string)
 
 class Tournament(Enum):
@@ -56,6 +57,8 @@ class MasterFoxCubTest:
         parser = argparse.ArgumentParser()
         parser.add_argument('-slaves', default=4, type=int,
                             help='Amount of slaves to use in a test.')
+        parser.add_argument('-type', required=True, type=str,
+                            help='Testing results format')
         parser.add_argument('-patterns', type=self.check_pattern_path,
                             default='testing.searchers.AllPattern',
                             help='Teams searching pattern(s) class.' +\
@@ -85,6 +88,7 @@ class MasterFoxCubTest:
             self.patterns.append(pattern)
 
         self.group_by = Group(self.args.groupBy)
+        self.type = FormatType(self.args.type)
 
     def test(self, dataset: DatasetAggregator):
         """ Make API calls to Fox.Cub statistical model
@@ -122,20 +126,17 @@ class MasterFoxCubTest:
 
     def print_test_results(self):
         print("Tested games:", len(self.results.actual_results_team1))
+        print("Home adv:", self.get_home_advantage(self.results.home_scored, self.results.away_scored))
         print("League goals avg:", mean(self.results.league_goals_avg))
-        print("Scored avg team1:", mean(self.results.scored_1))
-        print("Conceded avg team1:", mean(self.results.conceded_1))
-        print("Scored avg team2:", mean(self.results.scored_2))
-        print("Conceded avg team2:", mean(self.results.conceded_2))
-        print('='*25)
+        self.print_type()
         print("Real results Team1 Win:", self.get_actual_results(self.results.actual_results_team1, 0))
         print("Real results Team2 Win:", self.get_actual_results(self.results.actual_results_team2, 0))
         print("Real results Draw:", self.get_percentage(self.results.actual_results_team2, 0))
         print("Real results Total Under 2.5:", self.get_percentage(self.results.totals_2_5, True))
         print("Real results Total Under 3.5:", self.get_percentage(self.results.totals_3_5, True))
         print("Real results BTTS:", self.get_percentage(self.results.btts, True))
-        print("Real results Home Score:", self.get_percentage(self.results.home_scored, True))
-        print("Real results Away Score:", self.get_percentage(self.results.away_scored, True))
+        print("Real results Home Score:", self.get_condition(self.results.home_scored, 0))
+        print("Real results Away Score:", self.get_condition(self.results.away_scored, 0))
         print('='*25)
         print("Fox.cub results Team1 Win:", self.get_fox_cub_scoreline('Win', 'Team1'))
         print("Fox.cub results Team2 Win:", self.get_fox_cub_scoreline('Win', 'Team2'))
@@ -176,6 +177,36 @@ class MasterFoxCubTest:
     def get_percentage(self, collection, value):
         """ Calculate percentage of a given value in collection """
         return collection.count(value) / len(collection)
+
+    def get_condition(self, collection, value):
+        return sum(1 for v in collection if v > value) / len(collection)
+
+    def get_home_advantage(self, home, away):
+        if len(home) == 0 or len(away) == 0:
+            return 0
+        return sum(home)/len(home) - sum(away)/len(away)
+
+    def print_type(self):
+        if self.type == FormatType.Goals:
+            print("Scored avg team1:", mean(self.results.scored_1))
+            print("Conceded avg team1:", mean(self.results.conceded_1))
+            print("Scored avg team2:", mean(self.results.scored_2))
+            print("Conceded avg team2:", mean(self.results.conceded_2))
+            print('='*25)
+            print("Test Scored avg team1:", mean(self.results.test_scored_1))
+            print("Test Conceded avg team1:", mean(self.results.test_conceded_1))
+            print("Test Scored avg team2:", mean(self.results.test_scored_2))
+            print("Test Conceded avg team2:", mean(self.results.test_conceded_2))
+            print('='*25)
+        elif self.type == FormatType.Points:
+            print("Points team1:", mean(self.results.points_1))
+            print("Points team2:", mean(self.results.points_2))
+            print('='*25)
+            print("Test Points team1:", mean(self.results.test_points_1))
+            print("Test Points team2:", mean(self.results.test_points_2))
+            print('='*25)
+        else:
+            raise RuntimeError("Incorrect testing type")
 
 
 if __name__ == '__main__':
