@@ -8,8 +8,9 @@ from collections import defaultdict
 from statistics import mean
 
 from utils import (join_path,
-                   Game,
                    Season)
+
+from games import BaseGame, GameFactory
 
 DATA_FOLDER = os.environ.get('DATA_FOLDER', '')
 
@@ -27,45 +28,14 @@ class FeatureVector:
     attack_strength_away_team: float
     defence_strength_home_team: float
     defence_strength_away_team: float
+    home_advantage: float
+
+    exp_points_home_team: float
+    exp_points_away_team: float
 
     def get_avg_goals(self):
         return (self.avg_goals_home_team +\
                 self.avg_goals_away_team) / 2
-
-    def reshuffle(self):
-        """ Alert home team to away and away to home """
-
-        if bool(random.getrandbits(1)):
-            self.avg_goals_home_team, self.avg_goals_away_team =\
-                self.avg_goals_away_team, self.avg_goals_home_team
-
-            self.league_strength_home_team, self.league_strength_away_team =\
-                self.league_strength_away_team, self.league_strength_home_team
-
-            self.attack_strength_home_team, self.attack_strength_away_team =\
-                self.attack_strength_away_team, self.attack_strength_home_team
-
-            self.defence_strength_home_team, self.defence_strength_away_team =\
-                self.defence_strength_away_team, self.defence_strength_home_team
-
-
-class ModelType(Enum):
-
-    Btts = "btts"
-    Total = "totals"
-    Score = "scoreline"
-
-    @classmethod
-    def has_value(cls, value):
-        return any(value == item.value for item in cls)
-
-    def get_label_def(self):
-        labels = {
-            ModelType.Btts: ObservationDataset.btts,
-            ModelType.Total: ObservationDataset.totals,
-            ModelType.Score: ObservationDataset.scoreline
-        }
-        return labels[self]
 
 
 class BaseDataset:
@@ -75,7 +45,7 @@ class BaseDataset:
         self.meta = meta if meta else {}
 
     @classmethod
-    def from_list(cls, games: List[Game], meta: dict = None):
+    def from_list(cls, games: List[BaseGame], meta: dict = None):
         return cls(None, games, meta)
 
     @classmethod
@@ -91,7 +61,7 @@ class BaseDataset:
         if self._data:
             return self._data
 
-        self._data = Game.from_file(join_path(DATA_FOLDER,
+        self._data = BaseGame.from_file(join_path(DATA_FOLDER,
                                         self._dataset_path))
         return self._data
 
@@ -133,25 +103,29 @@ class FeatureDataset:
                                        season,
                                        dataset.meta.get('strength', 0))
 
-    def get_feature_vector(self, game: Game):
+    def get_feature_vector(self, game: BaseGame):
         """ Return feature vector for an input game.
         Return None if at least one team not exists in dataset"""
 
         try:
             home = self._stats[game.Season][game.HomeTeam]
             away = self._stats[game.Season][game.AwayTeam]
+            home_adv = home['home_adv']/home['league_avg']
         except KeyError:
             return None
 
         return FeatureVector(
             avg_goals_home_team=home['league_avg'],
             avg_goals_away_team=away['league_avg'],
+            home_advantage=home_adv,
             league_strength_home_team=home['league_strength'],
             league_strength_away_team=away['league_strength'],
             attack_strength_home_team=home['attack_strength'],
             attack_strength_away_team=away['attack_strength'],
             defence_strength_home_team=home['defence_strength'],
-            defence_strength_away_team=away['defence_strength'])
+            defence_strength_away_team=away['defence_strength'],
+            exp_points_home_team=home['expected_points'],
+            exp_points_away_team=away['expected_points'])
 
     def collect_team_features(self, team, dataset_stats, season_name,
                               season, league_strength):
@@ -161,8 +135,10 @@ class FeatureDataset:
             'season': season,
             'attack_strength': mean(team_scores['scored_xg']),
             'defence_strength': mean(team_scores['conceded_xg']),
+            'home_adv': team_scores['home_adv'],
             'league_strength': league_strength,
-            'league_avg': season.league_avg
+            'league_avg': season.league_avg,
+            'expected_points': team_scores['expected_points']
         }
 
 
@@ -171,8 +147,8 @@ class ObservationDataset(BaseDataset):
     Used to generate training datasets """
 
     @staticmethod
-    def scoreline(home_goals, away_goals):
-        diff = int(home_goals) - int(away_goals)
+    def scoreline(game):
+        diff = game.FTHG - game.FTAG
 
         if diff > 2: return 3
         if diff < -2: return 6
@@ -181,12 +157,61 @@ class ObservationDataset(BaseDataset):
         return diff
 
     @staticmethod
-    def btts(home_goals, away_goals):
-        return 1 if int(home_goals) and int(away_goals) else 0
+    def btts(game):
+        return 1 if game.FTHG and game.FTAG else 0
 
     @staticmethod
-    def totals(home_goals, away_goals):
-        return int(home_goals) + int(away_goals)
+    def totals(game):
+        return game.FTHG + game.FTAG
+
+
+class EObservationDataset(BaseDataset):
+    """ Represents esport history data.
+    Used to generate training datasets """
+
+    @staticmethod
+    def scoreline(game: BaseGame, is_changed=False):
+
+        if game.is_home_win(): return 1
+        if game.is_away_win(): return 2
+        return 0
+
+    @staticmethod
+    def btts(game, is_changed=False):
+        return 1 if game.FTHG and game.FTAG else 0
+
+    @staticmethod
+    def totals(self, games_serie, is_changed=False):
+        return 0 if len(games_serie) == 2 else 1
+
+    def __scoreline(games_serie, is_changed=False):
+        home, away = 0, 0
+        for game in games_serie:
+            if game.is_home_win():
+                home += 1
+            elif game.is_away_win():
+                away += 1
+
+        if not is_changed:
+            if home - away == 1:
+                return 0
+            elif home - away == 2:
+                return 1
+            if home - away == -1:
+                return 2
+            elif home - away == -2:
+                return 3
+        else:
+            if home - away == 1:
+                return 2
+            elif home - away == 2:
+                return 3
+            if home - away == -1:
+                return 0
+            elif home - away == -2:
+                return 1
+
+        return -1
 
 
 class DatasetAggregator:
@@ -195,10 +220,11 @@ class DatasetAggregator:
     for each observation
     """
 
-    def __init__(self, obs_dataset: ObservationDataset,
+    def __init__(self, obs_dataset: BaseDataset,
                  feat_dataset: FeatureDataset = None):
 
         self.obs_dataset = obs_dataset
+        self.obs_class = obs_dataset.__class__
 
         if not feat_dataset:
             # use the same dataset for features if not provided
@@ -211,7 +237,7 @@ class DatasetAggregator:
         """ Return label class and feature vector """
         self.check_features()
 
-        label = label_class_def(game.FTHG, game.FTAG) if label_class_def else None
+        label = label_class_def(game) if label_class_def else None
         features = self.feat_dataset.get_feature_vector(game)
 
         return label, features
@@ -226,14 +252,14 @@ class DatasetAggregator:
         season = Season.get(self.observations, season_name)
 
         if not split_by_group:
-            obs_set = ObservationDataset.from_list(season.games,
+            obs_set = self.obs_class.from_list(season.games,
                                                    self.obs_dataset.meta)
             return [DatasetAggregator(obs_set, self.feat_dataset)]
 
         for group in season.get_groups():
             if group == -1: continue
 
-            obs_set = ObservationDataset.from_list(season.get_group_games(group),
+            obs_set = self.obs_class.from_list(season.get_group_games(group),
                                                    self.obs_dataset.meta)
             output_sets.append(DatasetAggregator(obs_set, self.feat_dataset))
 
@@ -264,3 +290,22 @@ class DatasetAggregator:
 
     def __repr__(self):
         return "DatasetAggregator(observations_path=%s)" % self.obs_dataset.path
+
+
+class ModelType(Enum):
+
+    Btts = "btts"
+    Total = "totals"
+    Score = "scoreline"
+
+    @classmethod
+    def has_value(cls, value):
+        return any(value == item.value for item in cls)
+
+    def get_label_def(self, obs_class: BaseDataset):
+        labels = {
+            ModelType.Btts: obs_class.btts,
+            ModelType.Total: obs_class.totals,
+            ModelType.Score: obs_class.scoreline
+        }
+        return labels[self]

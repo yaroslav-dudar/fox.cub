@@ -75,7 +75,8 @@ LEAGUE_CUP = DatasetAggregator(
 
 EU_QUALIFICATION = DatasetAggregator(ObservationDataset('international/eu_qualification.json'))
 
-CSGO = DatasetAggregator(ObservationDataset('esport/csgo_big_events.json'))
+CSGO = DatasetAggregator(ObservationDataset('esport/csgo.json'))
+DOTA2 = DatasetAggregator(ObservationDataset('esport/dota2.json'))
 
 CONFIG = {
     'epl': EPL,
@@ -129,5 +130,6 @@ CONFIG = {
     'br_serie_b': BR_SERIE_B,
     'bahrain_pl': BAHRAIN_PL,
     'bel_pl': BEL_PL,
-    'cs_go': CSGO
+    'cs_go': CSGO,
+    'dota2': DOTA2
 }

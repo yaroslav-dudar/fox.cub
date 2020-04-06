@@ -6,6 +6,7 @@ model results with actual results.
 """
 
 from utils import *
+from games import BaseGame
 from dataset import DatasetAggregator, ObservationDataset
 from testing.helpers import TestSessionResult
 from testing.searchers import BasePattern
@@ -15,7 +16,7 @@ from typing import List, Tuple
 
 class SlaveFoxCubTest:
 
-    def __init__(self, tournament, games: List[Game], patterns: BasePattern):
+    def __init__(self, tournament, games: List[BaseGame], patterns: BasePattern):
         # setup http client
         self.fox_cub_client = FoxCub(tournament)
         # amount of games to test. negative value means take them from the end

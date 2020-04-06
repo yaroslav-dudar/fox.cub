@@ -2,99 +2,37 @@ from datetime import datetime
 from collections import OrderedDict
 from enum import Enum
 from typing import List
+from statistics import mean
 
-import json
+import random
 import os
 import time
 import uuid
 import functools
 
-from collections import namedtuple
-
+from games import BaseGame
 from fox_cub_client import FoxCub
 import gevent.pool
-
-game_fields = ["FTAG", "FTHG", "HTHG", "HTAG", "Group",
-               "HomeGoalsTiming", "AwayGoalsTiming",
-               "Season", "Date", "AwayTeam", "HomeTeam"]
-_GameTuple = namedtuple('GameTuple', game_fields, defaults=(None,) * len(game_fields))
-
-class Game(_GameTuple):
-    FLOAT_FIELDS = game_fields[:5]
-
-    def __new__(cls, *args, **kwargs):
-        obj = super(Game, cls)
-
-        new_args = [float(val) if cls.is_float(field, val) else val
-            for field, val in zip(obj.__thisclass__._fields, args)]
-
-        new_kwargs = {field: float(val) if cls.is_float(field, val) else val
-            for field, val in kwargs.items()}
-
-        return obj.__new__(cls, *new_args, **new_kwargs)
-
-    @classmethod
-    def is_float(cls, field, val):
-        return field in cls.FLOAT_FIELDS and val is not None
-
-    def is_total_under(self, total=2.5):
-        return self.FTHG + self.FTAG < total
-
-    def get_team_points(self, team):
-        if self.FTAG == self.FTHG:
-            return 1
-        if self.HomeTeam == team:
-            return 3 if self.FTHG > self.FTAG else 0
-        if self.AwayTeam == team:
-            return 3 if self.FTAG > self.FTHG else 0
-
-    def get_team_goals(self, team, is_score):
-        """ Send batch of games to Fox.Cub
-
-        Args:
-            team: team name to seatch
-            is_score: if True return team goals for if False goals agains
-        """
-        if self.HomeTeam == team:
-            return self.FTHG if is_score else self.FTAG
-        if self.AwayTeam == team:
-            return self.FTAG if is_score else self.FTHG
-
-    def date_as_datetime(self):
-        return self.to_datetime(self.Date)
-
-    @classmethod
-    def from_file(cls, filepath):
-        """ Create list of games using input file. """
-        games = []
-        with open(filepath, 'r') as f:
-            for g in json.load(f):
-                try:
-                    games.append(cls(**g))
-                except ValueError:
-                    pass
-
-        return games
-
-    @staticmethod
-    def to_datetime(str_date, date_format='%d/%m/%Y'):
-        return datetime.strptime(str_date, date_format)
 
 
 class Season:
 
-    def __init__(self, games: List[Game]):
+    def __init__(self, games: List[BaseGame]):
         self.games = games
 
-    def get_teams(self, games: List[Game] = None):
+    def get_teams(self, games: List[BaseGame] = None):
         games = self.games if not games else games
-        return list(set([g.AwayTeam for g in games]))
+        teams = set()
+        for g in games:
+            teams.add(g.AwayTeam)
+            teams.add(g.HomeTeam)
+        return list(teams)
 
     def is_empty(self):
         return len(self.games) == 0
 
     @staticmethod
-    def get_seasons(games: List[Game], reverse=False):
+    def get_seasons(games: List[BaseGame], reverse=False):
         """ Get list of seasons in asc/desc order"""
         seasons = list(set([g.Season for g in games]))
         seasons.sort(reverse=reverse)
@@ -108,6 +46,7 @@ class Season:
                        g.HomeTeam == team, self.games)
         return len(list(games))
 
+    @functools.lru_cache(maxsize=6)
     def get_table(self, metric='points'):
         teams = self.get_teams()
         table = {}
@@ -165,9 +104,26 @@ class Season:
         else:
             home_games = []
 
-        scored = [g.FTAG for g in away_games] + [g.FTHG for g in home_games]
-        conceded = [g.FTHG for g in away_games] + [g.FTAG for g in home_games]
-        return { "scored_xg": scored, "conceded_xg": conceded }
+        scored_h = [g.FTHG for g in home_games]
+        scored_a = [g.FTAG for g in away_games]
+
+        conceded_h = [g.FTAG for g in home_games]
+        conceded_a = [g.FTHG for g in away_games]
+
+        try:
+            mean_gd = mean(scored_h + scored_a) - mean(conceded_h + conceded_a)
+            home_gd = mean(scored_h) - mean(conceded_h)
+            home_adv = home_gd - mean_gd
+        except Exception:
+            home_adv = 0
+
+        return {
+            "scored_xg": scored_h + scored_a,
+            "conceded_xg": conceded_h + conceded_a,
+            "home_adv": home_adv,
+            "expected_points": self.get_table(metric='points')[team] /
+                               len(home_games + away_games)
+        }
 
     def get_team_results(self, team):
         games = self.get_team_scores(team)
@@ -176,7 +132,7 @@ class Season:
                         games['conceded_xg']))
 
     @staticmethod
-    def get(games: List[Game], season: str = None):
+    def get(games: List[BaseGame], season: str = None):
         """ Get Season entity. """
         if season:
             season_games = filter(lambda g: g.Season == season, games)
@@ -189,7 +145,7 @@ class Season:
         return list(filter(lambda g: g.Group == group, self.games))
 
     @classmethod
-    def filter_games(cls, games: List[Game], before):
+    def filter_games(cls, games: List[BaseGame], before):
         before = cls.to_datetime(before)
         return tuple(filter(
             lambda g: g.date_as_datetime() < before, games))
@@ -205,7 +161,7 @@ class Season:
         return list(get_season_table(self.games).keys())[min_place-1:max_place-1]
 
     @staticmethod
-    def collect_stats(games: List[Game], date_min = None, date_max = None):
+    def collect_stats(games: List[BaseGame], date_min = None, date_max = None):
         """ Collecting general statistics for batch of games """
         if not games: games = self.games
 
@@ -216,9 +172,9 @@ class Season:
         home_score = sum([g.FTHG for g in games])
         away_score = sum([g.FTAG for g in games])
 
-        home_wins = sum(1 for _ in filter(lambda g: g.FTHG > g.FTAG, games))
-        away_wins = sum(1 for _ in filter(lambda g: g.FTHG < g.FTAG, games))
-        draws = sum(1 for _ in filter(lambda g: g.FTHG == g.FTAG, games))
+        home_wins = sum(1 for _ in filter(lambda g: g.is_home_win(), games))
+        away_wins = sum(1 for _ in filter(lambda g: g.is_away_win(), games))
+        draws = sum(1 for _ in filter(lambda g: g.is_draw(), games))
 
         return {
             'under2.5': float(under2_5) / len(games),
@@ -235,6 +191,7 @@ class Season:
 class Group(Enum):
     Disable = 'Off'
     Group = 'Group'
+    Series = "Series"
 
 
 def get_mean_line(data):

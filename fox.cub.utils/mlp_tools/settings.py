@@ -23,6 +23,7 @@ INT_FINAL = [
 ]
 
 CSGO = [DatasetAggregator(EObservationDataset('esport/csgo_big_events.json'))]
+DOTA2 = [DatasetAggregator(EObservationDataset('esport/dota2.json'))]
 
 GENERAL = [
     DatasetAggregator(ObservationDataset('leagues/j1_league.json')),
@@ -161,5 +162,10 @@ CONFIG = {
         ModelType.Score: CSGO,
         ModelType.Total: CSGO,
         ModelType.Btts: CSGO
+    },
+    'dota2': {
+        ModelType.Score: DOTA2,
+        ModelType.Total: DOTA2,
+        ModelType.Btts: DOTA2
     }
 }

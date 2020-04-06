@@ -187,11 +187,13 @@ class MasterFoxCubTest:
         return sum(home)/len(home) - sum(away)/len(away)
 
     def print_type(self):
+        t1_games = sum(self.results.team_1_games)
+        t2_games = sum(self.results.team_2_games)
         if self.type == FormatType.Goals:
-            print("Scored avg team1:", mean(self.results.scored_1))
-            print("Conceded avg team1:", mean(self.results.conceded_1))
-            print("Scored avg team2:", mean(self.results.scored_2))
-            print("Conceded avg team2:", mean(self.results.conceded_2))
+            print("Scored avg team1:", sum(self.results.scored_1)/t1_games)
+            print("Conceded avg team1:", sum(self.results.conceded_1)/t1_games)
+            print("Scored avg team2:", sum(self.results.scored_2)/t2_games)
+            print("Conceded avg team2:", sum(self.results.conceded_2)/t2_games)
             print('='*25)
             print("Test Scored avg team1:", mean(self.results.test_scored_1))
             print("Test Conceded avg team1:", mean(self.results.test_conceded_1))
@@ -199,8 +201,8 @@ class MasterFoxCubTest:
             print("Test Conceded avg team2:", mean(self.results.test_conceded_2))
             print('='*25)
         elif self.type == FormatType.Points:
-            print("Points team1:", mean(self.results.points_1))
-            print("Points team2:", mean(self.results.points_2))
+            print("Points team1:", sum(self.results.points_1)/t1_games)
+            print("Points team2:", sum(self.results.points_2)/t2_games)
             print('='*25)
             print("Test Points team1:", mean(self.results.test_points_1))
             print("Test Points team2:", mean(self.results.test_points_2))

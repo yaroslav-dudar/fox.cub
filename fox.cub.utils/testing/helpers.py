@@ -5,6 +5,7 @@ import importlib
 from typing import List
 
 from utils import *
+from games import BaseGame
 
 
 class FormatType(Enum):
@@ -33,7 +34,8 @@ class TestSessionResult():
                    'conceded_1', 'scored_2', 'conceded_2', 'test_scored_1',
                    'test_conceded_1', 'test_scored_2', 'test_conceded_2',
                    'points_1', 'points_2', 'test_points_1', 'test_points_2',
-                   'home_scored', 'away_scored', 'league_goals_avg', 'btts']
+                   'home_scored', 'away_scored', 'league_goals_avg', 'btts',
+                   'team_1_games', 'team_2_games']
 
     def __init__(self, teams_1: list = None, teams_2: list = None):
         self.teams_1, self.teams_2 = teams_1, teams_2
@@ -58,24 +60,24 @@ class TestSessionResult():
         points_table = season.get_table(metric='points')
 
         for t in self.teams_1:
-            number_of_games = season.get_team_games(t)
             try:
-                self.scored_1.append(scoring_table[t] / number_of_games)
-                self.conceded_1.append(cons_table[t] / number_of_games)
-                self.points_1.append(points_table[t] / number_of_games)
+                self.scored_1.append(scoring_table[t])
+                self.conceded_1.append(cons_table[t])
+                self.points_1.append(points_table[t])
+                self.team_1_games.append(season.get_team_games(t))
             except KeyError:
                 pass
 
         for t in self.teams_2:
-            number_of_games = season.get_team_games(t)
             try:
-                self.scored_2.append(scoring_table[t] / number_of_games)
-                self.conceded_2.append(cons_table[t] / number_of_games)
-                self.points_2.append(points_table[t] / number_of_games)
+                self.scored_2.append(scoring_table[t])
+                self.conceded_2.append(cons_table[t])
+                self.points_2.append(points_table[t])
+                self.team_2_games.append(season.get_team_games(t))
             except KeyError:
                 pass
 
-    def set_test_scoring_results(self, games: List[Game]):
+    def set_test_scoring_results(self, games: List[BaseGame]):
         for g in games:
             try:
                 if g.AwayTeam in self.teams_1 and g.HomeTeam in self.teams_2:
@@ -98,7 +100,7 @@ class TestSessionResult():
                 pass
 
 
-    def set_actual_results(self, game: Game):
+    def set_actual_results(self, game: BaseGame):
         if game.HomeTeam in self.teams_1:
             self.actual_results_team1.\
                 append(game.FTHG - game.FTAG)

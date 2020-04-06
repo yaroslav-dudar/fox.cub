@@ -7,6 +7,7 @@ import random
 import argparse
 
 from utils import *
+from games import BaseGame
 from dataset import DatasetAggregator, ModelType, FeatureVector
 from mlp_tools.settings import CONFIG
 
@@ -27,7 +28,7 @@ class TrainDataset:
 
 
     def filter_by_month(self, min_month, max_month):
-        def func(game: Game):
+        def func(game: BaseGame):
             game_date = game.date_as_datetime()
             return (game_date.month <= max_month and \
                     game_date.month >= min_month)
@@ -201,7 +202,7 @@ class TrainDataset:
         return True
 
 
-    def get_in_play_score(self, game: Game, minute: int):
+    def get_in_play_score(self, game: BaseGame, minute: int):
         home = game.HomeGoalsTiming.split(' ')
         away = game.AwayGoalsTiming.split(' ')
 
@@ -311,7 +312,6 @@ if __name__ == '__main__':
     for d in dataset[model_type]:
         seasons = Season.get_seasons(d.observations,
                                      reverse=reverse)
-        print(seasons)
         print("Seasons: ", seasons[:seasons_num])
         result_dataset.extend(train_dataset.execute(d, seasons[:seasons_num]))
 
