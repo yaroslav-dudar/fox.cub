@@ -8,9 +8,10 @@ from collections import defaultdict
 from statistics import mean
 
 from utils import (join_path,
-                   Season)
+                   Season,
+                   singledispatchmethod)
 
-from games import BaseGame, GameFactory
+from games import BaseGame, GameFactory, Serie
 
 DATA_FOLDER = os.environ.get('DATA_FOLDER', '')
 
@@ -96,12 +97,10 @@ class FeatureDataset:
                              dataset_stats['avgScoredAway'])
         self._seasons[season_name].append(season)
 
-        for team in season.get_teams():
-            self.collect_team_features(team,
-                                       dataset_stats,
-                                       season_name,
-                                       season,
-                                       dataset.meta.get('strength', 0))
+        self.collect_team_features(dataset_stats,
+                                   season_name,
+                                   season,
+                                   dataset.meta.get('strength', 0))
 
     def get_feature_vector(self, game: BaseGame):
         """ Return feature vector for an input game.
@@ -127,19 +126,20 @@ class FeatureDataset:
             exp_points_home_team=home['expected_points'],
             exp_points_away_team=away['expected_points'])
 
-    def collect_team_features(self, team, dataset_stats, season_name,
+    def collect_team_features(self, dataset_stats, season_name,
                               season, league_strength):
 
-        team_scores = season.get_team_scores(team)
-        self._stats[season_name][team] = {
-            'season': season,
-            'attack_strength': mean(team_scores['scored_xg']),
-            'defence_strength': mean(team_scores['conceded_xg']),
-            'home_adv': team_scores['home_adv'],
-            'league_strength': league_strength,
-            'league_avg': season.league_avg,
-            'expected_points': team_scores['expected_points']
-        }
+        scores = season.get_list_team_scores()
+        for team, team_scores in scores.items():
+            self._stats[season_name][team] = {
+                'season': season,
+                'attack_strength': mean(team_scores['scored_xg']),
+                'defence_strength': mean(team_scores['conceded_xg']),
+                'home_adv': team_scores['home_adv'],
+                'league_strength': league_strength,
+                'league_avg': season.league_avg,
+                'expected_points': team_scores['expected_points']
+            }
 
 
 class ObservationDataset(BaseDataset):
@@ -169,24 +169,23 @@ class EObservationDataset(BaseDataset):
     """ Represents esport history data.
     Used to generate training datasets """
 
+    @singledispatchmethod
     @staticmethod
-    def scoreline(game: BaseGame, is_changed=False):
+    def scoreline(game, is_changed=False):
+        raise NotImplementedError("scoreline: Type not supported")
 
+    @scoreline.register(BaseGame)
+    @staticmethod
+    def _(game: BaseGame, is_changed=False):
         if game.is_home_win(): return 1
         if game.is_away_win(): return 2
         return 0
 
+    @scoreline.register(Serie)
     @staticmethod
-    def btts(game, is_changed=False):
-        return 1 if game.FTHG and game.FTAG else 0
-
-    @staticmethod
-    def totals(self, games_serie, is_changed=False):
-        return 0 if len(games_serie) == 2 else 1
-
-    def __scoreline(games_serie, is_changed=False):
+    def __(serie: Serie, is_changed=False):
         home, away = 0, 0
-        for game in games_serie:
+        for game in serie.games:
             if game.is_home_win():
                 home += 1
             elif game.is_away_win():
@@ -212,6 +211,15 @@ class EObservationDataset(BaseDataset):
                 return 1
 
         return -1
+
+    @staticmethod
+    def btts(game, is_changed=False):
+        return 1 if game.FTHG and game.FTAG else 0
+
+    @staticmethod
+    def totals(serie, is_changed=False):
+        return 0 if len(serie.games) == 2 else 1
+
 
 
 class DatasetAggregator:

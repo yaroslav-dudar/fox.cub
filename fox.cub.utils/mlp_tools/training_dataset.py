@@ -7,10 +7,10 @@ import random
 import argparse
 
 from utils import *
-from games import BaseGame
-from dataset import DatasetAggregator, ModelType, FeatureVector
+from games import BaseGame, Serie
+from dataset import DatasetAggregator, ModelType
 from mlp_tools.settings import CONFIG
-
+from mlp_tools.output import Output
 
 class TrainDataset:
 
@@ -36,105 +36,9 @@ class TrainDataset:
         return func
 
 
-    def dataset_v1(self, feature: FeatureVector):
-        """
-            League avg goals,
-            Home team attack,
-            Home team defence,
-            Away Team attack,
-            Away team defence
-        """
-
-        return [
-            feature.get_avg_goals(),
-            feature.attack_strength_home_team,
-            feature.defence_strength_home_team,
-            feature.attack_strength_away_team,
-            feature.defence_strength_away_team,
-        ]
-
-
-    def dataset_v2(self, feature: FeatureVector):
-        """
-            Home team League avg goals,
-            Away team League avg goals,
-            Home team division [0 - higher 1 - lower],
-            Away team division [0 - higher 1 - lower],
-            Home team attack,
-            Home team defence,
-            Away team attack,
-            Away team defence
-        """
-
-        return [
-            feature.avg_goals_home_team,
-            feature.avg_goals_away_team,
-            feature.league_strength_home_team,
-            feature.league_strength_away_team,
-            feature.attack_strength_home_team,
-            feature.defence_strength_home_team,
-            feature.attack_strength_away_team,
-            feature.defence_strength_away_team
-        ]
-
-    def dataset_v3(self, feature: FeatureVector,
-                   minute: int, htg: int, atg: int):
-        """
-            League avg goals,
-            Home team attack,
-            Home team defence,
-            Away team attack,
-            Away team defence,
-            Home team score
-            Away team score,
-            Minute of play
-        """
-
-        return [
-            feature.get_avg_goals(),
-            feature.attack_strength_home_team,
-            feature.defence_strength_home_team,
-            feature.attack_strength_away_team,
-            feature.defence_strength_away_team,
-            htg,
-            atg,
-            minute
-        ]
-
-    def dataset_v4(self, feature: FeatureVector):
-        """
-            League avg goals,
-            Home team attack,
-            Home team defence,
-            Away team attack,
-            Away team defence,
-            Home advantage
-        """
-
-        return [
-            feature.get_avg_goals(),
-            feature.attack_strength_home_team,
-            feature.defence_strength_home_team,
-            feature.attack_strength_away_team,
-            feature.defence_strength_away_team,
-            feature.home_advantage
-        ]
-
-    def dataset_v5(self, feature: FeatureVector):
-        """
-            Home Expected Points
-            Away Expected Points
-        """
-
-        return [
-            feature.exp_points_home_team,
-            feature.exp_points_away_team
-        ]
-
-
     def prepare_data_group(self, games, dataset):
         if self.is_live:
-            return self.prepare_in_paly(games, dataset)
+            return self.prepare_in_play(games, dataset)
         else:
             return self.prepare_pre_game(games, dataset)
 
@@ -148,29 +52,29 @@ class TrainDataset:
                                                                 label_def)
 
             if not features: continue
-            data_group.append([label_class] + self.dataset_v5(features))
+            data_group.append([label_class] + Output.dataset_v5(features))
 
         return data_group
 
 
-    def prepare_series(self, games_serie, dataset):
+    def prepare_series(self, serie: Serie, dataset):
         data_group = []
         label_def = self.model_type.get_label_def(dataset.obs_class)
 
         if self.is_reshuffle:
-            is_changed, game = games_serie[0].reshuffle()
+            is_changed, game = serie.games[0].reshuffle()
         else:
-            is_changed, game = False, games_serie[0]
+            is_changed, game = False, serie.games[0]
         _, features = dataset.prepare_observation(game, None)
 
-        label_class = label_def(games_serie, is_changed)
+        label_class = label_def(serie, is_changed)
         if not features or label_class < 0 : return data_group
 
-        data_group.append([label_class] + self.dataset_v5(features))
+        data_group.append([label_class] + Output.dataset_v1(features))
         return data_group
 
 
-    def prepare_in_paly(self, games, dataset):
+    def prepare_in_play(self, games, dataset):
         data_group = []
         timestamps = [5*i for i in range(1,20)]
         label_def = self.model_type.get_label_def(dataset.obs_class)
@@ -187,7 +91,7 @@ class TrainDataset:
 
                 htg, atg = self.get_in_play_score(game, minute)
                 data_group.append([label_class] +\
-                                  self.dataset_v3(features, minute, htg, atg))
+                                  Output.dataset_v3(features, minute, htg, atg))
 
         return data_group
 
@@ -256,16 +160,10 @@ class TrainDataset:
                     output_dataset.extend(self.prepare_data_group(group_games,
                                                                   dataset))
             elif self.group_by == Group.Series:
-                groups = season.get_groups()
-
-                for group in groups:
-                    group_games = season.get_group_games(group)
-                    # ignore series with less than 2 games and more than 3
-                    if len(group_games) not in [2,3]: continue
-                    output_dataset.extend(self.prepare_series(group_games,
-                                                                  dataset))
-
-
+                for serie in Serie.from_season(season):
+                    # ignore not best of 3 series
+                    if serie.best_of() != 3: continue
+                    output_dataset.extend(self.prepare_series(serie, dataset))
         return output_dataset
 
 

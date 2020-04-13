@@ -24,3 +24,15 @@ fivethirtyeight:
 .PHONY: soccerpunter
 soccerpunter:
 	${PYTHON_BIN_DIR}/scrapy runspider soccerpunter.py -o result.json -t json
+
+.PHONY: betstady
+betstady:
+	${PYTHON_BIN_DIR}/scrapy runspider betstady.py -o result.json -t json
+
+.PHONY: hltv
+hltv:
+	${PYTHON_BIN_DIR}/scrapy runspider hltv.py -o result.json -t json
+
+.PHONY: opendota
+opendota:
+	${PYTHON_BIN_DIR}/scrapy runspider opendota.py -o result.json -t json

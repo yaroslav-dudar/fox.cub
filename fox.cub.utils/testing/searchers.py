@@ -50,7 +50,6 @@ class BasePattern(metaclass=ABCMeta):
 
         sorted_dateset = sorted(dataset, reverse=is_reversed,
                                 key=self.str_to_datetime)[:abs(games_to_test)]
-
         results = list(filter(
                     self.get_venue_def(teams_1, teams_2),
                     sorted_dateset))
@@ -312,15 +311,15 @@ class StrongVsAveragePattern(ScoringPattern):
     @property
     def team_1(self):
         return {
-            'attack': { 'min':  12, 'max': 17 },
-            'defence': { 'min': 12, 'max': 17 }
+            'attack': { 'min':  1.5, 'max': 2.8 },
+            'defence': { 'min': 0.0, 'max': 0.9 }
         }
 
     @property
     def team_2(self):
         return {
-            'attack': { 'min':  12, 'max': 17 },
-            'defence': { 'min': 12, 'max': 17 }
+            'attack': { 'min':  0.9, 'max': 1.4 },
+            'defence': { 'min': 1.2, 'max': 1.7 }
         }
 
 
@@ -374,11 +373,11 @@ class LeadersVsMidtablePattern(StandingsPattern):
 
     @property
     def team_1(self):
-        return { 'standings': { 'min': 8, 'max': 18 } }
+        return { 'standings': { 'min': 5, 'max': 11 } }
 
     @property
     def team_2(self):
-        return { 'standings': { 'min': 25, 'max': 45 } }
+        return { 'standings': { 'min': 8, 'max': 14 } }
 
 
 class MidtableVsDogsPattern(StandingsPattern):
@@ -420,21 +419,61 @@ class MidweekGamesPattern(AllPattern):
 class SingleTeamPattern(AllPattern):
     name  = ImmutableProperty('SingleTeam')
 
+    dota2_top_tier = ["Nigma", "Team Secret", "Evil Geniuses","Alliance",
+                "beastcoast", "Virtus.pro",
+                "Natus Vincere", "TNC Predator", "Vici Gaming", "INVICTUS GAMING",
+                "Fnatic", "Team Liquid", "Team Aster", "OG"]
+
+    dota2_mid_tier = ["HellRaisers", "Ninjas in Pyjamas", "Quincy Crew",
+        "Royal Never Give Up", "paiN Gaming", "Adroit", "BOOM Esports",
+        "PSG.LGD", "Quincy Crew", "OG.Seed", "CR4ZY", "Newbee", "ViKin.gg",
+        "FlyToMoon", "EHOME", "Aggressive Mode", "Geek Fam", "Thunder Predator",
+        "Infamous Gaming", "iG.Vitality", "Gambit Esports", "Execration", "Chaos EC"]
+
+    dota2_3_tier = ["B8", "Chicken Fighters !", "Team Unique", "KHAN", "Team Sirius",
+        "Sparking Arrow Gaming", "Typhoon", "Cloud9", "Furia", "Winstrike Team",
+        "Fighting PandaS", "Team Spirit", "Nemiga Gaming", "Team Empire Hope",
+        "Cyber Legacy", "KEEN GAMING", "NoPing Esports", "VICI GAMING POTENTIAL",
+        "Demon Slayers", "forZe eSports", "Cignal Ultra",
+        "GODSENT.gg", "business associates", "Reality Rift"]
+
+    cs_top_tier = ["Evil Geniuses", "FaZe", "Natus Vincere",
+        "100 Thieves", "Astralis", "mousesports", "G2", "fnatic",
+        "Liquid", "Vitality"]
+
+    cs_mid_tier = ["MIBR", "North", "ENCE", "FURIA", "Complexity", "AVANGAR",
+        "Cloud9", "Gen.G", "BIG", "OG", "Virtus.pro", "GODSENT", "HAVU",
+        "Renegades", "forZe", "Heroic", "Spirit", "MAD Lions", "NiP"]
+
+    cs_3_tier = ["Gambit Youngsters", "SKADE", "AGO", "Movistar Riders",
+        "Sprout", "Dignitas", "Nemiga", "Envy", "Nordavind", "Espada", "Triumph",
+        "Syman", "Copenhagen Flames", "Chaos", "Hard Legion",
+        "pro100", "Heretics", "Endpoint", "GamerLegion", "Illuminar", "Secret",
+        "Riot Squad", "INTZ", "Swole Patrol", "TYLOO", "c0ntact", "Winstrike",
+        "Orgless", "HellRaisers", "Bad News Bears", "FunPlus Phoenix"]
+
+    cs_4_tier = ["Apeks", "Salamander", "Vexed", "Prima", "Unicorns of Love",
+        "Singularity", "sAw", "AVEZ", "Demolition Crew", "KOVA", "LDLC", "Unique",
+        "ad hoc", "hREDS", "Ambush", "Defusekids", "Turkey5", "BLUEJAYS", "Tricked",
+        "Wisla Krakow", "ALTERNATE aTTaX", "FATE", "SJ", "PACT", "Juggernauts",
+        "Japaleno", "Swole Identity", "TeamOne", "BOOM", "Under 21", "ORDER",
+        "Oceanus", "AVANT", "Ground Zero", "Mythic", "SMASH"]
+
     @property
     def team_1(self):
-        return ["MAD Lions"]#["Liquid", "fnatic", "Evil Geniuses", "FaZe", "Natus Vincere"]
+        return ["Spirit"] #["Gentlemen", "forZe eSports"]
 
     @property
     def team_2(self):
-        return []#["MIBR", "Copenhagen Flames"]
+        return self.cs_mid_tier
 
     @functools.lru_cache(maxsize=None)
     def get_teams(self) -> Tuple[set, set]:
         teams_1, teams_2 = self.team_1, self.team_2
 
-        for season in self.dataset.get_seasons(self.season):
-            points_table = season.get_table(metric='points')
-            teams_2.extend(list(points_table)[0:25])
+        #for season in self.dataset.get_seasons(self.season):
+        #    points_table = season.get_table(metric='points')
+        #    #teams_2.extend(list(points_table)[0:30])
 
         return set(teams_1), set(teams_2)
 

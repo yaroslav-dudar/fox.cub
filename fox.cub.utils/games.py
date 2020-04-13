@@ -1,6 +1,8 @@
 from collections import namedtuple
 from datetime import datetime
+from typing import List
 import json
+import random
 
 required_fields = ["FTAG", "FTHG", "Season", "Date", "AwayTeam", "HomeTeam"]
 game_fields = required_fields + ["HTHG", "HTAG", "Group",
@@ -14,7 +16,7 @@ _Dota2GameTuple = namedtuple('GameTuple', dota2_game_fields,
 
 
 class GameFactory:
-    """The Game factory."""
+    """Game object creator."""
 
     @staticmethod
     def get_game_class(raw_game):
@@ -43,6 +45,8 @@ class GameFactory:
 
 
 class BaseGame:
+    date_format = '%d/%m/%Y'
+
     @classmethod
     def is_float(cls, field, val):
         FLOAT_FIELDS = ["FTAG", "FTHG", "HTHG", "HTAG", "Group"]
@@ -90,8 +94,11 @@ class BaseGame:
 
         return games
 
-    @staticmethod
-    def to_datetime(str_date, date_format='%d/%m/%Y'):
+    @classmethod
+    def to_datetime(cls, str_date, date_format=None):
+        if not date_format:
+            date_format = cls.date_format
+
         return datetime.strptime(str_date, date_format)
 
     @classmethod
@@ -172,3 +179,50 @@ class Dota2Game(BaseGame, _Dota2GameTuple):
                                  HomeGoalsTiming=AwayGoalsTiming,
                                  HomeTeam=AwayTeam, HomeTeamWin=HomeTeamWin)
         return False, self
+
+
+class Serie:
+
+    """ Store game series list """
+
+    def __init__(self, games: List[BaseGame]):
+        self.games = games
+        self.team_1 = games[0].HomeTeam
+        self.team_2 = games[0].AwayTeam
+
+    def best_of(self):
+        """ Calculate amount of wins to win whole serie """
+        serie_len = len(self.games)
+        if serie_len == 1:
+            return 1
+        if serie_len == 2:
+            # bo3
+            # TODO: may be bo2
+            return 3
+        if serie_len == 3:
+            # bo3 or bo5
+            team1_p = sum([g.get_team_points(self.team_1) for g in self.games])
+            team2_p = sum([g.get_team_points(self.team_2) for g in self.games])
+
+            max_points = max([team1_p, team2_p])
+            if max_points == 6:
+                return 3
+            if max_points == 9:
+                return 5
+
+        # Unknown format
+        return -1
+
+
+    def get_winner(self):
+        """ Get team/player who won a serie """
+        pass
+
+    def get_final_score(self):
+        pass
+
+    @staticmethod
+    def from_season(season):
+        """ Generate list of series from season object """
+        groups = season.get_groups()
+        return [Serie(season.get_group_games(g)) for g in groups]

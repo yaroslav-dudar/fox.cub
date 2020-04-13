@@ -3,6 +3,7 @@ from scrapy.exceptions import DropItem
 
 import re
 import hashlib
+import urllib.parse
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import List
@@ -30,7 +31,7 @@ class CSGOTeam:
 
 class HLTVDataset:
     """ http://spys.one/en/ """
-    url_pattern = "https://www.hltv.org/stats/teams/matches/{0}/{1}?matchType=BigEvents"
+    url_pattern = "https://www.hltv.org/stats/teams/matches/{0}/{1}"
 
     def __init__(self, teams: List[CSGOTeam]):
         self.current = 0
@@ -70,70 +71,119 @@ class DuplicatesPipeline:
             return item
 
 
-top_teams = HLTVDataset([CSGOTeam(10578, "Infamous"),
-                         CSGOTeam(10330, "Supremacy"),
-                         CSGOTeam(8008, "Grayhound"),
-                         CSGOTeam(4863, "TYLOO"),
-                         CSGOTeam(6211, "Renegades"),
-                         CSGOTeam(5929, "Space%20Soldiers"),
-                         CSGOTeam(6665, "Astralis"),
-                         CSGOTeam(8513, "Windigo"),
-                         CSGOTeam(7533, "North"),
-                         CSGOTeam(4411, "NiP"),
-                         CSGOTeam(7092, "5POWER"),
-                         CSGOTeam(5995, "G2"),
-                         CSGOTeam(6667, "FaZe"),
-                         CSGOTeam(5310, "HellRaisers"),
-                         CSGOTeam(5973, "Liquid"),
-                         CSGOTeam(6134, "Kinguin"),
-                         CSGOTeam(6947, "TeamOne"),
-                         CSGOTeam(7532, "BIG"),
-                         CSGOTeam(4494, "mousesports"),
-                         CSGOTeam(5422, "Dignitas"),
-                         CSGOTeam(6290, "Luminosity"),
-                         CSGOTeam(6902, "GODSENT"),
-                         CSGOTeam(4991, "fnatic"),
-                         CSGOTeam(6137, "SK"),
-                         CSGOTeam(7865, "HAVU"),
-                         CSGOTeam(6615, "OpTic"),
-                         CSGOTeam(6978, "Singularity"),
-                         CSGOTeam(8120, "AVANGAR"),
-                         CSGOTeam(6010, "Chiefs"),
-                         CSGOTeam(5991, "Envy"),
-                         CSGOTeam(4608, "Natus%20Vincere"),
-                         CSGOTeam(5752, "Cloud9"),
-                         CSGOTeam(7175, "Heroic"),
-                         CSGOTeam(5378, "Virtus.pro"),
-                         CSGOTeam(5988, "FlipSid3"),
-                         CSGOTeam(4688, "Epsilon"),
-                         CSGOTeam(8637, "Sprout"),
-                         CSGOTeam(4869, "ENCE"),
-                         CSGOTeam(5974, "CLG"),
-                         CSGOTeam(8135, "forZe"),
-                         CSGOTeam(5395, "PENTA"),
-                         CSGOTeam(6673, "NRG"),
-                         CSGOTeam(4674, "LDLC"),
-                         CSGOTeam(5005, "Complexity"),
-                         CSGOTeam(8068, "AGO"),
-                         CSGOTeam(7898, "pro100"),
-                         CSGOTeam(7020, "Spirit"),
-                         CSGOTeam(6896, "PRIDE"),
-                         CSGOTeam(4602, "Tricked"),
-                         CSGOTeam(6651, "Gambit"),
-                         CSGOTeam(7969, "Nemiga"),
-                         CSGOTeam(4501, "ALTERNATE%20aTTaX"),
-                         CSGOTeam(9215, "MIBR"),
-                         CSGOTeam(8474, "100%20Thieves"),
-                         CSGOTeam(10399, "Evil%20Geniuses"),
-                         CSGOTeam(7354, "MVP%20PK"),
-                         CSGOTeam(7606, "ViCi")])
+test = HLTVDataset([CSGOTeam(5973, "Liquid"), CSGOTeam(10399, "Evil%20Geniuses")])
+
+top_teams = [CSGOTeam(10578, "Infamous"),
+             CSGOTeam(10330, "Supremacy"),
+             CSGOTeam(8008, "Grayhound"),
+             CSGOTeam(4863, "TYLOO"),
+             CSGOTeam(6211, "Renegades"),
+             CSGOTeam(5929, "Space%20Soldiers"),
+             CSGOTeam(6665, "Astralis"),
+             CSGOTeam(10399, "Evil%20Geniuses"),
+             CSGOTeam(7533, "North"),
+             CSGOTeam(4411, "NiP"),
+             CSGOTeam(7092, "5POWER"),
+             CSGOTeam(5995, "G2"),
+             CSGOTeam(6667, "FaZe"),
+             CSGOTeam(5310, "HellRaisers"),
+             CSGOTeam(5973, "Liquid"),
+             CSGOTeam(4608, "Natus%20Vincere"),
+             CSGOTeam(6134, "Kinguin"),
+             CSGOTeam(6947, "TeamOne"),
+             CSGOTeam(7532, "BIG"),
+             CSGOTeam(4494, "mousesports"),
+             CSGOTeam(8297, "FURIA"),
+             CSGOTeam(5422, "Dignitas"),
+             CSGOTeam(6902, "GODSENT"),
+             CSGOTeam(4991, "fnatic"),
+             CSGOTeam(7865, "HAVU"),
+             CSGOTeam(6615, "OpTic"),
+             CSGOTeam(8120, "AVANGAR"),
+             CSGOTeam(5991, "Envy"),
+             CSGOTeam(10503, "OG"),
+             CSGOTeam(5752, "Cloud9"),
+             CSGOTeam(7175, "Heroic"),
+             CSGOTeam(5378, "Virtus.pro"),
+             CSGOTeam(8637, "Sprout"),
+             CSGOTeam(4869, "ENCE"),
+             CSGOTeam(8135, "forZe"),
+             CSGOTeam(5005, "Complexity"),
+             CSGOTeam(8068, "AGO"),
+             CSGOTeam(7020, "Spirit"),
+             CSGOTeam(9215, "MIBR"),
+             CSGOTeam(8474, "100%20Thieves"),
+             CSGOTeam(9976, "Gambit%20Youngsters"),
+             CSGOTeam(8769, "Nordavind"),
+             CSGOTeam(8346, "Heretics"),
+             CSGOTeam(7718, "Movistar%20Riders"),
+             CSGOTeam(10618, "Orgless"),
+             CSGOTeam(10671, "FunPlus%20Phoenix"),
+             CSGOTeam(10514, "Gen.G"),
+             CSGOTeam(9085, "Chaos")]
+
+
+lower_teams = [CSGOTeam(7461, "Copenhagen%20Flames"),
+               CSGOTeam(7354, "MVP%20PK"),
+               CSGOTeam(6896, "PRIDE"),
+               CSGOTeam(5395, "PENTA"),
+               CSGOTeam(5974, "CLG"),
+               CSGOTeam(8513, "Windigo"),
+               CSGOTeam(7144, "Japaleno"),
+               CSGOTeam(7606, "ViCi"),
+               CSGOTeam(4501, "ALTERNATE%20aTTaX"),
+               CSGOTeam(4602, "Tricked"),
+               CSGOTeam(4674, "LDLC"),
+               CSGOTeam(4688, "Epsilon"),
+               CSGOTeam(5988, "FlipSid3"),
+               CSGOTeam(6651, "Gambit"),
+               CSGOTeam(7969, "Nemiga"),
+               CSGOTeam(10421, "Hard%20Legion"),
+               CSGOTeam(6137, "SK"),
+               CSGOTeam(10315, "SMASH"),
+               CSGOTeam(9928, "GamerLegion"),
+               CSGOTeam(8772, "Syman"),
+               CSGOTeam(7234, "Endpoint"),
+               CSGOTeam(6010, "Chiefs"),
+               CSGOTeam(6978, "Singularity"),
+               CSGOTeam(6290, "Luminosity"),
+               CSGOTeam(9183, "Winstrike"),
+               CSGOTeam(7898, "pro100"),
+               CSGOTeam(6673, "NRG"),
+               CSGOTeam(10386, "SKADE"),
+               CSGOTeam(9863, "FATE"),
+               CSGOTeam(9287, "Unique"),
+               CSGOTeam(8536, "Ground%20Zero"),
+               CSGOTeam(10144, "Turkey5"),
+               CSGOTeam(9939, "Salamander"),
+               CSGOTeam(8669, "Espada"),
+               CSGOTeam(7726, "Swole%20Patrol"),
+               CSGOTeam(8020, "Vexed"),
+               CSGOTeam(7674, "Ambush"),
+               CSGOTeam(8504, "SJ"),
+               CSGOTeam(9806, "Apeks"),
+               CSGOTeam(10614, "Prima"),
+               CSGOTeam(9648, "KOVA"),
+               CSGOTeam(10426, "Wisla%20Krakow"),
+               CSGOTeam(8813, "Illuminar"),
+               CSGOTeam(10164, "Riot%20Squad"),
+               CSGOTeam(6947, "TeamOne"),
+               CSGOTeam(9949, "TheDice"),
+               CSGOTeam(7666, "Defusekids"),
+               CSGOTeam(9812, "Unicorns%20of%20Love"),
+               CSGOTeam(8248, "PACT"),
+               CSGOTeam(5293, "AVANT"),
+               CSGOTeam(8668, "ORDER"),
+               CSGOTeam(9881, "Rooster"),
+               CSGOTeam(7983, "Paradox")
+]
 
 
 class HLTVSpider(scrapy.Spider):
     name = 'hltv'
 
-    dataset = top_teams
-    proxy = "61.220.204.25:3128"
+    dataset = HLTVDataset(top_teams + lower_teams)
+    proxy = "51.158.180.179:8811"
 
     custom_settings = {
         'DOWNLOAD_DELAY': 2,
@@ -146,7 +196,8 @@ class HLTVSpider(scrapy.Spider):
         for url, team in self.dataset:
             yield scrapy.Request(url=url,
                                  callback=self.parse_table,
-                                 meta={'proxy': self.proxy, 'team': team})
+                                 meta={'proxy': self.proxy,
+                                       'team': urllib.parse.unquote(team)})
 
     def get_season_year(self, date):
         return date.split('/')[-1]

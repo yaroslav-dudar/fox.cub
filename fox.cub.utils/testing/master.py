@@ -11,6 +11,7 @@ import time
 import argparse
 from enum import Enum
 from statistics import mean
+from datetime import datetime
 from concurrent.futures import (
     ProcessPoolExecutor,
     ALL_COMPLETED,
@@ -53,6 +54,19 @@ class MasterFoxCubTest:
                 "%s is an invalid path to the python class" % value)
         return value
 
+    def str2datetime(self, value):
+        if isinstance(value, datetime):
+            return value
+
+        try:
+            value = datetime.strptime(value, BaseGame.date_format)
+        except (ValueError, TypeError) as e:
+            raise argparse.ArgumentTypeError(
+                "Date should be in %s format" % BaseGame.date_format)
+
+        return value
+
+
     def parse_args(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('-slaves', default=4, type=int,
@@ -76,7 +90,12 @@ class MasterFoxCubTest:
                             help='Selecting MLP model based on this attribute')
         parser.add_argument('-groupBy', default="Off", type=str,
                             help='Define how to group teams inside a season.')
+        parser.add_argument('-start', default=datetime.min, type=self.str2datetime,
+                            help='Test games from this date. 1/1/1 by default')
+        parser.add_argument('-end', default=datetime.now(), type=self.str2datetime,
+                            help='Test games to this date. By default today')
         self.args = parser.parse_args()
+        print(self.args)
 
     def parse_config(self):
         """ Parse passed args and to map them with python objects """
@@ -101,7 +120,10 @@ class MasterFoxCubTest:
 
         slave = SlaveFoxCubTest(self.args.tournamentId,
                                 self.args.games,
-                                self.patterns)
+                                self.patterns,
+                                self.args.start,
+                                self.args.end)
+
         reverse = True if self.args.seasons < 0 else False
         seasons_num = abs(self.args.seasons)
 

@@ -70,9 +70,108 @@ class BetStadySpider(scrapy.Spider):
                                          ["{0}-{1}".format(year, year+1)
                                          for year in range(2005, 2019)])
 
+    segunda = BetStadyDataset("spain", "segunda-division",
+                              ["{0}-{1}".format(year, year+1)
+                              for year in range(2005, 2019)])
 
-    dataset = ukr_premier_league
-    proxy = "200.105.215.18:33630"
+    a_bundesliga = BetStadyDataset("austria", "bundesliga",
+                                   ["{0}-{1}".format(year, year+1)
+                                   for year in range(2005, 2019)])
+
+    au_1liga =BetStadyDataset("austria", "1.-liga",
+                                   ["{0}-{1}".format(year, year+1)
+                                   for year in range(2005, 2019)])
+
+
+    den_1div = BetStadyDataset("denmark", "1st-division",
+                               ["{0}-{1}".format(year, year+1)
+                               for year in range(2005, 2019)])
+
+    eerste_div = BetStadyDataset("netherlands", "eerste-divisie",
+                                 ["{0}-{1}".format(year, year+1)
+                                 for year in range(2005, 2019)])
+
+    liganos = BetStadyDataset("portugal", "primeira-liga",
+                              ["{0}-{1}".format(year, year+1)
+                              for year in range(2005, 2019)])
+
+    ger_3liga = BetStadyDataset("germany", "3.-liga",
+                              ["{0}-{1}".format(year, year+1)
+                              for year in range(2005, 2019)])
+
+    j1_league = BetStadyDataset("japan", "j1-league",
+                                ["{0}".format(year)
+                                for year in range(2005, 2019)])
+
+    allsvenskan = BetStadyDataset("sweden", "allsvenskan",
+                                  ["{0}".format(year)
+                                  for year in range(2005, 2019)])
+
+    sc_championship = BetStadyDataset("scotland", "championship",
+                                      ["{0}-{1}".format(year, year+1)
+                                      for year in range(2005, 2019)])
+
+    sc_premiership = BetStadyDataset("scotland", "premiership",
+                                     ["{0}-{1}".format(year, year+1)
+                                     for year in range(2005, 2019)])
+
+    croatia_hnl = BetStadyDataset("croatia", "1.-hnl",
+                                  ["{0}-{1}".format(year, year+1)
+                                  for year in range(2005, 2019)])
+
+    copa_libertadores = BetStadyDataset("south-america", "copa-libertadores",
+                                        ["{0}".format(year)
+                                        for year in range(2006, 2019)])
+
+    rpl = BetStadyDataset("russia", "premier-league",
+                          ["{0}-{1}".format(year, year+1)
+                          for year in range(2011, 2019)])
+
+    fnl = BetStadyDataset("russia", "fnl",
+                          ["2018-2019","2017-2018","2016-2017",
+                          "2010","2009", "2008", "2007", "2006", "2005"])
+
+    czech_liga = BetStadyDataset("czech-republic", "czech-liga",
+                          ["{0}-{1}".format(year, year+1)
+                          for year in range(2005, 2019)])
+
+    colombia_a = BetStadyDataset("colombia", "primera-a",
+                                 ["{0}".format(year)
+                                 for year in range(2005, 2019)])
+
+    liga_mx = BetStadyDataset("mexico", "liga-mx",
+                              ["{0}-{1}".format(year, year+1)
+                              for year in range(2005, 2019)])
+
+    arg_primera = BetStadyDataset("argentina", "primera-division",
+                              ["{0}-{1}".format(year, year+1)
+                              for year in range(2016, 2020)])
+
+    chile_primera = BetStadyDataset("chile", "primera-division",
+                                    ["2019","2018","2016-2017",
+                                    "2012","2011"])
+
+    serbia_super_liga = BetStadyDataset("serbia", "super-liga",
+                              ["{0}-{1}".format(year, year+1)
+                              for year in range(2006, 2019)])
+
+    primera_b_national = BetStadyDataset("argentina", "prim-b-nacional",
+                              ["{0}-{1}".format(year, year+1)
+                              for year in range(2005, 2019)])
+
+    br_serie_b = BetStadyDataset("brazil", "serie-b",
+                              ["{0}".format(year)
+                              for year in range(2005, 2019)])
+
+    bahrain_pl = BetStadyDataset("bahrain", "premier-league",
+                              ["{0}-{1}".format(year, year+1)
+                              for year in range(2005, 2019)])
+
+    bl_pl = BetStadyDataset("belarus", "premier-league",
+                             ["{0}".format(year)
+                             for year in range(2005, 2019)])
+    dataset = bl_pl
+    proxy = "181.143.237.99:8080"
 
     def start_requests(self):
         for url in self.dataset:

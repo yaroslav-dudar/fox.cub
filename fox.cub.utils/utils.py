@@ -1,10 +1,9 @@
 from datetime import datetime
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from enum import Enum
 from typing import List
 from statistics import mean
 
-import random
 import os
 import time
 import uuid
@@ -48,20 +47,17 @@ class Season:
 
     @functools.lru_cache(maxsize=6)
     def get_table(self, metric='points'):
-        teams = self.get_teams()
-        table = {}
-        for t in teams:
-            games = filter(lambda g: t in [g.HomeTeam, g.AwayTeam], self.games)
-            count = 0
-            for g in games:
-                if metric == 'points':
-                    count += g.get_team_points(t)
-                elif metric == 'scored':
-                    count += g.get_team_goals(t, True)
-                elif metric == 'conceded':
-                    count += g.get_team_goals(t, False)
-
-            table[t] = count
+        table = defaultdict(lambda: 0)
+        for g in self.games:
+            if metric == 'points':
+                table[g.HomeTeam] += g.get_team_points(g.HomeTeam)
+                table[g.AwayTeam] += g.get_team_points(g.AwayTeam)
+            elif metric == 'scored':
+                table[g.HomeTeam] += g.get_team_goals(g.HomeTeam, True)
+                table[g.AwayTeam] += g.get_team_goals(g.AwayTeam, True)
+            elif metric == 'conceded':
+                table[g.HomeTeam] += g.get_team_goals(g.HomeTeam, False)
+                table[g.AwayTeam] += g.get_team_goals(g.AwayTeam, False)
 
         return OrderedDict(sorted(table.items(), key=lambda t: t[1], reverse=True))
 
@@ -92,8 +88,9 @@ class Season:
 
         return groups
 
-    @functools.lru_cache(maxsize=32)
+    @functools.lru_cache(maxsize=512)
     def get_team_scores(self, team, include_home=True, include_away=True):
+        """ Deprecated. Slow and unoptimized method """
         if include_away:
             away_games = list(filter(lambda g: team == g.AwayTeam, self.games))
         else:
@@ -125,6 +122,28 @@ class Season:
                                len(home_games + away_games)
         }
 
+    def get_list_team_scores(self):
+        """ Calculate team stats for each team in a season """
+        scores = defaultdict(lambda: {
+            "scored_xg": [],
+            "conceded_xg": [],
+            "home_adv": 0,
+            "expected_points": 0
+        })
+
+        for g in self.games:
+            scores[g.HomeTeam]["scored_xg"].append(g.FTHG)
+            scores[g.HomeTeam]["conceded_xg"].append(g.FTAG)
+            scores[g.AwayTeam]["scored_xg"].append(g.FTAG)
+            scores[g.AwayTeam]["conceded_xg"].append(g.FTHG)
+
+        for team in scores.keys():
+            scores[team]["expected_points"] = (self.get_table(metric='points')[team] /
+                                               len(scores[team]["scored_xg"]))
+
+        return scores
+
+
     def get_team_results(self, team):
         games = self.get_team_scores(team)
         return list(map(float.__sub__,
@@ -141,6 +160,7 @@ class Season:
 
         return Season(list(season_games))
 
+    @functools.lru_cache(maxsize=64)
     def get_group_games(self, group):
         return list(filter(lambda g: g.Group == group, self.games))
 
@@ -226,3 +246,14 @@ def test_fox_cub(games_to_test, dataset, client):
 
 def join_path(base_path, file_path):
     return os.path.join(base_path, *file_path.split('/'))
+
+
+def singledispatchmethod(func):
+    """ singledispatchmethod for python 3.7.
+    Use only with staticmethod or classmethod """
+    dispatcher = functools.singledispatch(func)
+    def wrapper(*args, **kw):
+        return dispatcher.dispatch(args[0].__class__).__func__(*args, **kw)
+    wrapper.register = dispatcher.register
+    functools.update_wrapper(wrapper, func)
+    return wrapper
