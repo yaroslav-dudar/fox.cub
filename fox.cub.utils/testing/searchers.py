@@ -8,6 +8,7 @@ import functools
 from utils import *
 from dataset import DatasetAggregator
 from helpers import ImmutableProperty, VenueFilter
+from testing.ranking import CsGoRank, Dota2Rank
 
 class BasePattern(metaclass=ABCMeta):
 
@@ -212,15 +213,15 @@ class StrongWithWeakPattern(ScoringPattern):
     @property
     def team_1(self):
         return {
-            'attack': { 'min': 1.1, 'max': 1.8 },
-            'defence': { 'min': 0.9, 'max': 1.55 }
+            'attack': { 'min': 1.3, 'max': 2.0 },
+            'defence': { 'min': 0.0, 'max': 0.9 }
         }
 
     @property
     def team_2(self):
         return {
-            'attack': { 'min': 1.0 , 'max': 1.8 },
-            'defence': { 'min': 1.5, 'max': 2.95 }
+            'attack': { 'min': 0.0 , 'max': 1.35 },
+            'defence': { 'min': 1.35, 'max': 1.85 }
         }
 
 
@@ -361,7 +362,7 @@ class LeadersVsDogsPattern(StandingsPattern):
 
     @property
     def team_1(self):
-        return { 'standings': { 'min': 4, 'max': 10 } }
+        return { 'standings': { 'min': 0, 'max': 5 } }
 
     @property
     def team_2(self):
@@ -373,11 +374,11 @@ class LeadersVsMidtablePattern(StandingsPattern):
 
     @property
     def team_1(self):
-        return { 'standings': { 'min': 5, 'max': 11 } }
+        return { 'standings': { 'min': 0, 'max': 2 } }
 
     @property
     def team_2(self):
-        return { 'standings': { 'min': 8, 'max': 14 } }
+        return { 'standings': { 'min': 4, 'max': 10 } }
 
 
 class MidtableVsDogsPattern(StandingsPattern):
@@ -419,53 +420,13 @@ class MidweekGamesPattern(AllPattern):
 class SingleTeamPattern(AllPattern):
     name  = ImmutableProperty('SingleTeam')
 
-    dota2_top_tier = ["Nigma", "Team Secret", "Evil Geniuses","Alliance",
-                "beastcoast", "Virtus.pro",
-                "Natus Vincere", "TNC Predator", "Vici Gaming", "INVICTUS GAMING",
-                "Fnatic", "Team Liquid", "Team Aster", "OG"]
-
-    dota2_mid_tier = ["HellRaisers", "Ninjas in Pyjamas", "Quincy Crew",
-        "Royal Never Give Up", "paiN Gaming", "Adroit", "BOOM Esports",
-        "PSG.LGD", "Quincy Crew", "OG.Seed", "CR4ZY", "Newbee", "ViKin.gg",
-        "FlyToMoon", "EHOME", "Aggressive Mode", "Geek Fam", "Thunder Predator",
-        "Infamous Gaming", "iG.Vitality", "Gambit Esports", "Execration", "Chaos EC"]
-
-    dota2_3_tier = ["B8", "Chicken Fighters !", "Team Unique", "KHAN", "Team Sirius",
-        "Sparking Arrow Gaming", "Typhoon", "Cloud9", "Furia", "Winstrike Team",
-        "Fighting PandaS", "Team Spirit", "Nemiga Gaming", "Team Empire Hope",
-        "Cyber Legacy", "KEEN GAMING", "NoPing Esports", "VICI GAMING POTENTIAL",
-        "Demon Slayers", "forZe eSports", "Cignal Ultra",
-        "GODSENT.gg", "business associates", "Reality Rift"]
-
-    cs_top_tier = ["Evil Geniuses", "FaZe", "Natus Vincere",
-        "100 Thieves", "Astralis", "mousesports", "G2", "fnatic",
-        "Liquid", "Vitality"]
-
-    cs_mid_tier = ["MIBR", "North", "ENCE", "FURIA", "Complexity", "AVANGAR",
-        "Cloud9", "Gen.G", "BIG", "OG", "Virtus.pro", "GODSENT", "HAVU",
-        "Renegades", "forZe", "Heroic", "Spirit", "MAD Lions", "NiP"]
-
-    cs_3_tier = ["Gambit Youngsters", "SKADE", "AGO", "Movistar Riders",
-        "Sprout", "Dignitas", "Nemiga", "Envy", "Nordavind", "Espada", "Triumph",
-        "Syman", "Copenhagen Flames", "Chaos", "Hard Legion",
-        "pro100", "Heretics", "Endpoint", "GamerLegion", "Illuminar", "Secret",
-        "Riot Squad", "INTZ", "Swole Patrol", "TYLOO", "c0ntact", "Winstrike",
-        "Orgless", "HellRaisers", "Bad News Bears", "FunPlus Phoenix"]
-
-    cs_4_tier = ["Apeks", "Salamander", "Vexed", "Prima", "Unicorns of Love",
-        "Singularity", "sAw", "AVEZ", "Demolition Crew", "KOVA", "LDLC", "Unique",
-        "ad hoc", "hREDS", "Ambush", "Defusekids", "Turkey5", "BLUEJAYS", "Tricked",
-        "Wisla Krakow", "ALTERNATE aTTaX", "FATE", "SJ", "PACT", "Juggernauts",
-        "Japaleno", "Swole Identity", "TeamOne", "BOOM", "Under 21", "ORDER",
-        "Oceanus", "AVANT", "Ground Zero", "Mythic", "SMASH"]
-
     @property
     def team_1(self):
-        return ["Spirit"] #["Gentlemen", "forZe eSports"]
+        return ["Ground Zero"]
 
     @property
     def team_2(self):
-        return self.cs_mid_tier
+        return self.cs_3_tier
 
     @functools.lru_cache(maxsize=None)
     def get_teams(self) -> Tuple[set, set]:

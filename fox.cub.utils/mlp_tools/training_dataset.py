@@ -10,7 +10,7 @@ from utils import *
 from games import BaseGame, Serie
 from dataset import DatasetAggregator, ModelType
 from mlp_tools.settings import CONFIG
-from mlp_tools.output import Output
+from mlp_tools.output import DatasetFormat
 
 class TrainDataset:
 
@@ -52,7 +52,7 @@ class TrainDataset:
                                                                 label_def)
 
             if not features: continue
-            data_group.append([label_class] + Output.dataset_v5(features))
+            data_group.append([label_class] + DatasetFormat.dataset_v5(features))
 
         return data_group
 
@@ -70,7 +70,7 @@ class TrainDataset:
         label_class = label_def(serie, is_changed)
         if not features or label_class < 0 : return data_group
 
-        data_group.append([label_class] + Output.dataset_v1(features))
+        data_group.append([label_class] + DatasetFormat.dataset_v5(features))
         return data_group
 
 
@@ -91,7 +91,7 @@ class TrainDataset:
 
                 htg, atg = self.get_in_play_score(game, minute)
                 data_group.append([label_class] +\
-                                  Output.dataset_v3(features, minute, htg, atg))
+                                  DatasetFormat.dataset_v3(features, minute, htg, atg))
 
         return data_group
 
@@ -161,8 +161,8 @@ class TrainDataset:
                                                                   dataset))
             elif self.group_by == Group.Series:
                 for serie in Serie.from_season(season):
-                    # ignore not best of 3 series
-                    if serie.best_of() != 3: continue
+                    # ignore not best of 2/3 series
+                    if serie.best_of() not in [2, 3]: continue
                     output_dataset.extend(self.prepare_series(serie, dataset))
         return output_dataset
 
