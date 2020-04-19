@@ -7,12 +7,15 @@ import random
 required_fields = ["FTAG", "FTHG", "Season", "Date", "AwayTeam", "HomeTeam"]
 game_fields = required_fields + ["HTHG", "HTAG", "Group",
                "HomeGoalsTiming", "AwayGoalsTiming"]
-dota2_game_fields = game_fields + ["HomeTeamWin", "Type"]
+dota2_game_fields = game_fields + ["HomeTeamWin", "Type", "Id"]
+cs_game_fields = game_fields + ["Map", "Event", "Id"]
 
 _BaseGameTuple = namedtuple('GameTuple', game_fields,
                          defaults=(None,) * len(game_fields))
 _Dota2GameTuple = namedtuple('GameTuple', dota2_game_fields,
                              defaults=(None,) * len(dota2_game_fields))
+_CsGoGameTuple = namedtuple('GameTuple', cs_game_fields,
+                             defaults=(None,) * len(cs_game_fields))
 
 
 class GameFactory:
@@ -22,6 +25,8 @@ class GameFactory:
     def get_game_class(raw_game):
         if GameFactory.is_dota2(raw_game):
             return Dota2Game
+        elif GameFactory.is_cs(raw_game):
+            return CsGoGame
         elif GameFactory.is_default(raw_game):
             return Game
         else:
@@ -38,6 +43,14 @@ class GameFactory:
     @staticmethod
     def is_dota2(raw_game):
         if "HomeTeamWin" in raw_game and "Type" in raw_game:
+            if GameFactory.is_default(raw_game):
+                return True
+
+        return False
+
+    @staticmethod
+    def is_cs(raw_game):
+        if "Map" in raw_game and "Event" in raw_game:
             if GameFactory.is_default(raw_game):
                 return True
 
@@ -150,6 +163,10 @@ class Game(_BaseGameTuple, BaseGame):
     __new__ = base_new
 
 
+class CsGoGame(BaseGame, _CsGoGameTuple):
+    __new__ = base_new
+
+
 class Dota2Game(BaseGame, _Dota2GameTuple):
     __new__ = base_new
 
@@ -186,7 +203,7 @@ class Serie:
     """ Store game series list """
 
     def __init__(self, games: List[BaseGame]):
-        self.games = games
+        self.games = sorted(games, key=CsGoGame.Id.fget)
         self.team_1 = games[0].HomeTeam
         self.team_2 = games[0].AwayTeam
 
@@ -220,6 +237,13 @@ class Serie:
 
     def get_final_score(self):
         pass
+
+    def wins_in_a_row(self, wins: int):
+        points = sum([g.get_team_points(self.team_1) for g in self.games[:wins]])
+        if points == 0 or points == 3 * wins:
+            return True
+
+        return False
 
     @staticmethod
     def from_season(season):

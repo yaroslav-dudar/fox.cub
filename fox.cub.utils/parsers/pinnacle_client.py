@@ -71,6 +71,8 @@ class PinnacleApi:
 
     odds_v1 = '/v1/odds?sportId={0}&leagueIds={1}&oddsFormat={2}'
     fixtures_v1 = '/v1/fixtures?sportId={0}&leagueIds={1}'
+    sports_v2 = '/v2/sports'
+    leagues_v2 = '/v2/leagues?sportId={0}'
 
     def __init__(self, username, password, incremental_updates):
         self.username = username
@@ -81,10 +83,11 @@ class PinnacleApi:
         self.init_data()
 
 
-    LEAGUES       = property(lambda self: '1977, 1980, 2663, 1842, 2635, 2627, 2630, 1843, 1957')
-    SPORT_ID      = property(lambda self: '29')
-    FIND_TEAM_BY  = property(lambda self: 'pinnacle_name')
-    FIND_TOURN_BY = property(lambda self: 'pinnacle_id')
+    SOCCER_LEAGUES = property(lambda self: '1977, 1980, 2663, 1842, 2635, 2627, 2630, 1843, 1957')
+    SOCCER_ID      = property(lambda self: '29')
+    E_SPORT_ID     = property(lambda self: '12')
+    FIND_TEAM_BY   = property(lambda self: 'pinnacle_name')
+    FIND_TOURN_BY  = property(lambda self: 'pinnacle_id')
 
     @property
     def auth_headers(self) -> dict:
@@ -100,6 +103,26 @@ class PinnacleApi:
                          username,
                          password
                          ).encode()).decode("ascii")
+
+
+    def get_sports(self):
+        """ Returns all sports with the status
+        whether they currently have lines or not. """
+        req = URL(self.sports_v2)
+        response = self.http.get(req.request_uri, headers=self.auth_headers)
+        data = self.read_json(response)
+
+        return data
+
+
+    def get_leagues(self, sport_id):
+        """ Returns all sports leagues with the status
+        whether they currently have lines or not. """
+        req = URL(self.leagues_v2.format(sport_id))
+        response = self.http.get(req.request_uri, headers=self.auth_headers)
+        data = self.read_json(response)
+
+        return data
 
 
     def get_fixture(self, sport_id, leagues_ids):
@@ -211,7 +234,7 @@ class PinnacleApi:
 
     def init_data(self):
         # upload tournaments and teams from DB
-        for l in self.LEAGUES.split(','):
+        for l in self.SOCCER_LEAGUES.split(','):
             l_id = int(l.strip())
             tournament = Tournament.get(l_id, self.FIND_TOURN_BY)
 
@@ -310,12 +333,12 @@ if __name__ == '__main__':
     pool = gevent.pool.Pool(20)
 
     fixtures = pool.spawn(pinnacle.get_fixture,
-                          pinnacle.SPORT_ID,
-                          pinnacle.LEAGUES)
+                          pinnacle.SOCCER_ID,
+                          pinnacle.SOCCER_LEAGUES)
 
     odds = pool.spawn(pinnacle.get_odds,
-                      pinnacle.SPORT_ID,
-                      pinnacle.LEAGUES)
+                      pinnacle.SOCCER_ID,
+                      pinnacle.SOCCER_LEAGUES)
     pool.join()
 
     for fixture in fixtures.value:
@@ -323,5 +346,6 @@ if __name__ == '__main__':
 
     if odds.value:
         Odds.insert_many(odds.value)
+
 
     pinnacle.close()

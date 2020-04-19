@@ -32,7 +32,8 @@ class OpenDotaSpider(scrapy.Spider):
     name = 'opendota'
 
     base_url = "https://api.opendota.com/api/proMatches"
-    proxy = "195.82.116.230:8080"
+    stop_on_match_id = 5354613721
+    proxy = "140.238.15.222:3128"
 
     custom_settings = {
         'DOWNLOAD_DELAY': 3,
@@ -81,6 +82,10 @@ class OpenDotaSpider(scrapy.Spider):
 
             if lower_match_id > match["Id"]:
                 lower_match_id = match["Id"]
+
+            if self.stop_on_match_id and match["Id"] < self.stop_on_match_id:
+                # stop parser
+                return
 
             if None not in [match['HomeTeam'], match['AwayTeam']]:
                 yield match

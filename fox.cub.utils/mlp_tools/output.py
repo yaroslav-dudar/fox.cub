@@ -1,6 +1,7 @@
 from dataset import FeatureVector
 
-class Output:
+class DatasetFormat:
+    """ Output formats for training dataset """
 
     @staticmethod
     def dataset_v1(feature: FeatureVector):

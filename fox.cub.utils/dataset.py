@@ -217,8 +217,8 @@ class EObservationDataset(BaseDataset):
         return 1 if game.FTHG and game.FTAG else 0
 
     @staticmethod
-    def totals(serie, is_changed=False):
-        return 0 if len(serie.games) == 2 else 1
+    def totals(serie: Serie, is_changed=False):
+        return 0 if serie.wins_in_a_row(2) else 1
 
 
 

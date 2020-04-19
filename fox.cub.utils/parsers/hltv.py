@@ -183,7 +183,7 @@ class HLTVSpider(scrapy.Spider):
     name = 'hltv'
 
     dataset = HLTVDataset(top_teams + lower_teams)
-    proxy = "51.158.180.179:8811"
+    proxy = "140.238.15.222:3128"
 
     custom_settings = {
         'DOWNLOAD_DELAY': 2,
