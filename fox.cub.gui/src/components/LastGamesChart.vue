@@ -21,13 +21,13 @@ export default {
                 title: { text: this.team_name + " last 6 games" },
                 series: [{
                     name: 'Expected goals for',
-                    data: last_games.map(g => g.xG_for)
+                    data: last_games.map(g => g.team_data["xG"])
                 }, {
                     name: 'Expected goals against',
-                    data: last_games.map(g => g.xG_against)
+                    data: last_games.map(g => g.opponent_data["xG"])
                 }, {
                     name: 'Expected goals diff',
-                    data: last_games.map(g => g.xG_for - g.xG_against)
+                    data: last_games.map(g => g.team_data["xG"] - g.opponent_data["xG"])
                 }]
             };
         }

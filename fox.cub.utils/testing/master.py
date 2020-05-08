@@ -95,7 +95,6 @@ class MasterFoxCubTest:
         parser.add_argument('-end', default=datetime.now(), type=self.str2datetime,
                             help='Test games to this date. By default today')
         self.args = parser.parse_args()
-        print(self.args)
 
     def parse_config(self):
         """ Parse passed args and to map them with python objects """
@@ -211,7 +210,7 @@ class MasterFoxCubTest:
     def print_type(self):
         t1_games = sum(self.results.team_1_games)
         t2_games = sum(self.results.team_2_games)
-        if self.type == FormatType.Goals:
+        if self.type == FormatType.Score:
             print("Scored avg team1:", sum(self.results.scored_1)/t1_games)
             print("Conceded avg team1:", sum(self.results.conceded_1)/t1_games)
             print("Scored avg team2:", sum(self.results.scored_2)/t2_games)

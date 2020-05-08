@@ -147,7 +147,7 @@ export default {
             let selected_games = this.games.filter(g => g.selected);
             return (selected_games
                 .map(g => this.getTeamPPG(this.ppg_table,
-                                          g.opponent[0]._id.$oid,
+                                          g.opponent_id,
                                           g.tournament,
                                           metric))
                 .reduce((a, c) => {return a + c }) /

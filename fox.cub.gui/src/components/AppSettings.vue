@@ -30,8 +30,8 @@
 
                 <label for="trendType">Trend type</label>
                 <select id="trendType" v-model="settings.rolling_trend.type" class="form-control pure-input-1-2">
-                    <option value="xG">Expected goals Ingogol</option>
-                    <option value="goals">Actual goals</option>
+                    <option v-bind:value="SoccerMetrics.xG">Expected goals Ingogol</option>
+                    <option v-bind:value="SoccerMetrics.goals">Actual goals</option>
                 </select>
 
                 <label for="trendType">Games Filter</label>
@@ -50,12 +50,20 @@
 </template>
 
 <script>
-import Vue from 'vue'
-import vmodal from 'vue-js-modal'
+import Vue from 'vue';
+import vmodal from 'vue-js-modal';
+
+import {SoccerMetrics} from '@/models/Game';
+
 Vue.use(vmodal)
 
 export default {
     props: ['settings'],
+     data: function() {
+        return {
+            SoccerMetrics
+        }
+    },
     methods: {
         openModel() { this.$modal.show('appSettings'); },
         resetFilters() { this.$emit('reset'); }

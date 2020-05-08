@@ -9,6 +9,8 @@ import {
     SET_AWAY_GAMES
 } from "./mutations.type"
 
+import Game, {Venue} from '@/models/Game';
+
 const initialState = {
     // list of prev home team games
     home_games: [],
@@ -27,9 +29,9 @@ export const actions = {
 
         Vue.http.get(getGameUrl, {params: params})
             .then(function (response) {
-                if (data.venue == 'home') {
+                if (data.venue == Venue.home) {
                     context.commit(SET_HOME_GAMES, response.body.firstBatch);
-                } else if (data.venue == 'away') {
+                } else if (data.venue == Venue.away) {
                     context.commit(SET_AWAY_GAMES, response.body.firstBatch);
                 }
             });
@@ -37,19 +39,11 @@ export const actions = {
 };
 
 export const mutations = {
-    [SET_HOME_GAMES](state, games) {
-        state.home_games = games.map((g) => {
-            // adding selected field
-            g.selected = false;
-            return g;
-        });
+    [SET_HOME_GAMES](state, data) {
+        state.home_games = Game.asFoxcub(data);
     },
-    [SET_AWAY_GAMES](state, games) {
-        state.away_games = games.map((g) => {
-            // adding selected field
-            g.selected = false;
-            return g;
-        });
+    [SET_AWAY_GAMES](state, data) {
+        state.away_games = Game.asFoxcub(data);
     }
 };
 

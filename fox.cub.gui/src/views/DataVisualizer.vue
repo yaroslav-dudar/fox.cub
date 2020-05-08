@@ -5,15 +5,16 @@
 
         <select v-model="data_field" @change="redraw()">
             <option
-                v-for="(field, idx) in parsed_fields" :key="field"
-                v-bind:value='idx'> {{field}}
+                v-for="field in game_attrs" :key="field"
+                v-bind:value='field'> {{field}}
             </option>
         </select>
         <hr>
 
         <div class="pure-g">
             <div class="pure-u-2-5">
-                <team-results v-bind:games="results_set"></team-results>
+                <team-results v-bind:games="games"
+                              v-bind:extra_metric="extra_metric"></team-results>
             </div>
             <div class="pure-u-3-5" >
                 <highcharts :options="chart_options" style="height: 400px;"></highcharts>
@@ -28,6 +29,7 @@
 import readXlsxFile  from 'read-excel-file';
 import {Chart} from 'highcharts-vue';
 import TeamResults from '@/components/TeamResults.vue'
+import Game from '@/models/Game'
 
 import exporting from "highcharts/modules/exporting"
 import Highcharts from "highcharts";
@@ -39,13 +41,12 @@ export default {
 
     data: function() {
         return {
-            import_data: {},
-            raw_fields: [],
-            parsed_fields: [],
-            data_field: -1,
-            size: 6,
+            games: [],
+            game_attrs: [],
+            data_field: null,
+            size: 10,
             chart_options: {},
-            results_set: []
+            extra_metric: "xG"
         }
     },
     components: {
@@ -54,7 +55,7 @@ export default {
     },
 
     watch: {
-        'results_set': {
+        'games': {
             handler: function() {
                 this.redraw();
             },
@@ -63,7 +64,7 @@ export default {
     },
 
     methods: {
-        onFileChange(ev) {
+        async onFileChange(ev) {
             var files = ev.target.files || ev.dataTransfer.files;
 
             if (files.length != 1) {
@@ -71,13 +72,31 @@ export default {
                 return;
             }
 
-            readXlsxFile(files[0]).then((rows) => {
-                this.raw_fields = rows[0];
-                this.import_data = rows.slice(3);
+            if (files[0].type == "application/json") {
+                // fox_cub data detected
+                var data = await files[0].text();
+                var games = Game.asFoxcub(JSON.parse(data));
 
-                this.prepareDataFields();
-                this.prepareTeamResults();
-            })
+                if (games.length < 1) {
+                    alert("Games not found!");
+                    return;
+                }
+
+                this.game_attrs = Object.keys(games[0].team_data);
+                this.data_field = this.game_attrs[0];
+                this.games = games.sort((a, b) => b.timestamp - a.timestamp);
+            } else {
+                // try as wyscout data
+                readXlsxFile(files[0]).then((rows) => {
+                    let raw_fields = rows[0];
+                    let import_data = rows.slice(3);
+                    var games = Game.asWyscout(raw_fields, import_data);
+                    this.game_attrs = Object.keys(games[0].team_data);
+
+                    this.data_field = this.game_attrs[0];
+                    this.games = games.sort((a, b) => b.timestamp - a.timestamp);
+                })
+            }
         },
 
         redraw() {
@@ -85,22 +104,18 @@ export default {
         },
 
         getChartOptions() {
-            var team_data = this.import_data
-                .filter((_,i) => i % 2 == 0)
+            var selected_games = Array.from(this.games)
                 .reverse()
-                .filter((_, i) => this.isGameSelected(this.results_set[i]));
+                .filter(g => g.selected);
 
-            var opponent_data = this.import_data
-                .filter((r,i) => i % 2 == 1)
-                .reverse()
-                .filter((_, i) => this.isGameSelected(this.results_set[i]));
-
-            var date = team_data.map(row => row[0]);
-            const [team_avg, team_set] = this.getChartData(team_data)
-            const [opponent_avg, opponent_set] = this.getChartData(opponent_data)
+            var date = selected_games.map(g => new Date(g.timestamp))
+            const [team_avg, team_set] = this.getChartData(
+                selected_games.map(g => g.team_data))
+            const [opponent_avg, opponent_set] = this.getChartData(
+                selected_games.map(g => g.opponent_data))
 
             return {
-                title: { text: this.parsed_fields[this.data_field] },
+                title: { text: this.data_field },
                 xAxis: {
                     type: 'datetime',
                     categories: date
@@ -124,7 +139,7 @@ export default {
         },
 
         getChartData(data) {
-            var points = data.map(row => row[this.data_field]);
+            var points = data.map(g => g[this.data_field]);
 
             var point_cluster = points
                 .map((v, i) => points.slice(0,i+1)
@@ -135,77 +150,6 @@ export default {
 
             let avg = points.reduce((pr, cr) => pr + cr) / points.length;
             return [avg.toFixed(3), arr];
-        },
-
-        prepareTeamResults() {
-            var team_data = this.import_data
-                .filter((r,i) => i % 2 == 0)
-                .reverse();
-
-            var opponent_data = this.import_data
-                .filter((r,i) => i % 2 == 1)
-                .reverse();
-
-            let goal_field = this.parsed_fields
-                .findIndex((f) => f == "Goals");
-            let xG_field = this.parsed_fields
-                .findIndex((f) => f == "xG");
-            let team_field = this.parsed_fields
-                .findIndex((f) => f == "Team");
-
-            var res = [];
-            let team_name = team_data[0][team_field];
-
-            team_data.forEach((_, i) => {
-                res.push({
-                    _id: {$oid: i},
-                    venue: this.getVenue(team_data[i], team_name),
-                    selected: true,
-                    goals_for: team_data[i][goal_field],
-                    goals_against: opponent_data[i][goal_field],
-                    xG_for: team_data[i][xG_field],
-                    xG_against: opponent_data[i][xG_field],
-                    team: [{name: team_name}],
-                    opponent: [{name: opponent_data[i][team_field]}]
-                })
-            });
-
-            this.results_set = res;
-
-        },
-
-        getVenue(row, team) {
-            let match_field = this.parsed_fields
-                .findIndex((f) => f == "Match");
-
-            return row[match_field].startsWith(team) ? "home": "away";
-        },
-
-        isGameSelected(game) {
-            return game ? game.selected : true;
-        },
-
-        prepareDataFields() {
-            this.parsed_fields = [];
-
-            this.raw_fields.forEach(field => {
-                if (field == null) return;
-                var sub_fields = field.split("/");
-
-                if (sub_fields.length == 1)
-                    this.parsed_fields.push(sub_fields[0]);
-                else if (sub_fields.length == 2) {
-                    this.parsed_fields.push(sub_fields[0]);
-                    this.parsed_fields.push(`${sub_fields[1]} ${sub_fields[0]}`);
-                    this.parsed_fields.push(`${sub_fields[1]} ${sub_fields[0]} %`);
-                }
-                else if (sub_fields.length == 4) {
-                    this.parsed_fields.push(sub_fields[0]);
-                    this.parsed_fields.push(`${sub_fields[1]} ${sub_fields[0]}`);
-                    this.parsed_fields.push(`${sub_fields[2]} ${sub_fields[0]}`);
-                    this.parsed_fields.push(`${sub_fields[3]} ${sub_fields[0]}`);
-                }
-            });
         }
     },
 

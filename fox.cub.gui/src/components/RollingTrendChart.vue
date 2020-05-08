@@ -3,10 +3,10 @@
 </template>
 
 <script>
-import {Chart} from 'highcharts-vue'
+import {Chart} from 'highcharts-vue';
 
 export default {
-    props: ['games', 'size', 'type', 'team_name'],
+    props: ['games', 'size', 'metric', 'team_name'],
     components: {
         highcharts: Chart
     },
@@ -21,16 +21,16 @@ export default {
                 },
                 xAxis: {
                     type: 'datetime',
-                    categories: this.games.map(g => new Date(g.date*1000))
+                    categories: this.games.map(g => new Date(g.timestamp))
                 },
                 series: [{
                     name: 'Goals for',
                     data: points.map(batch => batch.reduce(
-                        (a, b) => +a + +b[this.type + "_for"], 0) / batch.length)
+                        (a, b) => +a + +b.team_data[this.metric], 0) / batch.length)
                 }, {
                     name: 'Goals against',
                     data: points.map(batch => batch.reduce(
-                        (a, b) => +a + +b[this.type + "_against"], 0) / batch.length)
+                        (a, b) => +a + +b.opponent_data[this.metric], 0) / batch.length)
                 }]
             }
         }

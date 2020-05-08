@@ -55,12 +55,12 @@ export default {
             let data = this.games.filter(game => game.selected == true);
 
             var xg = {
-                "scored": data.reduce((a, b) => +a + +b.xG_for, 0) / data.length,
-                "conceded": data.reduce((a, b) => +a + +b.xG_against, 0) / data.length
+                "scored": data.reduce((a, b) => +a + +b.team_data["xG"], 0) / data.length,
+                "conceded": data.reduce((a, b) => +a + +b.opponent_data["xG"], 0) / data.length
             }
             var actual = {
-                "scored": data.reduce((a, b) => +a + +b.goals_for, 0) / data.length,
-                "conceded": data.reduce((a, b) => +a + +b.goals_against, 0) / data.length
+                "scored": data.reduce((a, b) => +a + +b.score_for, 0) / data.length,
+                "conceded": data.reduce((a, b) => +a + +b.score_against, 0) / data.length
             }
 
             return {xg: xg, actual: actual}

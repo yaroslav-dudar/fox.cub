@@ -19,14 +19,14 @@ export default {
 
             var opponents_strength = points.map(batch => batch.reduce(
                 (a, b) => +a + +this.getTeamPPG(this.ppg_table,
-                                                b.opponent[0]._id.$oid,
+                                                b.opponent_id,
                                                 b.tournament), 0) / batch.length)
 
             return {
                 title: { text: "Schedule complexity" },
                 xAxis: {
                     type: 'datetime',
-                    categories: this.games.map(g => new Date(g.date*1000))
+                    categories: this.games.map(g => new Date(g.timestamp))
                 },
                 series: [{
                     name: 'Opoonents point per game',

@@ -9,11 +9,11 @@
         <div class="pure-g">
             <div class="pure-u-1-3">
                 <h3>Home Team Results:</h3>
-                <team-results v-bind:games="home_games_to_view"></team-results>
+                <team-results v-bind:games="home_games_to_view" v-bind:extra_metric="extra_metric"></team-results>
             </div>
             <div class="pure-u-1-3">
                 <h3>Away Team Results:</h3>
-                <team-results v-bind:games="away_games_to_view"></team-results>
+                <team-results v-bind:games="away_games_to_view" v-bind:extra_metric="extra_metric"></team-results>
             </div>
             <div class="pure-u-1-3">
                 <h3>Game Odds History:</h3>
@@ -44,7 +44,7 @@
                 <rolling-trend-chart
                     v-bind:games="home_games_to_view"
                     v-bind:team_name="fixture.home_name"
-                    v-bind:type="settings.rolling_trend.type"
+                    v-bind:metric="settings.rolling_trend.metric"
                     v-bind:size="settings.rolling_trend.size">
                 </rolling-trend-chart>
             </div>
@@ -52,7 +52,7 @@
                 <rolling-trend-chart
                     v-bind:games="away_games_to_view"
                     v-bind:team_name="fixture.away_name"
-                    v-bind:type="settings.rolling_trend.type"
+                    v-bind:metric="settings.rolling_trend.metric"
                     v-bind:size="settings.rolling_trend.size">
                 </rolling-trend-chart>
             </div>
@@ -88,16 +88,18 @@
 
 <script>
 import { mapGetters } from "vuex";
-import router from '@/router'
+import router from '@/router';
 
-import GameOddsChart from '@/components/GameOddsChart.vue'
-import TeamResults from '@/components/TeamResults.vue'
-import TeamStats from '@/components/TeamStats.vue'
-import AppSettings from '@/components/AppSettings.vue'
+import GameOddsChart from '@/components/GameOddsChart.vue';
+import TeamResults from '@/components/TeamResults.vue';
+import TeamStats from '@/components/TeamStats.vue';
+import AppSettings from '@/components/AppSettings.vue';
 
-import ScheduleChart from '@/components/ScheduleChart.vue'
-import RollingTrendChart from '@/components/RollingTrendChart.vue'
-import LastGamesChart from '@/components/LastGamesChart.vue'
+import ScheduleChart from '@/components/ScheduleChart.vue';
+import RollingTrendChart from '@/components/RollingTrendChart.vue';
+import LastGamesChart from '@/components/LastGamesChart.vue';
+
+import {Venue, SoccerMetrics} from '@/models/Game';
 
 import {
     FETCH_GAMES,
@@ -122,10 +124,11 @@ export default {
             fixture: {},
             home_games_to_view: [], // home games with applied filters
             away_games_to_view: [], // away games with applied filters
+            extra_metric: 'xG',
             settings: {
                 full_history: true,
                 rolling_trend: {
-                    type: 'xG', // allowed [xG, goals]
+                    metric: SoccerMetrics.xG,
                     size: 6
                 },
                 away_home_filter: false,
@@ -184,7 +187,7 @@ export default {
         applyHomeGameFilters() {
             var games = this.home_games.filter((g) => {
                 if (this.settings.away_home_filter) {
-                    return g.venue == "home";
+                    return g.venue == Venue.home;
                 }
                 return true;
             }).filter((g) => {
@@ -200,7 +203,7 @@ export default {
         applyAwayGameFilters() {
             var games = this.away_games.filter((g) => {
                 if (this.settings.away_home_filter) {
-                    return g.venue == "away";
+                    return g.venue == Venue.away;
                 }
                 return true;
             }).filter((g) => {
@@ -219,14 +222,14 @@ export default {
                 {
                     team_id: this.home_team,
                     tournament_id: this.settings.full_history ? null : this.tournament,
-                    venue: 'home'
+                    venue: Venue.home
                 });
 
             this.$store.dispatch(FETCH_GAMES,
                 {
                     team_id: this.away_team,
                     tournament_id: this.settings.full_history ? null : this.tournament,
-                    venue: 'away'
+                    venue: Venue.away
                 });
         },
 

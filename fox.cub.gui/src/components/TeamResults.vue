@@ -68,39 +68,47 @@
             </tr>
         </thead>
         <tr v-for="g in games"
-            :key="g._id.$oid"
-            v-bind:class="[getResult(g.goals_for, g.goals_against), isSelected(g)]">
+            :key="g.id"
+            v-bind:class="[getResult(g.score_for, g.score_against), isSelected(g)]">
 
             <td>
                 <input type="checkbox" v-model="g.selected">
             </td>
-            <td v-if="g.venue == 'home'"><strong>{{g.team[0].name}}</strong></td>
-            <td v-else>{{g.opponent[0].name}}</td>
+            <td v-if="g.venue == Venue.home"><strong>{{g.team_name}}</strong></td>
+            <td v-else>{{g.opponent_name}}</td>
 
-            <td v-if="g.venue == 'home'">
-                {{g.goals_for}}<small>({{g.xG_for}})</small> -
-                {{g.goals_against}}<small>({{g.xG_against}})</small>
+            <td v-if="g.venue == Venue.home">
+                {{g.score_for}}<small>({{g.team_data[extra_metric]}})</small> -
+                {{g.score_against}}<small>({{g.opponent_data[extra_metric]}})</small>
             </td>
             <td v-else>
-                {{g.goals_against}}<small>({{g.xG_against}})</small> -
-                {{g.goals_for}}<small>({{g.xG_for}})</small>
+                {{g.score_against}}<small>({{g.opponent_data[extra_metric]}})</small> -
+                {{g.score_for}}<small>({{g.team_data[extra_metric]}})</small>
             </td>
 
-            <td v-if="g.venue == 'home'">{{g.opponent[0].name}}</td>
-            <td v-else><strong>{{g.team[0].name}}</strong>
+            <td v-if="g.venue == Venue.home">{{g.opponent_name}}</td>
+            <td v-else><strong>{{g.team_name}}</strong>
             </td>
         </tr>
     </table>
 </template>
 
 <script>
+
+import {Venue} from '@/models/Game';
+
 export default {
-    props: ['games'],
+    props: ['games', 'extra_metric'],
+    data() {
+        return {
+            Venue
+        }
+    },
     methods: {
-        getResult(goals_for, goals_against) {
-            if (goals_for > goals_against) {
+        getResult(score_for, score_against) {
+            if (score_for > score_against) {
                 return 'win';
-            } else if (goals_for == goals_against) {
+            } else if (score_for == score_against) {
                 return 'draw';
             } else {
                 return 'lose';

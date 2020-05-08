@@ -7,7 +7,7 @@ import random
 required_fields = ["FTAG", "FTHG", "Season", "Date", "AwayTeam", "HomeTeam"]
 game_fields = required_fields + ["HTHG", "HTAG", "Group",
                "HomeGoalsTiming", "AwayGoalsTiming"]
-dota2_game_fields = game_fields + ["HomeTeamWin", "Type", "Id"]
+dota2_game_fields = game_fields + ["HomeTeamWin", "Type", "Id", "Event"]
 cs_game_fields = game_fields + ["Map", "Event", "Id"]
 
 _BaseGameTuple = namedtuple('GameTuple', game_fields,
@@ -90,6 +90,9 @@ class BaseGame:
 
     def date_as_datetime(self):
         return self.to_datetime(self.Date)
+
+    def date_as_timestamp(self):
+        return self.to_datetime(self.Date).strftime("%s")
 
     @classmethod
     def from_file(cls, filepath):

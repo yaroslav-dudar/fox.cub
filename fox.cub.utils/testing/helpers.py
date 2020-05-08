@@ -9,7 +9,7 @@ from games import BaseGame
 
 
 class FormatType(Enum):
-    Goals = "goals"
+    Score = "score"
     Points = "points"
 
 

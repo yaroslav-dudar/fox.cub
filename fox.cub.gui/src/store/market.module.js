@@ -52,7 +52,6 @@ export const mutations = {
     },
     [SET_MARKET_TEAMS](state, teams) {
         state.market_teams = teams.length > 0 ? teams[0].teams: [];
-        console.log(state.market_teams);
     },
 };
 
