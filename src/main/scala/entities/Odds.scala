@@ -39,43 +39,22 @@ object Odds {
         val group = Json.obj(
             ("$group", Json.obj(
                 ("_id", null),
-                ("openLine", Json.obj( ("$first", "$$ROOT") )),
-                ("closingLine", Json.obj( ("$last", "$$ROOT") ))
+                ("open", Json.obj( ("$first", "$$ROOT") )),
+                ("close", Json.obj( ("$last", "$$ROOT") ))
             )))
 
-        val openTotal = Json.obj( ("$arrayElemAt", Json.arr("$openLine.totals", 0)) )
-        val closingTotal = Json.obj( ("$arrayElemAt", Json.arr("$closingLine.totals", 0)) )
+        val openTotal = Json.obj( ("$arrayElemAt", Json.arr("$open.totals", 0)) )
+        val closeTotal = Json.obj( ("$arrayElemAt", Json.arr("$close.totals", 0)) )
         val project_1 = Json.obj(
             ("$project", Json.obj(
-                ("openLine", 1),
-                ("closingLine", 1),
+                ("open", 1),
+                ("close", 1),
                 ("openTotal", openTotal),
-                ("closingTotal", closingTotal)
+                ("closeTotal", closeTotal)
             )))
 
-        val homeDiff = Json.obj(("$subtract", Json.arr("$closingLine.moneyline.home",
-                                                       "$openLine.moneyline.home")))
-        val awayDiff = Json.obj(("$subtract", Json.arr("$closingLine.moneyline.away",
-                                                       "$openLine.moneyline.away")))
-        val drawDiff = Json.obj(("$subtract", Json.arr("$closingLine.moneyline.draw",
-                                                       "$openLine.moneyline.draw")))
-        val totalPointsDiff = Json.obj(("$subtract", Json.arr("$closingTotal.points",
-                                                              "$openTotal.points")))
-        val totalOverDiff = Json.obj(("$subtract", Json.arr("$closingTotal.over",
-                                                            "$openTotal.over")))
-        val totalUnderDiff = Json.obj(("$subtract", Json.arr("$closingTotal.under",
-                                                             "$openTotal.under")))
-        val project_2 = Json.obj(
-            ("$project", Json.obj(
-                ("_id", 0),
-                ("homeDiff", homeDiff),
-                ("awayDiff", awayDiff),
-                ("drawDiff", drawDiff),
-                ("totalPointsDiff", totalPointsDiff),
-                ("totalOverDiff", totalOverDiff),
-                ("totalUnderDiff", totalUnderDiff)
-            )))
 
+        val project_2 = projectDiff()
         var cursor = Json.obj()
 
         var pipeline = Json.arr(aggMatch, aggSort, group, project_1, project_2)
@@ -83,5 +62,34 @@ object Odds {
             put("pipeline", pipeline).put("cursor", cursor)
 
         QueryEvent("aggregate", query)
+    }
+
+    def cond(ifExpr: String, resExpr: JsonObject) = {
+        val eq = Json.obj( ("$eq", Json.arr(ifExpr, 0)))
+        Json.obj( ("$cond", Json.arr(eq, 1, resExpr)) )
+    }
+
+    def divide(fisrt: String, second: String) = Json.obj(("$divide", Json.arr(fisrt, second)))
+
+    def projectDiff() = {
+        val homeDiff = divide("$open.moneyline.home", "$close.moneyline.home")
+        val awayDiff = divide("$open.moneyline.away", "$close.moneyline.away")
+        val drawDiff = divide("$open.moneyline.draw", "$close.moneyline.draw")
+
+        Json.obj(
+            ("$project", Json.obj(
+                ("_id", 1),
+                ("away_name", 1),
+                ("home_name", 1),
+                ("tournament_name", 1),
+                ("external_ids", 1),
+                ("tournament_id", 1),
+                ("date", 1),
+                ("home_id", 1),
+                ("away_id", 1),
+                ("homeDiff", cond("$close.moneyline.home", homeDiff)),
+                ("awayDiff", cond("$close.moneyline.away", awayDiff)),
+                ("drawDiff", cond("$close.moneyline.draw", drawDiff))
+            )))
     }
 }

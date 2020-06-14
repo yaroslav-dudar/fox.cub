@@ -32,8 +32,8 @@ class OpenDotaSpider(scrapy.Spider):
     name = 'opendota'
 
     base_url = "https://api.opendota.com/api/proMatches"
-    stop_on_match_id = 5354613721
-    proxy = "140.238.15.222:3128"
+    stop_on_match_id = 5458146682
+    proxy = "83.168.86.1:8090"
 
     custom_settings = {
         'DOWNLOAD_DELAY': 3,

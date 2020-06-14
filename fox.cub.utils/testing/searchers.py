@@ -213,16 +213,21 @@ class StrongWithWeakPattern(ScoringPattern):
     @property
     def team_1(self):
         return {
-            'attack': { 'min': 1.3, 'max': 2.0 },
+            'attack': { 'min': 1.4, 'max': 3.1 },
             'defence': { 'min': 0.0, 'max': 0.9 }
         }
+
 
     @property
     def team_2(self):
         return {
-            'attack': { 'min': 0.0 , 'max': 1.35 },
-            'defence': { 'min': 1.35, 'max': 1.85 }
+            'attack': { 'min': 1.1, 'max': 2.0 },
+            'defence': { 'min': 1.0, 'max': 1.7 }
         }
+        #return {
+        #    'attack': { 'min': 1.4 , 'max': 2.2 },
+        #    'defence': { 'min': 0.95, 'max': 1.65 }
+        #}
 
 
 
@@ -233,18 +238,17 @@ class StrongWithStrongPattern(ScoringPattern):
     @property
     def team_1(self):
         return {
-            'attack': { 'min': 0.9, 'max': 1.6 },
-            'defence': { 'min': 0.95, 'max': 1.6 }
+            'attack': { 'min': 0.0, 'max': 1.3 },
+            'defence': { 'min': 1.2, 'max': 1.93 }
         }
+
 
     @property
     def team_2(self):
         return {
-            'attack': { 'min': 1.1, 'max': 1.75 },
-            'defence': { 'min': 0.75, 'max': 1.5 }
+            'attack': { 'min': 1.55, 'max': 2.5 },
+            'defence': { 'min': 0.7, 'max': 1.55 }
         }
-
-
 
 
 class StrongAttVsWeakDefPattern(ScoringPattern):
@@ -273,15 +277,15 @@ class StrongAttVsStrongDefPattern(ScoringPattern):
     @property
     def team_1(self):
         return {
-            'attack': { 'min': 1.3, 'max': 2.1 },
-            'defence': { 'min': 0.0, 'max': 1.5 }
+            'attack': { 'min': 1.0, 'max': 1.7 },
+            'defence': { 'min': 1.1, 'max': 2.0 }
         }
 
     @property
     def team_2(self):
         return {
-            'attack': { 'min': 1.0, 'max': 1.7 },
-            'defence': { 'min': 1.1, 'max': 1.8 }
+            'attack': { 'min': 0.8, 'max': 1.5 },
+            'defence': { 'min': 0.8, 'max': 1.5 }
         }
 
 
@@ -293,15 +297,15 @@ class WeakDefWithWeakDefPattern(ScoringPattern):
     def team_1(self):
         return {
             'attack': { 'min':  0.8, 'max': 1.65 },
-            'defence': { 'min': 0.8, 'max': 1.6 }
+            'defence': { 'min': 0.0, 'max': 1.3 }
         }
 
 
     @property
     def team_2(self):
         return {
-            'attack': { 'min':  1.6, 'max': 3.1 },
-            'defence': { 'min': 0.7, 'max': 1.5 }
+            'attack': { 'min':  0.0, 'max': 1.3 },
+            'defence': { 'min': 1.3, 'max': 1.9 }
         }
 
 
@@ -312,15 +316,16 @@ class StrongVsAveragePattern(ScoringPattern):
     @property
     def team_1(self):
         return {
-            'attack': { 'min':  1.5, 'max': 2.8 },
-            'defence': { 'min': 0.0, 'max': 0.9 }
+            'attack': { 'min':  1.9, 'max': 1.75 },
+            'defence': { 'min': 0.9, 'max': 1.75 }
         }
+
 
     @property
     def team_2(self):
         return {
-            'attack': { 'min':  0.9, 'max': 1.4 },
-            'defence': { 'min': 1.2, 'max': 1.7 }
+            'attack': { 'min':  1.3, 'max': 1.9 },
+            'defence': { 'min': 1.0, 'max': 1.6 }
         }
 
 
@@ -362,11 +367,11 @@ class LeadersVsDogsPattern(StandingsPattern):
 
     @property
     def team_1(self):
-        return { 'standings': { 'min': 0, 'max': 5 } }
+        return { 'standings': { 'min': 12, 'max': 17 } }
 
     @property
     def team_2(self):
-        return { 'standings': { 'min': 8, 'max': 14 } }
+        return { 'standings': { 'min': 12, 'max': 16 } }
 
 
 class LeadersVsMidtablePattern(StandingsPattern):
@@ -374,11 +379,11 @@ class LeadersVsMidtablePattern(StandingsPattern):
 
     @property
     def team_1(self):
-        return { 'standings': { 'min': 0, 'max': 2 } }
+        return { 'standings': { 'min': 5, 'max': 11 } }
 
     @property
     def team_2(self):
-        return { 'standings': { 'min': 4, 'max': 10 } }
+        return { 'standings': { 'min': 2, 'max': 5 } }
 
 
 class MidtableVsDogsPattern(StandingsPattern):
@@ -417,16 +422,42 @@ class MidweekGamesPattern(AllPattern):
         return super().get_games(games_to_test, midweek)
 
 
+class EventsPattern(AllPattern):
+    name  = ImmutableProperty('MidweekGames')
+
+    def is_major_event(self, g):
+        return g.Event.startswith(('ESL One', 'StarLadder ImbaTV', 'Dota Summit',
+                                   'EPICENTER Major', 'MDL Chengdu Major'))
+
+    def get_games(self, games_to_test: int, dataset: list = None):
+        teams_1, teams_2 = self.get_teams()
+        if not dataset: dataset = self.dataset.observations
+
+        games = filter(lambda g: self.is_major_event(g), dataset)
+        return super().get_games(games_to_test, games)
+
+
 class SingleTeamPattern(AllPattern):
     name  = ImmutableProperty('SingleTeam')
 
+    selected_team = None
+
     @property
     def team_1(self):
-        return ["Ground Zero"]
+        if self.selected_team: return [self.selected_team]
+
+        return ["FaZe"]
 
     @property
     def team_2(self):
-        return self.cs_3_tier
+        return CsGoRank.cs_mid_tier
+        #return ["NiP", "Complexity", "Astralis", "ENCE", "Natus Vincere", "Spirit", "Heretics", "BIG",
+        #    "G2", "FaZe", "mousesports", "fnatic", "Vitality", "MAD Lions", "GODSENT", "Dignitas"]
+        #return ["OG", "Alliance", "Ninjas in Pyjamas", "Virtus.pro", "HellRaisers", "Nigma",
+        #    "Team Liquid", "FlyToMoon", "Natus Vincere", "ViKin.gg", "VP.Prodigy"]
+        #return ["PSG.LGD", "Vici Gaming", "INVICTUS GAMING",
+        #    "Royal Never Give Up", "Team Aster", "EHOME", "CDEC "]
+
 
     @functools.lru_cache(maxsize=None)
     def get_teams(self) -> Tuple[set, set]:

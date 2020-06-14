@@ -216,8 +216,21 @@ class EObservationDataset(BaseDataset):
     def btts(game, is_changed=False):
         return 1 if game.FTHG and game.FTAG else 0
 
+    @singledispatchmethod
     @staticmethod
-    def totals(serie: Serie, is_changed=False):
+    def totals(game, is_changed=False):
+        raise NotImplementedError("totals: Type not supported")
+
+    @totals.register(BaseGame)
+    @staticmethod
+    def _(game: BaseGame, is_changed=False):
+        total_score = game.FTHG + game.FTAG
+        if total_score < 26.5: return 0
+        return 1
+
+    @totals.register(Serie)
+    @staticmethod
+    def _(serie: Serie, is_changed=False):
         return 0 if serie.wins_in_a_row(2) else 1
 
 

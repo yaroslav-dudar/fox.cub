@@ -4,11 +4,29 @@ import io.vertx.lang.scala.json.Json
 import io.vertx.core.json.JsonObject
 
 import fox.cub.internals.QueryEvent
-import fox.cub.utils.Utils.getUTCdate
+import fox.cub.utils.Utils.{getUTCdate, getDateByMillis}
 
 object Fixtures {
     private val Collection = "fixtures"
 
+    private val teamsToObjects =  Json.obj(("$addFields", Json.obj(
+                ("home_id", Json.obj(("$toObjectId", "$home_id"))),
+                ("away_id", Json.obj(("$toObjectId", "$away_id")))
+            )))
+
+    private val joinHomeTeam = Json.obj(("$lookup", Json.obj(
+            ("from", "team"),
+            ("localField", "home_id"),
+            ("foreignField", "_id"),
+            ("as", "home_team")
+            )))
+
+    private val joinAwayTeam = Json.obj(("$lookup", Json.obj(
+            ("from", "team"),
+            ("localField", "away_id"),
+            ("foreignField", "_id"),
+            ("as", "away_team")
+            )))
     /**
      * Get list of not expired fixtures
      * @param tournamentId Fixtures belongs to a tournament
@@ -110,5 +128,54 @@ object Fixtures {
             .put("batchSize", 250)
 
         QueryEvent("find", query)
+    }
+
+
+    def list(tournamentId: Option[String],
+             tournamentName: Option[String],
+             teamName: Option[String],
+             sortBy: Option[String],
+             window: Int): QueryEvent = {
+
+        val maxDate = getDateByMillis(System.currentTimeMillis + (
+            window * 86400000)) // 7 day window
+        val minDate = getUTCdate()
+
+        val dateFilter = Json.obj(("$gt", Json.obj(("$date", minDate))),
+                                  ("$lt", Json.obj(("$date", maxDate))))
+
+        val aggMatch = Json.obj(
+            ("$match", Json.obj( ("date", dateFilter) )))
+
+        if (tournamentId != None)
+            // search by tournament id
+            aggMatch.getJsonObject("$match").put("tournament_id", tournamentId.get)
+
+        if (tournamentName != None)
+            // search by tournament name
+            aggMatch.getJsonObject("$match").put("tournament_name", tournamentName.get)
+
+        if (teamName != None) {
+            // search by team name
+            val home = Json.obj(("home_name", teamName.get))
+            val away = Json.obj(("away_name", teamName.get))
+
+            aggMatch.getJsonObject("$match").put("$or", Json.arr(home, away))
+        }
+        println(teamName == None, teamName)
+        val project_1 = Odds.projectDiff()
+        var cursor = Json.obj()
+        var pipeline = Json.arr(aggMatch, project_1)
+
+        if (sortBy != None)
+            pipeline.add(Json.obj(("$sort", Json.obj( (sortBy.get, 1) ))))
+
+        if (tournamentId != None)
+            pipeline.addAll(Json.arr(teamsToObjects, joinHomeTeam, joinAwayTeam))
+
+        val query = new JsonObject().put("aggregate", Collection).
+            put("pipeline", pipeline).put("cursor", cursor)
+
+        QueryEvent("aggregate", query)
     }
 }

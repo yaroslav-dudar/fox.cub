@@ -35,4 +35,5 @@
 
 <style>
 @import '../node_modules/purecss/build/pure-min.css';
+@import '../node_modules/purecss/build/grids-responsive-min.css';
 </style>

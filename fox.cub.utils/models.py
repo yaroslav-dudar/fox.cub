@@ -1,7 +1,7 @@
 """Pymongo wrapper with object models and operations with them."""
 
 import atexit
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pymongo
 from bson.objectid import ObjectId
@@ -104,6 +104,19 @@ class Odds(metaclass=BaseModel):
             "totals": totals,
         }
 
+    @classmethod
+    def get_line_diff(cls, fixture_ids: list):
+        match_query = {'$match': {'fixture_id': { '$in': fixture_ids }}}
+        sort_query = { '$sort': {'date': 1 } }
+        group_query = {'$group': {
+            '_id': "$fixture_id",
+            'open': { '$first': "$$ROOT" },
+            'close': { '$last': "$$ROOT" }
+        }}
+
+        return list(cls.db_context.aggregate([match_query,
+                                              sort_query,
+                                              group_query]))
 
 class Fixture(metaclass=BaseModel):
     collection = "fixtures"
@@ -153,7 +166,7 @@ class Fixture(metaclass=BaseModel):
         }
 
     @classmethod
-    def get_id(self, home_id, away_id, date: datetime):
+    def get_id(cls, home_id, away_id, date: datetime):
         """ Non-rigid date filter """
         where = 'return this.date.getDay() == {0}'.format(date.day)
         fixture = cls.db_context.find_one({'$where' : where,
@@ -161,6 +174,37 @@ class Fixture(metaclass=BaseModel):
                                             "away_id": away_id})
 
         return None if not fixture else str(fixture['_id'])
+
+    @classmethod
+    def bulk_write_stats(cls, fixtures: list):
+        requests = []
+        for f in fixtures:
+            upd_req = pymongo.UpdateOne(
+                {'_id': f['_id']},
+                {'$set': {'open': f['open'],
+                          'close': f['close']}
+                })
+            requests.append(upd_req)
+
+        return cls.db_context.bulk_write(requests)
+
+
+    @classmethod
+    def get_not_started(cls, window_in_h=3, day_range=7):
+        """ Return not started Fixtures within given range
+
+        Args:
+            window_in_h: additional time in hours for Fixture
+            day_range: fixtures should lay in a given range in days
+        """
+
+        from_date = datetime.utcnow() - timedelta(hours=window_in_h)
+        to_date = datetime.utcnow() + timedelta(days=day_range)
+
+        projection = {'_id': 1, 'external_ids': 1}
+        query = {'date' : {'$gte':from_date, '$lte':to_date}}
+        return list(cls.db_context.find(query, projection))
+
 
 class StatsModel(metaclass=BaseModel):
     collection = "tournament_model"

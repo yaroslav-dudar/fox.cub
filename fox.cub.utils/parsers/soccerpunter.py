@@ -388,7 +388,22 @@ class SoccerPunterSpider(scrapy.Spider):
         "/season/5326/Europe-Europa-League-2005-2006"
     ]
 
-    tournaments = denmark_superlig
+    k_league2 = [
+        "/season/15690/Korea-Republic-K-League-2-2019",
+        "/season/12176/Korea-Republic-K-League-2-2018",
+        "/season/6340/Korea-Republic-K-League-2-2017",
+        "/season/6338/Korea-Republic-K-League-2-2016",
+        "/season/6337/Korea-Republic-K-League-2-2015",
+        "/season/6336/Korea-Republic-K-League-2-2014",
+        "/season/6335/Korea-Republic-K-League-2-2013",
+        "/season/6334/Korea-Republic-K-League-2-2012",
+        "/season/6333/Korea-Republic-K-League-2-2011",
+        "/season/6332/Korea-Republic-K-League-2-2010",
+        "/season/6331/Korea-Republic-K-League-2-2009",
+        "/season/6330/Korea-Republic-K-League-2-2008",
+    ]
+
+    tournaments = k_league2
 
     MODES = {
         'default': {
@@ -416,7 +431,7 @@ class SoccerPunterSpider(scrapy.Spider):
     REGULAR_SEASON_NAMINGS = ["Group Stage", "Regular Season"]
     GROUPS = {}
 
-    proxy = "200.105.215.18:33630"
+    proxy = "105.112.8.53:3128"
 
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
@@ -556,7 +571,7 @@ class SoccerPunterSpider(scrapy.Spider):
             item['Group'] = -1
 
     def is_regular_season_game(self, game):
-        game_title = game.xpath("preceding::tr[@class='titleSpace']/td/h2/text()")[-1]
+        game_title = game.xpath("preceding::tr/td/h2[@class='centerOnScore']/text()")[-1]
         return game_title.extract().strip() in self.REGULAR_SEASON_NAMINGS
 
     def is_valid_match(self, match):

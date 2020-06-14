@@ -144,7 +144,6 @@ lower_teams = [CSGOTeam(7461, "Copenhagen%20Flames"),
                CSGOTeam(9928, "GamerLegion"),
                CSGOTeam(8772, "Syman"),
                CSGOTeam(7234, "Endpoint"),
-               CSGOTeam(6010, "Chiefs"),
                CSGOTeam(6978, "Singularity"),
                CSGOTeam(6290, "Luminosity"),
                CSGOTeam(9183, "Winstrike"),
@@ -172,10 +171,38 @@ lower_teams = [CSGOTeam(7461, "Copenhagen%20Flames"),
                CSGOTeam(7666, "Defusekids"),
                CSGOTeam(9812, "Unicorns%20of%20Love"),
                CSGOTeam(8248, "PACT"),
+               CSGOTeam(9802, "Budapest%20Five"),
+               CSGOTeam(9797, "AVEZ"),
+               CSGOTeam(9799, "Bad%20News%20Bears"),
+               CSGOTeam(10371, "NAVI%20Junior"),
+               # south america
+               CSGOTeam(7653, "Isurus"),
+               CSGOTeam(7733, "BOOM"),
+               CSGOTeam(9455, "Imperial"),
+               CSGOTeam(7176, "RED%20Canids"),
+               CSGOTeam(8574, "W7M"),
+               CSGOTeam(8902, "DETONA"),
+               CSGOTeam(6033, "Keyd"),
+               CSGOTeam(4773, "paiN"),
+               # australia
+               CSGOTeam(8536, "Ground%20Zero"),
                CSGOTeam(5293, "AVANT"),
                CSGOTeam(8668, "ORDER"),
                CSGOTeam(9881, "Rooster"),
-               CSGOTeam(7983, "Paradox")
+               CSGOTeam(6010, "Chiefs"),
+               CSGOTeam(10425, "Airborne"),
+               CSGOTeam(7983, "Paradox"),
+               # North America
+               CSGOTeam(9497, "Polar%20Ace"),
+               CSGOTeam(10463, "Recon%205"),
+               CSGOTeam(9963, "Infinity"),
+               CSGOTeam(5479, "Mythic"),
+               CSGOTeam(10700, "Swedish%20Canadians"),
+               CSGOTeam(9888, "New%20England%20Whalers"),
+               CSGOTeam(10017, "Rugratz"),
+               CSGOTeam(10692, "blood,%20sweat,%20and%20tears"),
+               CSGOTeam(10676, "AA"),
+               CSGOTeam(10691, "Keep%20the%20Comms%20Up")
 ]
 
 
@@ -183,7 +210,7 @@ class HLTVSpider(scrapy.Spider):
     name = 'hltv'
 
     dataset = HLTVDataset(top_teams + lower_teams)
-    proxy = "140.238.15.222:3128"
+    proxy = "36.89.182.153:36152"
 
     custom_settings = {
         'DOWNLOAD_DELAY': 2,

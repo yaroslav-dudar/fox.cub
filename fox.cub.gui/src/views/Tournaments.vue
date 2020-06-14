@@ -63,7 +63,7 @@ export default {
         */
         onChange() {
             this.$store.dispatch(SELECT_TOURNAMENT, this.tournament);
-            this.$store.dispatch(FETCH_FIXTURES, this.selected_tournament);
+            this.$store.dispatch(FETCH_FIXTURES, {tournament_id: this.selected_tournament});
             this.$store.dispatch(FETCH_TEAMS, this.selected_tournament);
         }
     },

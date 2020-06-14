@@ -19,7 +19,7 @@ from pstats import SortKey
 class SlaveFoxCubTest:
 
     def __init__(self, tournament: str,
-                 games: List[BaseGame],
+                 games: int,
                  patterns: BasePattern,
                  start: datetime, end: datetime):
         # setup http client

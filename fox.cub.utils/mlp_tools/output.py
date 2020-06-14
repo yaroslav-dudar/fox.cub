@@ -101,3 +101,19 @@ class DatasetFormat:
             feature.exp_points_home_team,
             feature.exp_points_away_team
         ]
+
+    @staticmethod
+    def dataset_v6(feature: FeatureVector):
+        """
+            Home team attack,
+            Home team defence,
+            Away Team attack,
+            Away team defence
+        """
+
+        return [
+            feature.attack_strength_home_team,
+            feature.defence_strength_home_team,
+            feature.attack_strength_away_team,
+            feature.defence_strength_away_team,
+        ]

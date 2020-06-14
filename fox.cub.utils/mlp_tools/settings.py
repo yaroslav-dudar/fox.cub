@@ -22,7 +22,7 @@ INT_FINAL = [
     DatasetAggregator(ObservationDataset('international/gold_cup.json'))
 ]
 
-CSGO = [DatasetAggregator(EObservationDataset('esport/csgo.json'))]
+CSGO = [DatasetAggregator(EObservationDataset('esport/csgo_big_events.json'))]
 DOTA2 = [DatasetAggregator(EObservationDataset('esport/dota2.json'))]
 
 GENERAL = [

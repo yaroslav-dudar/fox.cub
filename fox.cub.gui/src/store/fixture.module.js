@@ -17,10 +17,13 @@ const initialState = {
 export const state = { ...initialState };
 
 export const actions = {
-    async [FETCH_FIXTURES](context, tournament_id) {
-        let getFixtureUrl = `${Vue.config.host}/api/v1/fixtures/${tournament_id}`;
+    async [FETCH_FIXTURES](context, data) {
+        let getFixtureUrl = `${Vue.config.host}/api/v1/fixtures/list`;
 
-        Vue.http.get(getFixtureUrl).then(function (response) {
+        Object.keys(data).forEach((key) => (data[key] == null) && delete data[key]);
+        data.window = 10;
+
+        Vue.http.get(getFixtureUrl, {params: data}).then(function (response) {
             context.commit(SET_FIXTURES, response.body.firstBatch);
         });
     },

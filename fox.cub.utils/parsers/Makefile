@@ -15,7 +15,7 @@ run-all:
 
 .PHONY: infogol
 infogol:
-	.${PYTHON_BIN_DIR}/scrapy runspider infogol.py
+	${PYTHON_BIN_DIR}/scrapy runspider infogol.py
 
 .PHONY: infogol
 fivethirtyeight:
