@@ -29,13 +29,13 @@
                 </select>
 
                 <label for="trendType">Trend type</label>
-                <select id="trendType" v-model="settings.rolling_trend.type" class="form-control pure-input-1-2">
+                <select id="trendType" v-model="settings.rolling_trend.metric" class="form-control pure-input-1-2">
                     <option v-bind:value="SoccerMetrics.xG">Expected goals Ingogol</option>
                     <option v-bind:value="SoccerMetrics.goals">Actual goals</option>
                 </select>
 
-                <label for="trendType">Games Filter</label>
-                <select id="trendType" v-model="settings.away_home_filter" class="form-control pure-input-1-2">
+                <label for="gameFilter">Games Filter</label>
+                <select id="gameFilter" v-model="settings.away_home_filter" class="form-control pure-input-1-2">
                     <option v-bind:value="true">Home - Away games only</option>
                     <option v-bind:value="false">Show all games</option>
                 </select>

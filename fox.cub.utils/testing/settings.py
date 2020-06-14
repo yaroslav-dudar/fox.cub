@@ -53,6 +53,9 @@ BR_SERIE_B = DatasetAggregator(ObservationDataset('leagues/br_serie_b.json'))
 BAHRAIN_PL = DatasetAggregator(ObservationDataset('leagues/bahrain_pl.json'))
 BEL_PL = DatasetAggregator(ObservationDataset('leagues/bel_pl.json'))
 K_LEAGUE = DatasetAggregator(ObservationDataset('leagues/k_league.json'))
+K_LEAGUE2 = DatasetAggregator(ObservationDataset('leagues/k_league2.json'))
+COSTA_RICA = DatasetAggregator(ObservationDataset('leagues/costa_rica_primera.json'))
+NB_1_LIGA = DatasetAggregator(ObservationDataset('leagues/nb_1_liga.json'))
 
 FA_CUP = DatasetAggregator(
     ObservationDataset('cups/fa_cup.json'),
@@ -132,6 +135,9 @@ CONFIG = {
     'bahrain_pl': BAHRAIN_PL,
     'bel_pl': BEL_PL,
     'k_league': K_LEAGUE,
+    'k_league2': K_LEAGUE2,
+    'costa_rica': COSTA_RICA,
     'cs_go': CSGO,
-    'dota2': DOTA2
+    'dota2': DOTA2,
+    'nb_1_liga': NB_1_LIGA
 }

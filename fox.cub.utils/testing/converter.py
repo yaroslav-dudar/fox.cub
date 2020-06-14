@@ -17,8 +17,10 @@ from datetime import datetime
 from utils import Season
 from games import BaseGame
 from dataset import DatasetAggregator
-from testing.settings import CONFIG
 
+from testing.settings import CONFIG
+from testing.slave import SlaveFoxCubTest
+from testing.searchers import SingleTeamPattern
 
 class FoxCubConverter:
 
@@ -64,13 +66,24 @@ class FoxCubConverter:
         reverse = True if self.args.seasons < 0 else False
         seasons_num = abs(self.args.seasons)
 
+        patterns = [SingleTeamPattern]
+        patterns[0].selected_team = self.args.team
+
         result_dataset = []
         for season in Season.get_seasons(dataset.observations,
                                          reverse)[:seasons_num]:
 
-            season_games = Season.get(dataset.observations, season).games
-            filtered_games = list(filter(self.filter_game, season_games))
+            subdataset = dataset.split(season)[0]
+            slave = SlaveFoxCubTest(None,
+                                    100000,
+                                    patterns,
+                                    self.args.start,
+                                    self.args.end)
 
+            games, (teams_1, teams_2) = slave.build_pipeline(subdataset, season)
+            games, _, _ = slave.filter_results(games, teams_1, teams_2)
+
+            filtered_games = list(filter(self.filter_game, games))
             result_dataset.extend([self.get_result(g) for g in filtered_games])
 
         self.to_json(result_dataset)
@@ -91,7 +104,6 @@ class FoxCubConverter:
             "points_against": game.get_team_points(opponent),
             "date": game.date_as_timestamp()
         }
-
 
     def filter_game(self, game):
         return self.args.start <=\
