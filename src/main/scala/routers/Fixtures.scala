@@ -16,26 +16,11 @@ import fox.cub.model
 
 object Fixtures {
 
+    val dateReg = "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+
     val fixturesListValidator = new HttpRequestValidator()
-        .addQueryParam("window", new RegexValidator("^[0-9]+$"))
-
-    def getUpcomingFixtures(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
-        var response = context.response
-        var tournamentId = context.request.getParam("tournament_id")
-        var query = model.Fixtures.getRecent(tournamentId)
-
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
-            case Success(result) => {
-                val json = result.body.result
-                logger.info(context.request.path.get)
-                jsonResponse(response, json)
-            }
-            case Failure(cause) => {
-                logger.error(cause.getStackTraceString)
-                errorResponse(context.response, cause.toString, 500)
-            }
-        }
-    }
+        .addQueryParam("end", new RegexValidator(dateReg))
+        .addQueryParam("start", new RegexValidator(dateReg))
 
     def list(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
         var response = context.response
@@ -43,13 +28,15 @@ object Fixtures {
         var tournamentName = context.request.getParam("tournament_name")
         var teamName = context.request.getParam("team_name")
         var sortBy = context.request.getParam("sort_by")
-        var window = context.request.getParam("window").get.toInt
+        var start = context.request.getParam("start").get
+        var end = context.request.getParam("end").get
 
         var query = model.Fixtures.list(tournamentId,
                                         tournamentName,
                                         teamName,
                                         sortBy,
-                                        window)
+                                        start,
+                                        end)
 
         val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
             case Success(result) => {

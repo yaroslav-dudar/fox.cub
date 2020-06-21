@@ -73,20 +73,17 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
         .handler(RouterModel.trainModel)
 
     router.get("/api/v1/fixtures")
-        .handler(RouterFixtures.getUpcomingFixtures)
-    router.get("/api/v1/fixtures/list")
         .handler(RouterFixtures.fixturesListValidator.handle)
         .handler(RouterFixtures.list)
-
-    router.get("/api/v1/fixtures/:tournament_id")
-        .handler(RouterFixtures.getUpcomingFixtures)
 
     router.get("/api/v1/market/tournaments")
         .handler(RouterMarket.getTournaments)
     router.get("/api/v1/market/teams")
         .handler(RouterMarket.getTeams)
-    router.get("/api/v1/market/fixtures")
-        .handler(RouterMarket.getFixtures)
+    router.get("/api/v1/market/movement")
+        .handler(RouterFixtures.fixturesListValidator.handle)
+        .handler(RouterMarket.getMarketMoves)
+
 
     router.get("/api/v2/odds")
         .handler(RouterOdds.getOddsValidator.handle)

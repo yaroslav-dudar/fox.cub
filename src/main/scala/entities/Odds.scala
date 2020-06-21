@@ -3,8 +3,7 @@ package fox.cub.model
 import scala.collection.mutable.Buffer
 
 import io.vertx.lang.scala.json.Json
-import io.vertx.core.json.JsonObject
-import io.vertx.core.json.JsonArray
+import io.vertx.core.json.{JsonObject, JsonArray}
 
 import fox.cub.internals.QueryEvent
 import fox.cub.utils.Utils.getUTCdate
@@ -54,7 +53,7 @@ object Odds {
             )))
 
 
-        val project_2 = projectDiff()
+        val project_2 = projectDiff(false)
         var cursor = Json.obj()
 
         var pipeline = Json.arr(aggMatch, aggSort, group, project_1, project_2)
@@ -71,25 +70,30 @@ object Odds {
 
     def divide(fisrt: String, second: String) = Json.obj(("$divide", Json.arr(fisrt, second)))
 
-    def projectDiff() = {
+    def projectDiff(liteOutput: Boolean) = {
         val homeDiff = divide("$open.moneyline.home", "$close.moneyline.home")
         val awayDiff = divide("$open.moneyline.away", "$close.moneyline.away")
         val drawDiff = divide("$open.moneyline.draw", "$close.moneyline.draw")
 
-        Json.obj(
+        var baseProject = Json.obj(
             ("$project", Json.obj(
-                ("_id", 1),
                 ("away_name", 1),
                 ("home_name", 1),
-                ("tournament_name", 1),
-                ("external_ids", 1),
-                ("tournament_id", 1),
-                ("date", 1),
-                ("home_id", 1),
-                ("away_id", 1),
                 ("homeDiff", cond("$close.moneyline.home", homeDiff)),
                 ("awayDiff", cond("$close.moneyline.away", awayDiff)),
                 ("drawDiff", cond("$close.moneyline.draw", drawDiff))
             )))
+
+        if (!liteOutput)
+            baseProject.getJsonObject("$project")
+                .put("_id", 1)
+                .put("tournament_name", 1)
+                .put("external_ids", 1)
+                .put("tournament_id", 1)
+                .put("date", 1)
+                .put("home_id", 1)
+                .put("away_id", 1)
+
+        baseProject
     }
 }

@@ -32,11 +32,9 @@ object Market {
         }
     }
 
-    def getFixtures(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
+    def getTournaments(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
         var response = context.response
-        var tournamentName = context.request.getParam("tournament")
-        var teamName = context.request.getParam("team")
-        var query = model.Fixtures.getAll(tournamentName.get, teamName)
+        var query = model.Fixtures.getTournaments()
 
         val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
             case Success(result) => {
@@ -51,13 +49,23 @@ object Market {
         }
     }
 
-    def getTournaments(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
+    def getMarketMoves(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
         var response = context.response
-        var query = model.Fixtures.getTournaments()
+        var tournamentName = context.request.getParam("tournament_name")
+        var start = context.request.getParam("start").get
+        var end = context.request.getParam("end").get
+
+        var query = model.Fixtures.list(None,
+                                        tournamentName,
+                                        None,
+                                        None,
+                                        start,
+                                        end)
 
         val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
             case Success(result) => {
-                val json = result.body.result
+                val dbData = result.body.result
+                val json = model.Fixtures.groupByTeam(dbData.getJsonArray("firstBatch"))
                 logger.info(context.request.path.get)
                 jsonResponse(response, json)
             }

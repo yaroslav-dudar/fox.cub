@@ -14,14 +14,26 @@ const initialState = {
     fixtures: []
 };
 
+/**
+ * Return date in yyyy-mm-dd format
+ */
+function getDate(dayOffset) {
+    var timestamp = new Date().getTime();
+    var offset = 86400000 * dayOffset;
+    var date = new Date(timestamp + offset);
+    return date.toJSON().slice(0, 10);
+}
+
 export const state = { ...initialState };
 
 export const actions = {
     async [FETCH_FIXTURES](context, data) {
-        let getFixtureUrl = `${Vue.config.host}/api/v1/fixtures/list`;
+        let getFixtureUrl = `${Vue.config.host}/api/v1/fixtures`;
 
         Object.keys(data).forEach((key) => (data[key] == null) && delete data[key]);
-        data.window = 10;
+
+        if (!data.start) data.start = getDate(0);
+        if (!data.end) data.end = getDate(10);
 
         Vue.http.get(getFixtureUrl, {params: data}).then(function (response) {
             context.commit(SET_FIXTURES, response.body.firstBatch);
