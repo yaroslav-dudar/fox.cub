@@ -16,5 +16,5 @@ export const FETCH_MANUAL_STATS = "fetchManualStats";
 export const FETCH_TEAMS = "fetchTeams";
 
 export const FETCH_MARKET_TOURNAMENTS = "fetchMarketTournaments";
-export const FETCH_MARKET_FIXTURES = "fetchMarketFixtures";
 export const FETCH_MARKET_TEAMS = "fetchMarketTeams";
+export const FETCH_MARKET_MOVES = "fetchMarketMoves";

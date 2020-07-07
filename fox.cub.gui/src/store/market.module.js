@@ -2,14 +2,14 @@ import Vue from 'vue'
 
 import {
     FETCH_MARKET_TOURNAMENTS,
-    FETCH_MARKET_FIXTURES,
+    FETCH_MARKET_MOVES,
     FETCH_MARKET_TEAMS
 } from "./actions.type";
 
 import {
     SET_MARKET_TOURNAMENTS,
     SET_MARKET_TEAMS,
-    SET_FIXTURES
+    SET_MARKET_MOVES
 } from "./mutations.type"
 
 const initialState = {
@@ -35,14 +35,13 @@ export const actions = {
             context.commit(SET_MARKET_TEAMS, response.body.firstBatch);
         });
     },
-    async [FETCH_MARKET_FIXTURES](context, data) {
-        let getFixturesUrl = `${Vue.config.host}/api/v1/market/fixtures`;
-        let params = { "tournament": data.tournament, "team": data.team };
+    async [FETCH_MARKET_MOVES](context, data) {
+        let getMovesUrl = `${Vue.config.host}/api/v1/market/movement`;
 
-        Vue.http.get(getFixturesUrl, {params: params}).then(function (response) {
-            context.commit(SET_FIXTURES, response.body.firstBatch);
+        Vue.http.get(getMovesUrl, {params: data}).then(function (response) {
+            context.commit(SET_MARKET_MOVES, response.body);
         });
-    },
+    }
 
 };
 
@@ -53,6 +52,9 @@ export const mutations = {
     [SET_MARKET_TEAMS](state, teams) {
         state.market_teams = teams.length > 0 ? teams[0].teams: [];
     },
+    [SET_MARKET_MOVES](state, data) {
+        state.market_moves = data;
+    },
 };
 
 const getters = {
@@ -61,6 +63,9 @@ const getters = {
     },
     market_teams(state) {
         return state.market_teams;
+    },
+    market_moves(state) {
+        return state.market_moves;
     }
 };
 

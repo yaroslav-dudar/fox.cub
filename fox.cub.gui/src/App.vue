@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" class="container-pc">
     <div id="nav">
       <router-link to="/">Upcoming fixtures</router-link> |
       <router-link to="/test">Manual Testing</router-link> |
@@ -31,9 +31,18 @@
     }
   }
 }
+
+.container-pc {
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
 </style>
 
 <style>
+@import 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css';
 @import '../node_modules/purecss/build/pure-min.css';
 @import '../node_modules/purecss/build/grids-responsive-min.css';
 </style>

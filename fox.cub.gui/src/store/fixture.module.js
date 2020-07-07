@@ -10,19 +10,12 @@ import {
     SET_SELECTED_FIXTURE
 } from "./mutations.type"
 
+import {FixtureMixin} from "@/mixins/FixtureMixin";
+
 const initialState = {
     fixtures: []
 };
 
-/**
- * Return date in yyyy-mm-dd format
- */
-function getDate(dayOffset) {
-    var timestamp = new Date().getTime();
-    var offset = 86400000 * dayOffset;
-    var date = new Date(timestamp + offset);
-    return date.toJSON().slice(0, 10);
-}
 
 export const state = { ...initialState };
 
@@ -32,8 +25,8 @@ export const actions = {
 
         Object.keys(data).forEach((key) => (data[key] == null) && delete data[key]);
 
-        if (!data.start) data.start = getDate(0);
-        if (!data.end) data.end = getDate(10);
+        if (!data.start) data.start = FixtureMixin.methods.getDate(0);
+        if (!data.end) data.end = FixtureMixin.methods.getDate(10);
 
         Vue.http.get(getFixtureUrl, {params: data}).then(function (response) {
             context.commit(SET_FIXTURES, response.body.firstBatch);

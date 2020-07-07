@@ -18,3 +18,4 @@ export const SET_TEAMS = "setTeams";
 
 export const SET_MARKET_TOURNAMENTS = "setMarketTournaments";
 export const SET_MARKET_TEAMS = "setMarketTeams";
+export const SET_MARKET_MOVES = "setMarketMoves";

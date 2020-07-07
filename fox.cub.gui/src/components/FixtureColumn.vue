@@ -38,7 +38,7 @@ export default {
             : this.fixture.awayDiff;
 
         if (!interm_val) this.diff = 1.0;
-        this.diff = interm_val.toFixed(2);
+        this.diff = interm_val ? interm_val.toFixed(2): "No data";
     },
     methods: {
 
