@@ -18,6 +18,11 @@
             </div>
             <div class="pure-u-3-5" >
                 <highcharts :options="chart_options" style="height: 400px;"></highcharts>
+                <histogram-chart :dataset="team_dataset"></histogram-chart>
+                <histogram-chart :dataset="opponent_dataset"></histogram-chart>
+                <advanced-stats
+                    :team_dataset="team_dataset"
+                    :opponent_dataset="opponent_dataset"></advanced-stats>
             </div>
         </div>
 
@@ -29,6 +34,8 @@
 import readXlsxFile  from 'read-excel-file';
 import {Chart} from 'highcharts-vue';
 import TeamResults from '@/components/TeamResults.vue'
+import HistogramChart from '@/components/HistogramChart.vue'
+import AdvancedStats from '@/components/AdvancedStats.vue'
 import Game from '@/models/Game'
 
 import exporting from "highcharts/modules/exporting"
@@ -46,12 +53,16 @@ export default {
             data_field: null,
             size: 10,
             chart_options: {},
-            extra_metric: "xG"
+            extra_metric: "xG",
+            team_dataset: [],
+            opponent_dataset: []
         }
     },
     components: {
         highcharts: Chart,
-        TeamResults
+        TeamResults,
+        HistogramChart,
+        AdvancedStats
     },
 
     watch: {
@@ -109,10 +120,12 @@ export default {
                 .filter(g => g.selected);
 
             var date = selected_games.map(g => new Date(g.timestamp))
-            const [team_avg, team_set] = this.getChartData(
-                selected_games.map(g => g.team_data))
-            const [opponent_avg, opponent_set] = this.getChartData(
-                selected_games.map(g => g.opponent_data))
+
+            this.team_dataset = this.getFieldArr(selected_games.map(g => g.team_data));
+            this.opponent_dataset = this.getFieldArr(selected_games.map(g => g.opponent_data));
+
+            const [team_avg, team_set] = this.getChartData(this.team_dataset);
+            const [opponent_avg, opponent_set] = this.getChartData(this.opponent_dataset);
 
             return {
                 title: { text: this.data_field },
@@ -138,9 +151,7 @@ export default {
             }
         },
 
-        getChartData(data) {
-            var points = data.map(g => g[this.data_field]);
-
+        getChartData(points) {
             var point_cluster = points
                 .map((v, i) => points.slice(0,i+1)
                 .slice(-this.size));
@@ -148,8 +159,16 @@ export default {
             let arr = point_cluster.map(batch => batch.reduce(
                 (a, b) => +a + +b, 0) / batch.length)
 
-            let avg = points.reduce((pr, cr) => pr + cr) / points.length;
+            let avg = this.getAvg(points);
             return [avg.toFixed(3), arr];
+        },
+
+        getFieldArr(data) {
+            return data.map(g => g[this.data_field]);
+        },
+
+        getAvg(dataset) {
+            return dataset.reduce((pr, cr) => pr + cr) / dataset.length;
         }
     },
 

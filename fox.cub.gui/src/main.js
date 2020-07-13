@@ -11,7 +11,10 @@ import {
 
 import VueResource from 'vue-resource';
 import HighchartsVue from 'highcharts-vue'
+import Highcharts from "highcharts";
+import bellcurveInit from 'highcharts/modules/histogram-bellcurve'
 
+bellcurveInit(Highcharts)
 Vue.use(VueResource);
 Vue.use(HighchartsVue);
 

@@ -72,10 +72,11 @@
                     <button type="button"
                         class="pure-button pure-button-primary"
                         style="margin-right: 20px"
-                        v-on:click="onSubmit()">
+                        v-on:click="onSearchFixtures()">
                 Search Fixtures</button>
 
                 <button type="button"
+                        v-on:click="onSearchMarketMoves()"
                         class="pure-button pure-button-primary"
                         >
                 Show Market Movement</button>
@@ -84,9 +85,20 @@
             </fieldset>
         </form>
 
-        <market-fixtures
-            v-bind:fixtures="fixtures">
-        </market-fixtures>
+        <div class="pure-g">
+            <div class="pure-u-1 pure-u-md-1-2">
+                <market-fixtures
+                    :fixtures="fixtures">
+                </market-fixtures>
+            </div>
+            <div class="pure-u-1 pure-u-md-1-2">
+                <key-value-table
+                    :table_data="market_moves"
+                    :key_name="key_name"
+                    :value_name="value_name">
+                </key-value-table>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -111,10 +123,12 @@ import DateRangePicker from 'vue2-daterange-picker';
 import 'vue2-daterange-picker/dist/vue2-daterange-picker.css'
 
 import MarketFixtures from '@/components/MarketFixtures.vue';
+import KeyValueTable from '@/components/KeyValueTable.vue';
 import {FixtureMixin} from '@/mixins/FixtureMixin';
 
 import {
     FETCH_FIXTURES,
+    FETCH_MARKET_MOVES,
     FETCH_MARKET_TEAMS
 } from '@/store/actions.type'
 
@@ -126,12 +140,14 @@ export default {
     computed: {
         ...mapGetters([
             "market_tournaments", "fixtures",
-            "market_teams"
+            "market_teams", "market_moves"
         ])
     },
 
     data: function() {
         return {
+            key_name: "Team Name",
+            value_name: "Market movement %",
             tournament_name: null,
             team_name: null,
             dateRange: {
@@ -145,7 +161,8 @@ export default {
     },
     components: {
         MarketFixtures,
-        DateRangePicker
+        DateRangePicker,
+        KeyValueTable
     },
 
     methods: {
@@ -153,11 +170,18 @@ export default {
             this.$store.dispatch(FETCH_MARKET_TEAMS,
                                  this.tournament_name);
         },
-        onSubmit() {
+        onSearchFixtures() {
             this.$store.dispatch(FETCH_FIXTURES, {
                 tournament_name: this.tournament_name,
                 team_name: this.team_name,
                 sort_by: this.sort_by,
+                start: this.dateToStr(this.dateRange.startDate),
+                end: this.dateToStr(this.dateRange.endDate)
+            });
+        },
+
+        onSearchMarketMoves() {
+            this.$store.dispatch(FETCH_MARKET_MOVES, {
                 start: this.dateToStr(this.dateRange.startDate),
                 end: this.dateToStr(this.dateRange.endDate)
             });

@@ -14,7 +14,8 @@ import {
 
 const initialState = {
     market_tournaments: [],
-    market_teams: []
+    market_teams: [],
+    market_moves: {}
 };
 
 export const state = { ...initialState };
