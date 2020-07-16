@@ -10,7 +10,7 @@ monkey.patch_all()
 import gevent.pool
 import pymongo
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 import itertools
 
@@ -39,7 +39,12 @@ def modify_fixture_stats(fixture: dict, odds: list):
 
 if __name__ == '__main__':
     start_at = time.time()
-    open_fixtures = FixtureModel.get_not_started()
+
+    #from_date = datetime.utcnow() - timedelta(hours=window_in_h)
+    from_date = datetime.utcnow() - timedelta(days=7)
+    to_date = datetime.utcnow() + timedelta(days=7)
+
+    open_fixtures = FixtureModel.get_in_range(from_date, to_date)
 
     ext_ids = [f['external_ids'] for f in open_fixtures]
     flatten_ids = list(itertools.chain.from_iterable(ext_ids))

@@ -50,7 +50,7 @@ class InfogolSpider(scrapy.Spider):
         self.global_conf = Config()
         self.config = self.global_conf['infogol_parser']
 
-        self.proxy = "83.168.86.1:8090"
+        self.proxy = "51.68.61.17:80"
         self.leagues_list = {}
         self.init_data()
 

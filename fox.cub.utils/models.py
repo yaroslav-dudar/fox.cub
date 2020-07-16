@@ -1,7 +1,7 @@
 """Pymongo wrapper with object models and operations with them."""
 
 import atexit
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import pymongo
 from bson.objectid import ObjectId
@@ -118,6 +118,13 @@ class Odds(metaclass=BaseModel):
                                               sort_query,
                                               group_query]))
 
+    def del_from_date_range(cls, min_date: datetime, max_date: datetime):
+        """
+            Remove odds belongs to given date range
+        """
+        pass
+
+
 class Fixture(metaclass=BaseModel):
     collection = "fixtures"
 
@@ -190,16 +197,13 @@ class Fixture(metaclass=BaseModel):
 
 
     @classmethod
-    def get_not_started(cls, window_in_h=3, day_range=7):
-        """ Return not started Fixtures within given range
+    def get_in_range(cls, from_date: datetime, to_date: datetime):
+        """ Return Fixtures within given range
 
         Args:
-            window_in_h: additional time in hours for Fixture
-            day_range: fixtures should lay in a given range in days
+            from_date: minimum date Fixture
+            to_date: max date Fixture
         """
-
-        from_date = datetime.utcnow() - timedelta(hours=window_in_h)
-        to_date = datetime.utcnow() + timedelta(days=day_range)
 
         projection = {'_id': 1, 'external_ids': 1}
         query = {'date' : {'$gte':from_date, '$lte':to_date}}
