@@ -20,6 +20,8 @@ export default class Game {
         this.timestamp = timestamp;
         this.venue = venue;
         this.tournament = tournament;
+        this.team_points = this.getPoints(this.score_for, this.score_against);
+        this.opponent_points = this.getPoints(this.score_against, this.score_for)
     }
 
     static asWyscout(raw_wyscout_fields, wyscout_data) {
@@ -142,6 +144,19 @@ export default class Game {
             f => opponent_meta[f.replace(opponent_suffix, "")] = data[f]);
 
         return { team_meta, opponent_meta }
+    }
+
+    getPoints(team1_score, team2_score) {
+        /**
+         * Get amount of points earned by team1 against team2
+         */
+        if (team1_score > team2_score) {
+            return 3;
+        } else if (team1_score == team2_score) {
+            return 1;
+        } else {
+            return 0;
+        }
     }
 
 }

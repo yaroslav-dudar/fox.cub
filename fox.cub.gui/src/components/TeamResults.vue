@@ -52,7 +52,7 @@
 </style>
 
 <template>
-    <table class="pure-table pure-table-bordered">
+    <table class="pure-table pure-table-bordered" onselectstart = 'return false'>
         <thead>
             <tr>
                 <th>
@@ -63,13 +63,16 @@
                     </label>
                 </th>
                 <th>Home Team</th>
-                <th>Score</th>
+                <th>Score <span title="Team points per game">({{getTeamPPG()}})</span></th>
                 <th>Away Team</th>
             </tr>
         </thead>
         <tr v-for="g in games"
             :key="g.id"
-            v-bind:class="[getResult(g.score_for, g.score_against), isSelected(g)]">
+            @mouseup="onmouseup($event, g)"
+            @mousedown="onmousedown($event, g)"
+            @mousemove="onmousemove($event, g)"
+            v-bind:class="[getGameClass(g), isSelected(g)]">
 
             <td>
                 <input type="checkbox" v-model="g.selected">
@@ -101,14 +104,15 @@ export default {
     props: ['games', 'extra_metric'],
     data() {
         return {
-            Venue
+            Venue,
+            mouse_select: null
         }
     },
     methods: {
-        getResult(score_for, score_against) {
-            if (score_for > score_against) {
+        getGameClass(game) {
+            if (game.team_points == 3) {
                 return 'win';
-            } else if (score_for == score_against) {
+            } else if (game.team_points == 1) {
                 return 'draw';
             } else {
                 return 'lose';
@@ -122,7 +126,29 @@ export default {
 
             let display = ev.target.checked ? "": "none";
             elmts.forEach(el => el.style.display = display);
+        },
+        getTeamPPG() {
+            var selected_games = this.games.filter(game => game.selected);
+            var total_points = selected_games
+                                .reduce((total_points, game) =>
+                                        total_points + game.team_points, 0);
+            return (total_points / selected_games.length).toFixed(3);
+        },
+        onmousedown(ev, game) {
+            this.mouse_select = !game.selected;
+            game.selected = this.mouse_select;
+        },
+        onmousemove(ev, game) {
+            if (ev.buttons != 0 && this.mouse_select != null)
+                game.selected = this.mouse_select;
+
+            ev.stopPropagation();
+        },
+        onmouseup(ev, game) {
+            game.selected = this.mouse_select;
+            this.mouse_select = null;
         }
+
     }
 }
 </script>
