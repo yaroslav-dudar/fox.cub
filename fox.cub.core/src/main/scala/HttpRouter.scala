@@ -5,6 +5,9 @@ import io.vertx.lang.scala.ScalaLogger
 import io.vertx.scala.core.Vertx
 import io.vertx.scala.ext.web.handler.{BodyHandler, CorsHandler}
 
+import io.vertx.scala.ext.auth.jwt.{JWTAuthOptions, JWTAuth}
+import io.vertx.scala.ext.auth.KeyStoreOptions
+
 import io.vertx.core.eventbus.EventBus
 import io.vertx.core.json.JsonObject
 import io.vertx.core.http.HttpMethod
@@ -22,7 +25,8 @@ import fox.cub.router.{
     StatisticalModel => RouterModel,
     Fixtures => RouterFixtures,
     Odds => RouterOdds,
-    Market => RouterMarket
+    Market => RouterMarket,
+    User => RouterUser
 }
 
 /**
@@ -34,6 +38,14 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
     private val _router = Router.router(vertx)
     implicit private val eb = vertx.eventBus()
     private val crossHeadersAllowed = SortedSet("Content-Type", "X-Requested-With")
+
+    private var jwtOpt = JWTAuthOptions()
+        .setKeyStore(KeyStoreOptions()
+            .setPath(config.getJsonObject("jwt").getString("keypath"))
+            .setType("jceks")
+            .setPassword(config.getJsonObject("jwt").getString("keypwd")))
+
+    implicit private val jwtProvider = JWTAuth.create(vertx, jwtOpt);
 
     registerMsgCodec()
 
@@ -92,6 +104,13 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
     router.get("/api/v2/odds/diff")
         .handler(RouterOdds.getOddsValidator.handle)
         .handler(RouterOdds.getDiff)
+
+    router.post("/api/v1/auth/login")
+        .handler(RouterUser.login)
+
+    router.get("/api/v1/user/favorites")
+        .handler(RouterUser.authentication)
+        .handler(RouterUser.getFavorites)
 
     def router = _router
 

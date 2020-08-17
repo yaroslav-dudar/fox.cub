@@ -16,3 +16,8 @@ fox.cub.utils/research/*
 fox.cub.utils/results/*
 fox.cub.utils/**/*.csv
 fox.cub.utils/**/*.json
+
+.metals/
+.bloop/
+.ammonite/
+**/project/metals.sbt

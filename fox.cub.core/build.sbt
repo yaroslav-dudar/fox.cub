@@ -4,12 +4,13 @@ name:= "Fox.Cub"
 
 version := "0.0.1"
 
-scalaVersion := "2.12.6"
+scalaVersion := "2.12.12"
 
 libraryDependencies ++= Seq(
     "io.vertx" %% "vertx-lang-scala" % "3.5.4",
     "io.vertx" %% "vertx-web-scala" % "3.5.4",
     "io.vertx" %% "vertx-config-scala" % "3.5.4",
+    "io.vertx" %% "vertx-auth-jwt-scala" % "3.5.4",
     "io.vertx" %% "vertx-mongo-client-scala" % "3.5.4",
     "io.vertx" % "vertx-web-api-contract" % "3.5.4",
 
@@ -27,7 +28,7 @@ resolvers ++= Seq(
 )
 
 fork := true
-javaOptions := Seq("-Dvertx-config-path=./config/config.json")
+javaOptions := Seq("-Dvertx-config-path=./../config/config.json")
 
 mainClass in assembly := Some("fox.cub.FoxCub")
 // name of the resulting jar file

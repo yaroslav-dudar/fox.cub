@@ -10,6 +10,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import fox.cub.internals.ResultEvent
 import fox.cub.utils.HttpUtils.{jsonResponse, errorResponse}
 import fox.cub.http.validator.{HttpRequestValidator,
+                               MongoIdValidator,
                                RegexValidator}
 import fox.cub.db.DbProps
 import fox.cub.model
@@ -21,6 +22,9 @@ object Fixtures {
     val fixturesListValidator = new HttpRequestValidator()
         .addQueryParam("end", new RegexValidator(dateReg))
         .addQueryParam("start", new RegexValidator(dateReg))
+
+    val makeFavFixtuteValidator = new HttpRequestValidator()
+        .addJsonBodyParam("fixture", new MongoIdValidator, classOf[java.lang.String])
 
     def list(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
         var response = context.response
@@ -37,6 +41,25 @@ object Fixtures {
                                         sortBy,
                                         start,
                                         end)
+
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+            case Success(result) => {
+                val json = result.body.result
+                logger.info(context.request.path.get)
+                jsonResponse(response, json)
+            }
+            case Failure(cause) => {
+                logger.error(cause.getStackTraceString)
+                errorResponse(context.response, cause.toString, 500)
+            }
+        }
+    }
+
+    def makeFavFixture(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
+        var response = context.response
+        var fixture = context.getBodyAsJson
+
+        var query = model.User.addFavFixture(fixture.get)
 
         val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
             case Success(result) => {

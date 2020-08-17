@@ -180,4 +180,10 @@ object Fixtures {
             .foreach(v => sortedResults.put(v._1, v._2))
         sortedResults
     }
+
+    def listByIds(ids: JsonArray) = {
+        val filter = Json.obj(("_id", Json.obj(("$in", ids))))
+        val query = new JsonObject().put("find", Collection).put("filter", filter)
+        QueryEvent("find", query)
+    }
 }
