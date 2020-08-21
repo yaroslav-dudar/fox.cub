@@ -23,8 +23,8 @@ object Fixtures {
         .addQueryParam("end", new RegexValidator(dateReg))
         .addQueryParam("start", new RegexValidator(dateReg))
 
-    val makeFavFixtuteValidator = new HttpRequestValidator()
-        .addJsonBodyParam("fixture", new MongoIdValidator, classOf[java.lang.String])
+    val addFavFixtuteValidator = new HttpRequestValidator()
+        .addJsonBodyParam("fixture_id", new MongoIdValidator, classOf[java.lang.String])
 
     def list(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
         var response = context.response
@@ -42,7 +42,7 @@ object Fixtures {
                                         start,
                                         end)
 
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
             case Success(result) => {
                 val json = result.body.result
                 logger.info(context.request.path.get)
@@ -55,22 +55,4 @@ object Fixtures {
         }
     }
 
-    def makeFavFixture(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
-        var response = context.response
-        var fixture = context.getBodyAsJson
-
-        var query = model.User.addFavFixture(fixture.get)
-
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
-            case Success(result) => {
-                val json = result.body.result
-                logger.info(context.request.path.get)
-                jsonResponse(response, json)
-            }
-            case Failure(cause) => {
-                logger.error(cause.getStackTraceString)
-                errorResponse(context.response, cause.toString, 500)
-            }
-        }
-    }
 }

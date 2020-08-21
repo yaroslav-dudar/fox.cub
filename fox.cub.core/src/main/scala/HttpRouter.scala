@@ -112,6 +112,10 @@ class HttpRouter(vertx: Vertx, config: JsonObject) {
         .handler(RouterUser.authentication)
         .handler(RouterUser.getFavorites)
 
+    router.post("/api/v1/user/favorites")
+        .handler(RouterUser.authentication)
+        .handler(RouterUser.addFavFixture)
+
     def router = _router
 
     /**

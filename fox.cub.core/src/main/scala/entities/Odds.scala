@@ -81,7 +81,10 @@ object Odds {
                 ("home_name", 1),
                 ("homeDiff", cond("$close.moneyline.home", homeDiff)),
                 ("awayDiff", cond("$close.moneyline.away", awayDiff)),
-                ("drawDiff", cond("$close.moneyline.draw", drawDiff))
+                ("drawDiff", cond("$close.moneyline.draw", drawDiff)),
+                ("homeWin", "$close.moneyline.home"),
+                ("awayWin", "$close.moneyline.away"),
+                ("draw", "$close.moneyline.draw")
             )))
 
         if (!liteOutput)

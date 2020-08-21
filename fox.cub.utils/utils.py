@@ -257,3 +257,18 @@ def singledispatchmethod(func):
     wrapper.register = dispatcher.register
     functools.update_wrapper(wrapper, func)
     return wrapper
+
+
+def str2datetime(value):
+    if isinstance(value, datetime):
+        return value
+
+    try:
+        value = datetime.strptime(value, str2datetime.TIME_FORMAT)
+    except (ValueError, TypeError) as e:
+        raise argparse.ArgumentTypeError(
+            "Date should be in %s format" % str2datetime.TIME_FORMAT)
+
+    return value
+
+str2datetime.TIME_FORMAT = BaseGame.date_format

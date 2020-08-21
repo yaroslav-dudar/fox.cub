@@ -24,6 +24,7 @@ LIGUE2 = DatasetAggregator(ObservationDataset('leagues/ligue2.json'))
 JUPILER_LEAGUE = DatasetAggregator(ObservationDataset('leagues/jupiler.json'))
 BELGIUM_B = DatasetAggregator(ObservationDataset('leagues/belgium_b.json'))
 J1_LEAGUE = DatasetAggregator(ObservationDataset('leagues/j1_league.json'))
+J2_LEAGUE = DatasetAggregator(ObservationDataset('leagues/j2_league.json'))
 SUPER_LIG = DatasetAggregator(ObservationDataset('leagues/super_lig.json'))
 TURKEY_1LEAGUE = DatasetAggregator(ObservationDataset('leagues/turkey_1lig.json'))
 EREDIVISIE = DatasetAggregator(ObservationDataset('leagues/eredivisie.json'))
@@ -56,6 +57,9 @@ K_LEAGUE = DatasetAggregator(ObservationDataset('leagues/k_league.json'))
 K_LEAGUE2 = DatasetAggregator(ObservationDataset('leagues/k_league2.json'))
 COSTA_RICA = DatasetAggregator(ObservationDataset('leagues/costa_rica_primera.json'))
 NB_1_LIGA = DatasetAggregator(ObservationDataset('leagues/nb_1_liga.json'))
+Eliteserien = DatasetAggregator(ObservationDataset('leagues/eliteserien.json'))
+Allsvenskan = DatasetAggregator(ObservationDataset('leagues/allsvenskan.json'))
+CHINA_SUPER_LEAGUE = DatasetAggregator(ObservationDataset('leagues/china_super_league.json'))
 
 FA_CUP = DatasetAggregator(
     ObservationDataset('cups/fa_cup.json'),
@@ -76,6 +80,8 @@ LEAGUE_CUP = DatasetAggregator(
         BaseDataset.from_file('leagues/efl_league2.json', {'strength': 3})
         ])
 )
+
+JAPAN_CUP = DatasetAggregator(ObservationDataset('cups/japan_cup.json'))
 
 EU_QUALIFICATION = DatasetAggregator(ObservationDataset('international/eu_qualification.json'))
 
@@ -106,6 +112,7 @@ CONFIG = {
     'jupiler': JUPILER_LEAGUE,
     'belgium_b': BELGIUM_B,
     'j1_league': J1_LEAGUE,
+    'j2_league': J2_LEAGUE,
     'super_lig': SUPER_LIG,
     'turkey_1lig': TURKEY_1LEAGUE,
     'eredivisie': EREDIVISIE,
@@ -139,5 +146,9 @@ CONFIG = {
     'costa_rica': COSTA_RICA,
     'cs_go': CSGO,
     'dota2': DOTA2,
-    'nb_1_liga': NB_1_LIGA
+    'nb_1_liga': NB_1_LIGA,
+    'eliteserien': Eliteserien,
+    "allsvenskan": Allsvenskan,
+    "china_super_league": CHINA_SUPER_LEAGUE,
+    'japan_cup': JAPAN_CUP
 }

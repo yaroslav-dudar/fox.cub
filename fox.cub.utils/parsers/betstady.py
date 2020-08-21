@@ -68,7 +68,7 @@ class BetStadySpider(scrapy.Spider):
 
     ukr_premier_league = BetStadyDataset("ukraine", "premier-league",
                                          ["{0}-{1}".format(year, year+1)
-                                         for year in range(2005, 2019)])
+                                         for year in range(2005, 2020)])
 
     segunda = BetStadyDataset("spain", "segunda-division",
                               ["{0}-{1}".format(year, year+1)
@@ -100,6 +100,10 @@ class BetStadySpider(scrapy.Spider):
                               for year in range(2005, 2019)])
 
     j1_league = BetStadyDataset("japan", "j1-league",
+                                ["{0}".format(year)
+                                for year in range(2005, 2019)])
+
+    j2_league = BetStadyDataset("japan", "j2-league",
                                 ["{0}".format(year)
                                 for year in range(2005, 2019)])
 
@@ -187,8 +191,8 @@ class BetStadySpider(scrapy.Spider):
                                 ["{0}-{1}".format(year, year+1)
                                 for year in range(2005, 2019)])
 
-    dataset = nb_1_liga
-    proxy = "79.106.97.66:8080"
+    dataset = ukr_premier_league
+    proxy = "196.22.199.177:8080"
 
     def start_requests(self):
         for url in self.dataset:

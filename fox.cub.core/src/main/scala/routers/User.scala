@@ -65,22 +65,62 @@ object User {
     }
 
     /**
-      * Return user saved fixtures
+      * Return list of user saved fixtures
       */
     def getFavorites(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
         var response = context.response
         val userInfo = context.user().get.principal()
 
-        var query = model.Fixtures.listByIds(userInfo.getJsonArray("fav_fixtures"))
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        var query = model.User.findUser(userInfo.getString("username"))
+        eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+            case Success(result) => {
+                val user = model.User.getUser(result.body.result)
+                if (user == None ) {
+                    context.fail(401)
+                    return
+                }
+
+                var query = model.Fixtures.listByIds(user.get.getJsonArray("fav_fixtures"))
+
+                eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+                    case Success(result) => {
+                        val json = result.body.result
+                        logger.info(context.request.path.get)
+                        jsonResponse(response, json)
+                    }
+                    case Failure(cause) => {
+                        logger.error(cause.toString)
+                        context.fail(500)
+                    }
+                }
+            }
+            case Failure(cause) => {
+                logger.error(cause.toString)
+                context.fail(500)
+            }
+        }
+    }
+
+    /**
+      * Add fixture to user favorites
+      */
+    def addFavFixture(context: RoutingContext)(implicit eb: EventBus, logger: ScalaLogger) {
+        var response = context.response
+        var fixture = context.getBodyAsJson
+        val userInfo = context.user().get.principal()
+
+        var query = model.User.addFavFixture(userInfo.getString("username"),
+                                             fixture.get.getString("fixture_id"))
+
+        eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
             case Success(result) => {
                 val json = result.body.result
                 logger.info(context.request.path.get)
                 jsonResponse(response, json)
             }
             case Failure(cause) => {
-                logger.error(cause.toString)
-                context.fail(500)
+                logger.error(cause.getStackTraceString)
+                errorResponse(context.response, cause.toString, 500)
             }
         }
     }

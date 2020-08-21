@@ -10,13 +10,29 @@ monkey.patch_all()
 import gevent.pool
 import pymongo
 
+import argparse
 from datetime import datetime, timedelta
 import time
 import itertools
 
+from utils import str2datetime
 from models import (
     Fixture as FixtureModel, Odds, Tournament,
     Team, MongoClient, Pinnacle)
+
+
+str2datetime.TIME_FORMAT = "%d/%m/%Y %H:%M:%S"
+START_TIME_DEFAULT = datetime.utcnow() - timedelta(days=7)
+END_TIME_DEFAULT = datetime.utcnow() + timedelta(days=14)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-start', default=START_TIME_DEFAULT, type=str2datetime,
+                        help='Collect stats for fixtures from this date')
+    parser.add_argument('-end', default=END_TIME_DEFAULT, type=str2datetime,
+                        help='Collect stats for fixtures to this date')
+    return parser.parse_args()
 
 
 def modify_fixture_stats(fixture: dict, odds: list):
@@ -36,15 +52,11 @@ def modify_fixture_stats(fixture: dict, odds: list):
     return True
 
 
-
 if __name__ == '__main__':
     start_at = time.time()
 
-    #from_date = datetime.utcnow() - timedelta(hours=window_in_h)
-    from_date = datetime.utcnow() - timedelta(days=7)
-    to_date = datetime.utcnow() + timedelta(days=7)
-
-    open_fixtures = FixtureModel.get_in_range(from_date, to_date)
+    args = parse_args()
+    open_fixtures = FixtureModel.get_in_range(args.start, args.end)
 
     ext_ids = [f['external_ids'] for f in open_fixtures]
     flatten_ids = list(itertools.chain.from_iterable(ext_ids))
@@ -58,4 +70,5 @@ if __name__ == '__main__':
                                  open_fixtures)
 
     FixtureModel.bulk_write_stats(list(fixtures_with_stats))
-    print("Execution time: {}".format(time.time() - start_at))
+    print("Stats collection finished. Execution time: {}"
+        .format(time.time() - start_at))

@@ -14,12 +14,11 @@ object User {
      * so it may be tracked easely
      * @param note data in JSON fromat
     */
-    def addFavFixture(data: JsonObject): QueryEvent = {
-        var createdAt = Json.obj(("$date", getUTCdate()))
-
-        val q = Json.obj(("_id", Json.obj(("$oid", data.getString("user")))))
-        val push = Json.obj( ("fav_fixtures", data.getString("fixture")) )
-        val u = Json.obj(("$push", push))
+    def addFavFixture(username: String, fixtureId: String): QueryEvent = {
+        val q = Json.obj(("username", username))
+        val fixtureObj = Json.obj(("$oid", fixtureId))
+        val addToSet = Json.obj( ("fav_fixtures", fixtureObj) )
+        val u = Json.obj(("$addToSet", addToSet))
         val update = Json.obj(
             ("u", u),
             ("q", q),

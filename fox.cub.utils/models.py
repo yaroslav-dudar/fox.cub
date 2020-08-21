@@ -116,13 +116,19 @@ class Odds(metaclass=BaseModel):
 
         return list(cls.db_context.aggregate([match_query,
                                               sort_query,
-                                              group_query]))
+                                              group_query],
+                                              allowDiskUse=True))
 
-    def del_from_date_range(cls, min_date: datetime, max_date: datetime):
+    @classmethod
+    def remove(cls, fixture_ids: list, unremovable_ids: list):
         """
-            Remove odds belongs to given date range
+            Remove odds belongs to given fixtures
         """
-        pass
+
+        return cls.db_context.remove({
+            'fixture_id': {"$in": fixture_ids},
+            '_id': {'$nin': [ObjectId(i) for i in unremovable_ids]}
+        })
 
 
 class Fixture(metaclass=BaseModel):
@@ -197,7 +203,9 @@ class Fixture(metaclass=BaseModel):
 
 
     @classmethod
-    def get_in_range(cls, from_date: datetime, to_date: datetime):
+    def get_in_range(cls, from_date: datetime,
+                     to_date: datetime,
+                     is_lite_output=True):
         """ Return Fixtures within given range
 
         Args:
@@ -206,6 +214,9 @@ class Fixture(metaclass=BaseModel):
         """
 
         projection = {'_id': 1, 'external_ids': 1}
+        if not is_lite_output:
+            projection = {**projection, **{'open._id': 1, 'close._id': 1}}
+
         query = {'date' : {'$gte':from_date, '$lte':to_date}}
         return list(cls.db_context.find(query, projection))
 

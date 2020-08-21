@@ -80,8 +80,23 @@ class SoccerPunterSpider(scrapy.Spider):
     slovakia_super_liga = ["/Slovakia/Super-Liga-{0}-{1}".format(year, year+1)
         for year in range(2002, 2018)]
 
-    norway_division1 = ["/Norway/1.-Division-{0}".format(year)
-        for year in range(1997, 2018)]
+    norway_eliteserien = [
+        "/season/15581/Norway-Eliteserien-2019",
+        "/season/11983/Norway-Eliteserien-2018",
+        "/season/804/Norway-Eliteserien-2017",
+        "/season/1817/Norway-Eliteserien-2016",
+        "/season/1816/Norway-Eliteserien-2015",
+        "/season/1815/Norway-Eliteserien-2014",
+        "/season/1814/Norway-Eliteserien-2013",
+        "/season/3461/Norway-Eliteserien-2012",
+        "/season/1813/Norway-Eliteserien-2011",
+        "/season/1812/Norway-Eliteserien-2010",
+        "/season/1811/Norway-Eliteserien-2009",
+        "/season/1810/Norway-Eliteserien-2008",
+        "/season/1809/Norway-Eliteserien-2007",
+        "/season/1808/Norway-Eliteserien-2006",
+        "/season/1807/Norway-Eliteserien-2005"
+    ]
 
     denmark_division1 = ["/Denmark/1st-Division-{0}-{1}".format(year, year+1)
         for year in range(1997, 2018)]
@@ -403,7 +418,61 @@ class SoccerPunterSpider(scrapy.Spider):
         "/season/6330/Korea-Republic-K-League-2-2008",
     ]
 
-    tournaments = k_league2
+    allsvenskan = [
+        "/season/15529/Sweden-Allsvenskan-2019",
+        "/season/11759/Sweden-Allsvenskan-2018",
+        "/season/848/Sweden-Allsvenskan-2017",
+        "/season/2088/Sweden-Allsvenskan-2016",
+        "/season/2087/Sweden-Allsvenskan-2015",
+        "/season/2086/Sweden-Allsvenskan-2014",
+        "/season/2085/Sweden-Allsvenskan-2013",
+        "/season/2084/Sweden-Allsvenskan-2012",
+        "/season/2083/Sweden-Allsvenskan-2011",
+        "/season/2082/Sweden-Allsvenskan-2010",
+        "/season/2081/Sweden-Allsvenskan-2009",
+        "/season/2080/Sweden-Allsvenskan-2008",
+        "/season/2079/Sweden-Allsvenskan-2007",
+        "/season/2078/Sweden-Allsvenskan-2006",
+        "/season/16515/Sweden-Allsvenskan-2005"
+    ]
+
+    china_super_league = [
+        "/season/15715/China-PR-Super-League-2019",
+        "/season/12250/China-PR-Super-League-2018",
+        "/season/1003/China-PR-Super-League-2017",
+        "/season/3174/China-PR-Super-League-2016",
+        "/season/3173/China-PR-Super-League-2015",
+        "/season/3172/China-PR-Super-League-2014",
+        "/season/3171/China-PR-Super-League-2013",
+        "/season/3170/China-PR-Super-League-2012",
+        "/season/3169/China-PR-Super-League-2011",
+        "/season/3168/China-PR-Super-League-2010",
+        "/season/3167/China-PR-Super-League-2009",
+        "/season/3166/China-PR-Super-League-2008",
+        "/season/3165/China-PR-Super-League-2007",
+        "/season/3164/China-PR-Super-League-2006",
+        "/season/3163/China-PR-Super-League-2005"
+    ]
+
+    japan_cup = [
+        "/season/15693/Japan-Ybc-Levain-Cup-2019",
+        "/season/12161/Japan-Ybc-Levain-Cup-2018",
+        "/season/992/Japan-Ybc-Levain-Cup-2017",
+        "/season/3257/Japan-Ybc-Levain-Cup-2016",
+        "/season/3256/Japan-Ybc-Levain-Cup-2015",
+        "/season/3255/Japan-Ybc-Levain-Cup-2014",
+        "/season/3254/Japan-Ybc-Levain-Cup-2013",
+        "/season/3253/Japan-Ybc-Levain-Cup-2012",
+        "/season/3252/Japan-Ybc-Levain-Cup-2011",
+        "/season/3251/Japan-Ybc-Levain-Cup-2010",
+        "/season/3250/Japan-Ybc-Levain-Cup-2009",
+        "/season/3249/Japan-Ybc-Levain-Cup-2008",
+        "/season/3248/Japan-Ybc-Levain-Cup-2007",
+        "/season/3247/Japan-Ybc-Levain-Cup-2006",
+        "/season/3246/Japan-Ybc-Levain-Cup-2005"
+    ]
+
+    tournaments = japan_cup
 
     MODES = {
         'default': {
@@ -431,7 +500,7 @@ class SoccerPunterSpider(scrapy.Spider):
     REGULAR_SEASON_NAMINGS = ["Group Stage", "Regular Season"]
     GROUPS = {}
 
-    proxy = "105.112.8.53:3128"
+    proxy = "134.122.93.160:3128"
 
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)

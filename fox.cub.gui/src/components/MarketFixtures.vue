@@ -5,6 +5,7 @@
                 <th>Home Team</th>
                 <th>Away Team</th>
                 <th>Event Date</th>
+                <th>Moneyline</th>
                 <th>Detail Odds</th>
             </tr>
         </thead>
@@ -18,6 +19,10 @@
                 v-bind:venue="Venue.away">
             </fixture-column>
             <td>{{f.date.$date}}</td>
+             <td>
+                <fixture-moneyline v-bind:fixture="f">
+                </fixture-moneyline>
+            </td>
             <td>
                 <button v-on:click="redirectToEvent(f._id.$oid)">
                     Go
@@ -31,6 +36,7 @@
 import router from '@/router';
 import FixtureColumn from '@/components/FixtureColumn.vue';
 import {Venue} from '@/models/Game';
+import FixtureMoneyline from '@/components/FixtureMoneyline.vue';
 
 export default {
     props: ['fixtures'],
@@ -40,7 +46,8 @@ export default {
         }
     },
     components: {
-        FixtureColumn
+        FixtureColumn,
+        FixtureMoneyline
     },
     methods: {
         redirectToEvent(fixture) {
