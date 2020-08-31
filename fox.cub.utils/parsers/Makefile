@@ -23,7 +23,7 @@ fivethirtyeight:
 
 .PHONY: soccerpunter
 soccerpunter:
-	${PYTHON_BIN_DIR}/scrapy runspider soccerpunter.py -o result.json -t json
+	 PYTHONPATH=../. ${PYTHON_BIN_DIR}/scrapy runspider soccerpunter.py -o result.json -t json
 
 .PHONY: betstady
 betstady:

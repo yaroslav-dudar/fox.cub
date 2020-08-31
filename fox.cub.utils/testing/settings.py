@@ -51,6 +51,7 @@ CHILE_PRIMERA = DatasetAggregator(ObservationDataset('leagues/chile_primera.json
 SERBIA_SUPER_LIGA = DatasetAggregator(ObservationDataset('leagues/serbia_super_liga.json'))
 PRIMERA_B_NATIONAL = DatasetAggregator(ObservationDataset('leagues/primera_b_national.json'))
 BR_SERIE_B = DatasetAggregator(ObservationDataset('leagues/br_serie_b.json'))
+BR_SERIE_A = DatasetAggregator(ObservationDataset('leagues/br_serie_a.json'))
 BAHRAIN_PL = DatasetAggregator(ObservationDataset('leagues/bahrain_pl.json'))
 BEL_PL = DatasetAggregator(ObservationDataset('leagues/bel_pl.json'))
 K_LEAGUE = DatasetAggregator(ObservationDataset('leagues/k_league.json'))
@@ -139,6 +140,7 @@ CONFIG = {
     'chile_primera': CHILE_PRIMERA,
     'serbia_super_liga': SERBIA_SUPER_LIGA,
     'br_serie_b': BR_SERIE_B,
+    'br_serie_a': BR_SERIE_A,
     'bahrain_pl': BAHRAIN_PL,
     'bel_pl': BEL_PL,
     'k_league': K_LEAGUE,
