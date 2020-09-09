@@ -6,6 +6,7 @@ monkey.patch_all()
 import json
 import ssl
 import sys
+import pickle
 import functools
 import argparse
 from collections import namedtuple
@@ -22,6 +23,7 @@ import pymongo
 from models import (
     Fixture as FixtureModel, Odds, Tournament,
     Team, MongoClient, Pinnacle)
+from utils import StdInOutData
 
 
 def _create_tcp_socket(self, family, socktype, protocol):
@@ -59,7 +61,8 @@ event_fields = ["id", "periods"]
 Event = namedtuple('Event', event_fields, defaults=(None,) * len(event_fields))
 # Pinnacle Period object schema
 period_fields = ["lineId", "number", "cutoff", "maxSpread", "maxMoneyline",
-                 "maxTotal", "maxTeamTotal", "status",
+                 "maxTotal", "maxTeamTotal", "status", "spreadUpdatedAt",
+                 "moneylineUpdatedAt", "totalUpdatedAt", "teamTotalUpdatedAt",
                  "spreads", "moneyline", "totals", "teamTotal"]
 Period = namedtuple('Period', period_fields, defaults=(None,) * len(period_fields))
 
@@ -83,7 +86,10 @@ class PinnacleApi:
         self.init_data()
 
 
-    SOCCER_LEAGUES = property(lambda self: '1977, 1980, 2663, 1842, 2635, 2627, 2630, 1843, 1957')
+    SOCCER_LEAGUES = property(lambda self: '1766, 1728, 2157, 2242, 2333, 2421, 209349, 2360,'\
+                                           ' 6417, 1977, 1980, 2663, 1842, 2635, 2627, 2630, 1843,'\
+                                           ' 1957, 1913, 1792, 1891, 1844, 6416, 207551, 2374, 2592,'\
+                                           ' 2386, 2196, 2436, 2081, 1880')
     SOCCER_ID      = property(lambda self: '29')
     E_SPORT_ID     = property(lambda self: '12')
     FIND_TEAM_BY   = property(lambda self: 'pinnacle_name')
@@ -321,6 +327,8 @@ def parse_args():
                         help='Pinnacle user ID.')
     parser.add_argument('-p', required=True, type=str,
                         help='Pinnacle Password')
+    parser.add_argument('-o',  default=True, action='store_false',
+                        help='Write parsing results to std out')
     parser.add_argument('-incr', default=True, action='store_false',
                         help='Disable incremental updates.')
     return parser.parse_args()
@@ -328,7 +336,6 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-
     pinnacle = PinnacleApi(args.u, args.p, args.incr)
     pool = gevent.pool.Pool(20)
 
@@ -349,3 +356,8 @@ if __name__ == '__main__':
 
 
     pinnacle.close()
+
+    if args.o:
+        output = StdInOutData(odds.value, fixtures.value, None)
+        serialized = pickle.dumps(output)
+        sys.stdout.buffer.write(serialized)

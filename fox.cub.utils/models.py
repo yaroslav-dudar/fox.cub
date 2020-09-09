@@ -99,6 +99,7 @@ class Odds(metaclass=BaseModel):
     @classmethod
     def get_document(cls, fixture_id, date, spreads, moneyline, totals):
         return {
+            "_id": ObjectId(),
             "fixture_id": fixture_id, "date": date,
             "spreads": spreads, "moneyline": moneyline,
             "totals": totals,
@@ -171,6 +172,7 @@ class Fixture(metaclass=BaseModel):
         home_id=None, away_id=None, tournament_id=None):
 
         return {
+            "_id": ObjectId(),
             "external_id": fixture_id,
             "home_name": home_name, "away_name": away_name,
             "date": date, "tournament_id": tournament_id,
@@ -219,6 +221,12 @@ class Fixture(metaclass=BaseModel):
 
         query = {'date' : {'$gte':from_date, '$lte':to_date}}
         return list(cls.db_context.find(query, projection))
+
+    @classmethod
+    def get_by_ext_id(cls, ext_ids: list):
+        query = {'external_ids' : {'$in': ext_ids}}
+        projection = {'_id': 1}
+        return list(cls.db_context.find(query))
 
 
 class StatsModel(metaclass=BaseModel):
