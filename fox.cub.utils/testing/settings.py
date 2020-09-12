@@ -82,6 +82,8 @@ LEAGUE_CUP = DatasetAggregator(
         ])
 )
 
+DFB_POKAL = DatasetAggregator(ObservationDataset('cups/dfb_pokal.json'))
+
 JAPAN_CUP = DatasetAggregator(ObservationDataset('cups/japan_cup.json'))
 
 EU_QUALIFICATION = DatasetAggregator(ObservationDataset('international/eu_qualification.json'))
@@ -152,5 +154,6 @@ CONFIG = {
     'eliteserien': Eliteserien,
     "allsvenskan": Allsvenskan,
     "china_super_league": CHINA_SUPER_LEAGUE,
-    'japan_cup': JAPAN_CUP
+    'japan_cup': JAPAN_CUP,
+    'dfb_pokal': DFB_POKAL
 }

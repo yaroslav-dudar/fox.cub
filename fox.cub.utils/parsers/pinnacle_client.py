@@ -23,7 +23,7 @@ import pymongo
 from models import (
     Fixture as FixtureModel, Odds, Tournament,
     Team, MongoClient, Pinnacle)
-from utils import StdInOutData
+from utils import SharedDataObj, init_logger
 
 
 def _create_tcp_socket(self, family, socktype, protocol):
@@ -84,6 +84,7 @@ class PinnacleApi:
 
         self.leagues_list, self.last_since_id = {}, {}
         self.init_data()
+        self.logger = init_logger()
 
 
     SOCCER_LEAGUES = property(lambda self: '1766, 1728, 2157, 2242, 2333, 2421, 209349, 2360,'\
@@ -201,6 +202,8 @@ class PinnacleApi:
             raise Exception(
                 "Error occured during processing odds." +
                 " Pinnacle response: {}".format(data))
+        except TypeError:
+            self.logger.error("Invalid Event: {}".format(ev))
 
         # save since ID
         self.last_since_id['last_odds'] = data['last']
@@ -216,7 +219,8 @@ class PinnacleApi:
 
             data += chunk
 
-        print(data)
+        self.logger.debug(data)
+
         # NOTE: return empty object if no data
         return json.loads(data) if data else {}
 
@@ -354,10 +358,10 @@ if __name__ == '__main__':
     if odds.value:
         Odds.insert_many(odds.value)
 
-
     pinnacle.close()
 
     if args.o:
-        output = StdInOutData(odds.value, fixtures.value, None)
+        output = SharedDataObj(odds.value, fixtures.value, None)
         serialized = pickle.dumps(output)
+        pinnacle.logger.debug(serialized)
         sys.stdout.buffer.write(serialized)

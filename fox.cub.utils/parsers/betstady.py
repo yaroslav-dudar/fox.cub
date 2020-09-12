@@ -204,8 +204,12 @@ class BetStadySpider(scrapy.Spider):
                                 ["{0}-{1}".format(year, year+1)
                                 for year in range(2005, 2020)])
 
-    dataset = br_serie_a
-    proxy = "51.159.59.121:5836"
+    dfb_pokal = BetStadyDataset("germany", "dfb-pokal",
+                                ["{0}-{1}".format(year, year+1)
+                                for year in range(2005, 2020)])
+
+    dataset = dfb_pokal
+    proxy = "103.4.145.237:8080"
 
     def start_requests(self):
         for url in self.dataset:

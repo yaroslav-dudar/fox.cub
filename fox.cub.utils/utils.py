@@ -8,6 +8,8 @@ import os
 import time
 import uuid
 import functools
+import logging
+import sys
 
 from games import BaseGame
 from fox_cub_client import FoxCub
@@ -214,6 +216,14 @@ class Group(Enum):
     Series = "Series"
 
 
+class SharedDataObj:
+
+    def __init__(self, odds, fixtures, games):
+        self.odds = odds
+        self.fixtures = fixtures
+        self.games = games
+
+
 def get_mean_line(data):
     return [sum(data[0:i+1])/(i+1) for i in range(len(data))]
 
@@ -272,3 +282,37 @@ def str2datetime(value):
     return value
 
 str2datetime.TIME_FORMAT = BaseGame.date_format
+
+
+class LoggerWriter:
+    def __init__(self, logger, log_level=logging.INFO):
+        self.logger = logger
+        self.log_level = log_level
+        self.linebuf = ''
+
+    def write(self, buf):
+        for line in buf.rstrip().splitlines():
+            self.logger.log(self.log_level, line.rstrip())
+
+    def flush(self):
+        pass
+
+
+def init_logger():
+    logger_dir = os.path.dirname(os.path.realpath(__file__))
+    logger = logging.getLogger('fox_cub')
+    logger.setLevel(logging.INFO)
+    # disable redirect logging to stdout stream
+    logger.propagate = False
+    fh = logging.FileHandler(os.path.join(logger_dir, 'fox_cub.log'))
+
+    formatter = logging.Formatter('%(asctime)s - %(pathname)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    # add the handlers to the logger
+    logger.addHandler(fh)
+
+    # redirecting stderr to logger
+    err_fp = LoggerWriter(logger, logging.ERROR)
+    sys.stderr = err_fp
+
+    return logger
