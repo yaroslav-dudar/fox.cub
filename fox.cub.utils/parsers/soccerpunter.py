@@ -26,7 +26,7 @@ class SoccerPunterSpider(scrapy.Spider):
         'CONCURRENT_REQUESTS': 1
     }
 
-    tournaments = SoccerPunterLib.eu_qual_2020
+    tournaments = SoccerPunterLib.laliga
 
     MODES = {
         'default': {
@@ -49,12 +49,12 @@ class SoccerPunterSpider(scrapy.Spider):
     h_timings = defaultdict(list)
     a_timings = defaultdict(list)
 
-    SORT_BY_GROUP = True
-    IGNORE_NON_REGULAR_SEASON = False
+    SORT_BY_GROUP = False
+    IGNORE_NON_REGULAR_SEASON = True
     REGULAR_SEASON_NAMINGS = ["Group Stage", "Regular Season"]
     GROUPS = {}
 
-    proxy = "51.75.160.176:9999"
+    proxy = "104.41.54.53"
 
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
@@ -194,7 +194,7 @@ class SoccerPunterSpider(scrapy.Spider):
             item['Group'] = -1
 
     def is_regular_season_game(self, game):
-        game_title = game.xpath("preceding::tr/td/h2[@class='centerOnScore']/text()")[-1]
+        game_title = game.xpath("preceding::span[@class='centerOnScore']/text()")[-1]
         return game_title.extract().strip() in self.REGULAR_SEASON_NAMINGS
 
     def is_valid_match(self, match):

@@ -1,64 +1,69 @@
 
 class SoccerPunterLib:
-    championship = ["/England/Championship-{0}-{1}".format(year, year+1)
-        for year in range(1993, 2019)]
+    championship = [
+        "/season/16211/England-Championship-2019-2020"
+    ]
 
-    epl = ["/England/Premier-League-{0}-{1}".format(year, year+1)
-        for year in range(1965, 2019)]
+    epl = [
+        "/season/16036/England-Premier-League-2019-2020"
+    ]
 
     bundesliga = ["/Germany/Bundesliga-{0}-{1}".format(year, year+1)
-        for year in range(1963, 2019)]
+        for year in range(1963, 2020)]
 
     bundesliga2 = ["/Germany/2.-Bundesliga-{0}-{1}".format(year, year+1)
-        for year in range(1993, 2019)]
+        for year in range(1993, 2020)]
 
     bundesliga3 = ["/Germany/3.-Liga-{0}-{1}".format(year, year+1)
-        for year in range(2008, 2019)]
+        for year in range(2008, 2020)]
 
-    efl_league1 = ["/England/League-One-{0}-{1}".format(year, year+1)
-        for year in range(1993, 2019)]
+    efl_league1 = [
+        "/season/16210/England-League-One-2019-2020"
+    ]
 
-    efl_league2 = ["/England/League-Two-{0}-{1}".format(year, year+1)
-        for year in range(1993, 2019)]
+    efl_league2 = [
+        "/season/16212/England-League-Two-2019-2020"
+    ]
 
-    laliga = ["/Spain/La-Liga-{0}-{1}".format(year, year+1)
-        for year in range(1993, 2019)]
+    laliga = [
+        "/season/16326/Spain-La-Liga-2019-2020"
+    ]
 
     segunda = ["/Spain/Segunda-División-{0}-{1}".format(year, year+1)
-        for year in range(1996, 2019)]
+        for year in range(1996, 2020)]
 
     serie_a = ["/Italy/Serie-A-{0}-{1}".format(year, year+1)
         for year in range(1993, 2019)]
 
     serie_b = ["/Italy/Serie-B-{0}-{1}".format(year, year+1)
-        for year in range(1993, 2019)]
+        for year in range(1993, 2020)]
 
     serie_c = ["/Italy/Serie-C-{0}-{1}".format(year, year+1)
-        for year in range(1999, 2019)]
+        for year in range(1999, 2020)]
 
     france_ligue1 = ["/France/Ligue-1-{0}-{1}".format(year, year+1)
         for year in range(1994, 2019)]
 
     france_ligue2 = ["/France/Ligue-2-{0}-{1}".format(year, year+1)
-        for year in range(1994, 2019)]
+        for year in range(1994, 2020)]
 
     belgium_div1 = ["/Belgium/First-Division-A-{0}-{1}".format(year, year+1)
-        for year in range(1995, 2018)]
+        for year in range(1995, 2019)]
 
     eradivisie = ["/Netherlands/Eredivisie-{0}-{1}".format(year, year+1)
-        for year in range(1993, 2019)]
+        for year in range(1993, 2020)]
 
     eereste_divicie = ["/Netherlands/Eerste-Divisie-{0}-{1}".format(year, year+1)
-        for year in range(1996, 2019)]
+        for year in range(1996, 2020)]
 
     swiss_super_league = ["/Switzerland/Super-League-{0}-{1}".format(year, year+1)
-        for year in range(1994, 2019)]
+        for year in range(1994, 2020)]
 
     swiss_chalange_league = ["/Switzerland/Challenge-League-{0}-{1}".format(year, year+1)
-        for year in range(1999, 2019)]
+        for year in range(1999, 2020)]
 
     slovakia_super_liga = ["/Slovakia/Super-Liga-{0}-{1}".format(year, year+1)
-        for year in range(2002, 2018)]
+        for year in range(2002, 2019)]
 
     norway_eliteserien = [
         "/season/15581/Norway-Eliteserien-2019",
@@ -79,13 +84,13 @@ class SoccerPunterLib:
     ]
 
     denmark_division1 = ["/Denmark/1st-Division-{0}-{1}".format(year, year+1)
-        for year in range(1997, 2018)]
+        for year in range(1997, 2019)]
 
     czech_liga = ["/Czech-Republic/Czech-Liga-{0}-{1}".format(year, year+1)
-        for year in range(1994, 2018)]
+        for year in range(1994, 2020)]
 
     portugal_liga = ["/Portugal/Primeira-Liga-{0}-{1}".format(year, year+1)
-        for year in range(1994, 2019)]
+        for year in range(1994, 2020)]
 
     mls = ["/USA/MLS-{0}".format(year)
         for year in range(2000, 2020)]
@@ -97,7 +102,7 @@ class SoccerPunterLib:
         for year in range(1994, 2019)]
 
     turkey_1lig = ["/Turkey/1.-Lig-{0}-{1}".format(year, year+1)
-        for year in range(2005, 2019)]
+        for year in range(2005, 2020)]
 
     denmark_superlig = [
         "/season/16020/Denmark-Superliga-2019-2020",
@@ -310,44 +315,46 @@ class SoccerPunterLib:
         "/Europe/UEFA-U19-Championship-2010-France",
     ]
 
-    fa_cup = ["/England/FA-Cup-{0}-{1}".format(year, year+1)
-        for year in range(2004, 2019)]
+    fa_cup = [
+        "/season/16386/England-FA-Cup-2019-2020"
+    ]
 
     dfb_pokal = ["/Germany/DFB-Pokal-{0}-{1}".format(year, year+1)
-        for year in range(2004, 2019)]
+        for year in range(2004, 2020)]
 
     copa_del_rey = ["/Spain/Copa-del-Rey-{0}-{1}".format(year, year+1)
-        for year in range(2004, 2019)]
+        for year in range(2004, 2020)]
 
     scotland_fa_cup = ["/Scotland/FA-Cup-{0}-{1}".format(year, year+1)
-        for year in range(2004, 2019)]
+        for year in range(2004, 2020)]
 
     coupe_de_france = ["/France/Coupe-de-France-{0}-{1}".format(year, year+1)
-        for year in range(2004, 2019)]
+        for year in range(2004, 2020)]
 
     copa_italia = ["/Italy/Coppa-Italia-{0}-{1}".format(year, year+1)
-        for year in range(2004, 2019)]
+        for year in range(2004, 2020)]
 
     knvb_baker = ["/Netherlands/KNVB-Beker-{0}-{1}".format(year, year+1)
-        for year in range(2004, 2019)]
+        for year in range(2004, 2020)]
 
     taga_de_portugal = ["/Portugal/Taça-de-Portugal-{0}-{1}".format(year, year+1)
-        for year in range(2004, 2019)]
+        for year in range(2004, 2020)]
 
     austria_cup = ["/Austria/Cup-{0}-{1}".format(year, year+1)
-        for year in range(2004, 2019)]
+        for year in range(2004, 2020)]
 
     swiss_pokal = ["/Switzerland/Schweizer-Pokal-{0}-{1}".format(year, year+1)
-        for year in range(2004, 2019)]
+        for year in range(2004, 2020)]
 
     copa_de_ligue = ["/France/Coupe-de-la-Ligue-{0}-{1}".format(year, year+1)
-        for year in range(2004, 2019)]
+        for year in range(2004, 2020)]
 
-    league_cup = ["/England/League-Cup-{0}-{1}".format(year, year+1)
-        for year in range(2004, 2019)]
+    league_cup = [
+        "/season/16216/England-Carabao-Cup-2019-2020"
+    ]
 
     open_cup = ["/USA/US-Open-Cup-{0}".format(year)
-        for year in range(2007, 2019)]
+        for year in range(2007, 2020)]
 
     champions_league = [
         "/season/12950/Europe-Champions-League-2018-2019",
@@ -455,3 +462,7 @@ class SoccerPunterLib:
     eu_qual_2020 = [
         "/season/15474/Europe-Euro-Qualification-2020"
     ]
+
+
+class BetStadtLib:
+    pass

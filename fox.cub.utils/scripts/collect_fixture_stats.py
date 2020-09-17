@@ -18,7 +18,7 @@ from datetime import datetime, timedelta
 import time
 import itertools
 
-from utils import str2datetime
+from utils import str2datetime, init_logger
 from models import (
     Fixture as FixtureModel, Odds, Tournament,
     Team, MongoClient, Pinnacle)
@@ -59,14 +59,16 @@ if __name__ == '__main__':
     start_at = time.time()
 
     args = parse_args()
+    logger = init_logger()
     io_ops = select.select([sys.stdin], [], [], 2)
+
     if io_ops[0]:
         stdin = io_ops[0][0].buffer.read()
-        print(stdin)
         input_data = pickle.loads(stdin)
         ids = [f['fixture_id'] for f in input_data.odds]
         fixtures = FixtureModel.get_by_ext_id(ids)
     else:
+        logger.warning("No stdin received, staring script in time range mode.")
         fixtures = FixtureModel.get_in_range(args.start, args.end)
 
     ext_ids = [f['external_ids'] for f in fixtures]
@@ -76,10 +78,9 @@ if __name__ == '__main__':
     for f in fixtures:
         modify_fixture_stats(f, odds)
 
-    print(fixtures)
     fixtures_with_stats = filter(lambda f: f.get('open') and f.get('close'),
                                  fixtures)
 
     res = FixtureModel.bulk_write_stats(list(fixtures_with_stats))
-    print("Stats collection finished: {}. Execution time: {}"
+    logger.info("Stats collection finished: {}. Execution time: {}"
         .format(res.bulk_api_result, time.time() - start_at))

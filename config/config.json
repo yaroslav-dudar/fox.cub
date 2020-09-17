@@ -5,40 +5,8 @@
         "mlp_models_dir": "mlp.models"
     },
     "database": {
-        "db_name": "fox_cub",
-        "useObjectId": true,
-
-        "host" : "52.215.183.123",
-        "port" : 27017,
-
-        "maxPoolSize" : 50,
-        "minPoolSize" : 25,
-        "maxIdleTimeMS" : 300000,
-        "maxLifeTimeMS" : 3600000,
-        "waitQueueMultiple"  : 10,
-        "waitQueueTimeoutMS" : 10000,
-        "maintenanceFrequencyMS" : 2000,
-        "maintenanceInitialDelayMS" : 500,
-
-        "username"   : "",
-        "password"   : "",
-        "authSource" : "admin",
-        "authMechanism" : "",
-
-        "collections": {
-            "odds": "game_odds",
-            "tournament": "tournament",
-            "team": "team",
-            "game": "game_stats",
-            "stats_model": "tournament_model"
-        }
     },
-    "1xbet_parser": {
-        "find_team_by": "football_1xbet_name",
-        "mode": "json",
-        "tournaments_list": {
-            "MLS 2019": "https://1xbet.com/LineFeed/Get1x2_VZip?sports=1&champs=828065&count=50&lng=en&tf=2200000&tz=2&mode=4&country=2&partner=25&getEmpty=true"
-        }
+    "jwt": {
     },
     "data_co_uk_parser": {
         "find_team_by": "football_co_uk_name",
@@ -51,27 +19,21 @@
     "infogol_parser": {
         "find_team_by": "infogol_id",
         "tournaments_list": {
-            "EFL Championship 2019/2020": 151,
-            "Premier League England 2019/2020": 138,
-            "Bundesliga 2019/2020": 155
-        }
-    },
-    "americansocceranalysis_parser": {
-        "find_team_by": "name",
-        "tournaments_list": {
-            "MLS": "https://www.americansocceranalysis.com/by-game-2019"
+            "EFL Championship 2020/2021": 151,
+            "Premier League England 2020/2021": 138,
+            "Bundesliga 2020/2021": 155
         }
     },
     "fivethirtyeight_parser": {
         "find_team_by": "fivethirtyeight_name",
         "tournaments_list": {
-            "MLS 2019": {
+            "MLS 2020": {
                 "league": "Major League Soccer",
-                "range": {"start": 2019, "end": 2019}
+                "range": {"start": 2020, "end": 2020}
             },
-            "Internal Testing": {
+            "Bundesliga 2 2019/2020": {
                 "league": "German 2. Bundesliga",
-                "range": {"start": 2019, "end": 2020}
+                "range": {"start": 2020, "end": 2021}
             }
         }
     }
