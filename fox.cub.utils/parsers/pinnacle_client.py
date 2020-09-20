@@ -140,7 +140,7 @@ class PinnacleApi:
         response = self.http.get(req.request_uri, headers=self.auth_headers)
         data = self.read_json(response)
 
-        fixtures_list = []
+        fixtures_list, ev = [], None
         if not data: return fixtures_list
 
         try:
@@ -162,7 +162,7 @@ class PinnacleApi:
         except KeyError:
             raise Exception(
                 "Error occured during processing fixtures." +
-                " Pinnacle response: {}".format(data))
+                "Event data: {}.\nPinnacle response: {}".format(ev, data))
 
         # save since ID
         self.last_since_id['last_fixture'] = data['last']
