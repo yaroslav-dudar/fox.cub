@@ -46,7 +46,7 @@ db.team.update({name: "Luton Town"}, {$push: {tournaments: championship20_21.val
 db.team.update({name: "Watford"}, {$push: {tournaments: championship20_21.valueOf()}}, { upsert: false });
 db.team.update({name: "Bournemouth"}, {$push: {tournaments: championship20_21.valueOf()}}, { upsert: false });
 db.team.update({name: "Norwich City"}, {$push: {tournaments: championship20_21.valueOf()}}, { upsert: false });
-db.team.update({name: "Rotherham United"}, {$push: {tournaments: championship20_21.valueOf()}}, { upsert: false })
+db.team.update({name: "Rotherham United"}, {$set: {pinnacle_name: ["Rotherham"]}, $push: {tournaments: championship20_21.valueOf()}}, { upsert: false })
 db.team.insert({name: "Coventry", infogol_id: 340, news_feed: [], market_value: 0 , tournaments: [championship20_21.valueOf()], pinnacle_name: ["Coventry"]});
 db.team.insert({name: "Wycombe", infogol_id: 887, news_feed: [], market_value: 0 , tournaments: [championship20_21.valueOf()], pinnacle_name: ["Wycombe"]});
 
@@ -113,5 +113,5 @@ db.team.update({name: "Jahn Regensburg"}, {$push: {tournaments: bundesiga_2_20_2
 db.team.update({name: "Greuther Furth"}, {$push: {tournaments: bundesiga_2_20_21.valueOf()}}, { upsert: false });
 db.team.update({name: "SC Paderborn 07"}, {$set : {fivethirtyeight_name: "SC Paderborn"}, $push: {tournaments: bundesiga_2_20_21.valueOf()}}, { upsert: false });
 db.team.update({name: "Fortuna Düsseldorf"}, {$set : {fivethirtyeight_name: "Fortuna Düsseldorf"}, $push: {tournaments: bundesiga_2_20_21.valueOf()}}, { upsert: false });
-db.team.insert({name: "Wurzburger Kickers", fivethirtyeight_name: "Wurzburger Kickers", news_feed: [], market_value: 0 , tournaments: [bundesiga_2_20_21.valueOf()], pinnacle_name: ["Wurzburger Kickers"]});
+db.team.insert({name: "Wurzburger Kickers", fivethirtyeight_name: "Würzburger Kickers", news_feed: [], market_value: 0 , tournaments: [bundesiga_2_20_21.valueOf()], pinnacle_name: ["Wurzburger Kickers"]});
 db.team.insert({name: "Eintracht Braunschweig", fivethirtyeight_name: "Eintracht Braunschweig", news_feed: [], market_value: 0 , tournaments: [bundesiga_2_20_21.valueOf()], pinnacle_name: ["Eintracht Braunschweig"]});

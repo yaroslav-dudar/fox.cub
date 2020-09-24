@@ -1,10 +1,10 @@
 package fox.cub.db
 
 import io.vertx.lang.scala.{ScalaVerticle, ScalaLogger}
-import io.vertx.scala.config.{ConfigStoreOptions, ConfigRetriever}
+import io.vertx.scala.config.{ConfigRetriever}
 import io.vertx.scala.core.eventbus.{MessageConsumer, Message}
 import io.vertx.lang.scala.json.Json
-import io.vertx.core.json.JsonObject
+import io.vertx.core.json.{JsonObject}
 
 import io.vertx.scala.ext.mongo.MongoClient
 import com.mongodb.MongoCommandException
@@ -13,9 +13,11 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.util.{Failure, Success, Try}
+import scala.collection.mutable.ListBuffer
 
 import fox.cub.internals.{QueryEvent, ResultEvent}
 import fox.cub.utils.HttpUtils.jsonResponse
+import fox.cub.utils.Utils
 import fox.cub.model
 
 object DbProps {
@@ -34,7 +36,7 @@ class DatabaseVerticle extends ScalaVerticle {
     private var consumer:  MessageConsumer[QueryEvent] = null
 
     override def startFuture(): Future[Unit] = {
-        var retriever = ConfigRetriever.create(vertx)
+        var retriever = ConfigRetriever.create(vertx, Utils.getConfigOptions)
         consumer = vertx.eventBus.consumer[QueryEvent](DbProps.QueueName)
 
         retriever.getConfigFuture.flatMap(config => {
@@ -68,9 +70,9 @@ class DatabaseVerticle extends ScalaVerticle {
      */
     def registerQueryHandler(): MessageConsumer[QueryEvent] = {
         consumer.handler(msg => {
-            val onRegistered: Try[JsonObject] => Unit = {
-                case Success(result: JsonObject) => {
-                    replyResult(result, msg)
+            val onRegistered: Try[Option[JsonObject]] => Unit = {
+                case Success(result: Option[JsonObject]) => {
+                    replyResult(result.get, msg)
                 }
                 case Failure(cause: MongoCommandException) => {
                     logger.error(cause.getStackTraceString)
@@ -96,7 +98,7 @@ class DatabaseVerticle extends ScalaVerticle {
             val tournamentQuery = model.Tournament.getAll()
 
             vertx.eventBus()
-                .sendFuture[ResultEvent](DbProps.QueueName, modelQuery)
+                .sendFuture[ResultEvent](DbProps.QueueName, Option(modelQuery))
                 .onComplete {
                     case Success(result) => {
                         model.TournamentModel.prepareModels(result.body.result)
@@ -105,7 +107,7 @@ class DatabaseVerticle extends ScalaVerticle {
             }
 
             vertx.eventBus()
-                .sendFuture[ResultEvent](DbProps.QueueName, tournamentQuery)
+                .sendFuture[ResultEvent](DbProps.QueueName, Option(tournamentQuery))
                 .onComplete {
                     case Success(result) => {
                         model.TournamentModel.prepareTournaments(result.body.result)

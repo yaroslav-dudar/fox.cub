@@ -4,10 +4,6 @@
         "host": "0.0.0.0",
         "mlp_models_dir": "mlp.models"
     },
-    "database": {
-    },
-    "jwt": {
-    },
     "data_co_uk_parser": {
         "find_team_by": "football_co_uk_name",
         "tournaments_list": {
@@ -19,9 +15,9 @@
     "infogol_parser": {
         "find_team_by": "infogol_id",
         "tournaments_list": {
-            "EFL Championship 2020/2021": 151,
-            "Premier League England 2020/2021": 138,
-            "Bundesliga 2020/2021": 155
+            "EFL Championship 2020/2021": 264,
+            "Premier League England 2020/2021": 254,
+            "Bundesliga 2020/2021": 249
         }
     },
     "fivethirtyeight_parser": {
@@ -31,7 +27,7 @@
                 "league": "Major League Soccer",
                 "range": {"start": 2020, "end": 2020}
             },
-            "Bundesliga 2 2019/2020": {
+            "Bundesliga 2 2020/2021": {
                 "league": "German 2. Bundesliga",
                 "range": {"start": 2020, "end": 2021}
             }

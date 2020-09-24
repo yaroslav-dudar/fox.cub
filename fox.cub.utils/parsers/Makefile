@@ -15,7 +15,7 @@ run-all:
 
 .PHONY: infogol
 infogol:
-	${PYTHON_BIN_DIR}/scrapy runspider infogol.py
+	PYTHONPATH=../. ${PYTHON_BIN_DIR}/scrapy runspider infogol.py
 
 .PHONY: infogol
 fivethirtyeight:
@@ -23,7 +23,7 @@ fivethirtyeight:
 
 .PHONY: soccerpunter
 soccerpunter:
-	 PYTHONPATH=../. ${PYTHON_BIN_DIR}/scrapy runspider soccerpunter.py -o result.json -t json
+	PYTHONPATH=../. ${PYTHON_BIN_DIR}/scrapy runspider soccerpunter.py -o result.json -t json
 
 .PHONY: betstady
 betstady:

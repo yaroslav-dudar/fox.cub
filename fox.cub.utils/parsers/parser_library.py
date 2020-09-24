@@ -8,14 +8,11 @@ class SoccerPunterLib:
         "/season/16036/England-Premier-League-2019-2020"
     ]
 
-    bundesliga = ["/Germany/Bundesliga-{0}-{1}".format(year, year+1)
-        for year in range(1963, 2020)]
+    bundesliga = ["/season/16264/Germany-Bundesliga-2019-2020"]
 
-    bundesliga2 = ["/Germany/2.-Bundesliga-{0}-{1}".format(year, year+1)
-        for year in range(1993, 2020)]
+    bundesliga2 = ["/season/16263/Germany-2-Bundesliga-2019-2020"]
 
-    bundesliga3 = ["/Germany/3.-Liga-{0}-{1}".format(year, year+1)
-        for year in range(2008, 2020)]
+    bundesliga3 = ["/season/16304/Germany-3-Liga-2019-2020"]
 
     efl_league1 = [
         "/season/16210/England-League-One-2019-2020"
@@ -32,8 +29,7 @@ class SoccerPunterLib:
     segunda = ["/Spain/Segunda-División-{0}-{1}".format(year, year+1)
         for year in range(1996, 2020)]
 
-    serie_a = ["/Italy/Serie-A-{0}-{1}".format(year, year+1)
-        for year in range(1993, 2019)]
+    serie_a = ["/season/16415/Italy-Serie-A-2019-2020"]
 
     serie_b = ["/Italy/Serie-B-{0}-{1}".format(year, year+1)
         for year in range(1993, 2020)]

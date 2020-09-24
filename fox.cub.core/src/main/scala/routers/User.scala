@@ -38,7 +38,7 @@ object User {
         var auth = context.getBodyAsJson.get
         var query = model.User.findUser(auth.getString("username"))
 
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
             case Success(result) => {
                 val user = model.User.getUser(result.body.result)
                 if (user == None ) {
@@ -72,7 +72,7 @@ object User {
         val userInfo = context.user().get.principal()
 
         var query = model.User.findUser(userInfo.getString("username"))
-        eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
             case Success(result) => {
                 val user = model.User.getUser(result.body.result)
                 if (user == None ) {
@@ -82,7 +82,7 @@ object User {
 
                 var query = model.Fixtures.listByIds(user.get.getJsonArray("fav_fixtures"))
 
-                eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+                eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
                     case Success(result) => {
                         val json = result.body.result
                         logger.info(context.request.path.get)
@@ -112,7 +112,7 @@ object User {
         var query = model.User.addFavFixture(userInfo.getString("username"),
                                              fixture.get.getString("fixture_id"))
 
-        eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
             case Success(result) => {
                 val json = result.body.result
                 logger.info(context.request.path.get)

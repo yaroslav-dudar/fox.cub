@@ -19,7 +19,7 @@ object Market {
         var tournamentName = context.request.getParam("tournament")
         var query = model.Fixtures.getTeams(tournamentName.get)
 
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
             case Success(result) => {
                 val json = result.body.result
                 logger.info(context.request.path.get)
@@ -36,7 +36,7 @@ object Market {
         var response = context.response
         var query = model.Fixtures.getTournaments()
 
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
             case Success(result) => {
                 val json = result.body.result
                 logger.info(context.request.path.get)
@@ -62,7 +62,7 @@ object Market {
                                         start,
                                         end)
 
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
             case Success(result) => {
                 val dbData = result.body.result
                 val json = model.Fixtures.groupByTeam(dbData.getJsonArray("firstBatch"))

@@ -38,7 +38,7 @@ object UserNotes {
         var note = context.getBodyAsJson
         var query = model.UserNote.save(note.get)
 
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
             case Success(result) => {
                 val json = result.body.result
                 logger.info(context.request.path.get)
@@ -65,7 +65,7 @@ object UserNotes {
         var refTo = context.request.getParam("ref_to")
         var query = model.UserNote.getNotes(user.get, refTo.get, refId.get)
 
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
             case Success(result) => {
                 val json = result.body.result
                 logger.info(context.request.path.get)

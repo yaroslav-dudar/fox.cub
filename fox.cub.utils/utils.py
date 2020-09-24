@@ -9,6 +9,7 @@ import time
 import uuid
 import functools
 import logging
+from logging.handlers import RotatingFileHandler
 import sys
 
 from games import BaseGame
@@ -304,12 +305,13 @@ def init_logger():
     logger.setLevel(logging.INFO)
     # disable redirect logging to stdout stream
     logger.propagate = False
-    fh = logging.FileHandler(os.path.join(logger_dir, 'fox_cub.log'))
-
+    file_name = os.path.join(logger_dir, 'fox_cub.log')
+    file_handler = RotatingFileHandler(file_name, mode='a', maxBytes=3*1024*1024,
+                                       backupCount=2, encoding=None, delay=0)
     formatter = logging.Formatter('%(asctime)s - %(pathname)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
+    file_handler.setFormatter(formatter)
     # add the handlers to the logger
-    logger.addHandler(fh)
+    logger.addHandler(file_handler)
 
     # redirecting stderr to logger
     err_fp = LoggerWriter(logger, logging.ERROR)

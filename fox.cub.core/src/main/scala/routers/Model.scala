@@ -117,11 +117,11 @@ object StatisticalModel {
             }
 
             feature
-                .flatMap(query => eb.sendFuture[ResultEvent](DbProps.QueueName, query))
+                .flatMap(query => eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)))
                 .flatMap(result => {
                     uploadResult = result.body.result
                     eb.sendFuture[ResultEvent](DbProps.QueueName,
-                                               model.TournamentModel.getAllModels())
+                                               Option(model.TournamentModel.getAllModels()))
                 })
                 .onComplete(onModelUploaded)
         }

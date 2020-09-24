@@ -7,12 +7,12 @@ version := "0.0.1"
 scalaVersion := "2.12.12"
 
 libraryDependencies ++= Seq(
-    "io.vertx" %% "vertx-lang-scala" % "3.5.4",
-    "io.vertx" %% "vertx-web-scala" % "3.5.4",
-    "io.vertx" %% "vertx-config-scala" % "3.5.4",
-    "io.vertx" %% "vertx-auth-jwt-scala" % "3.5.4",
-    "io.vertx" %% "vertx-mongo-client-scala" % "3.5.4",
-    "io.vertx" % "vertx-web-api-contract" % "3.5.4",
+    "io.vertx" %% "vertx-lang-scala" % "3.9.1",
+    "io.vertx" %% "vertx-web-scala" % "3.9.1",
+    "io.vertx" %% "vertx-config-scala" % "3.9.1",
+    "io.vertx" %% "vertx-auth-jwt-scala" % "3.9.1",
+    "io.vertx" %% "vertx-mongo-client-scala" % "3.9.1",
+    "io.vertx" % "vertx-web-api-contract" % "3.9.1",
 
     "org.deeplearning4j" % "deeplearning4j-core" % "1.0.0-beta3",
     "org.nd4j" % "nd4j-native-platform" % "1.0.0-beta3"
@@ -23,12 +23,13 @@ packageOptions += ManifestAttributes(
 )
 
 resolvers ++= Seq(
-  "Typesafe" at "http://repo.typesafe.com/typesafe/releases/",
-  "Java.net Maven2 Repository" at "http://download.java.net/maven/2/"
+  "mvnrepository" at "http://mvnrepository.com/artifact/",
+
+
 )
 
 fork := true
-javaOptions := Seq("-Dvertx-config-path=./../config/config.json")
+envVars := Map("APP_CONFIG" -> "./../config")
 
 mainClass in assembly := Some("fox.cub.FoxCub")
 // name of the resulting jar file

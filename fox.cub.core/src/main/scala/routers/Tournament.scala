@@ -22,7 +22,7 @@ object Tournament {
         var tournament = context.request.getParam("tournament_id")
         var query = model.Team.getByTournament(tournament.get)
 
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
             case Success(result) => {
                 val json = result.body.result
                 logger.info(context.request.path.get)
@@ -42,7 +42,7 @@ object Tournament {
         var response = context.response
         var query = model.Tournament.getAll()
 
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
             case Success(result) => {
                 val json = result.body.result
                 logger.info(context.request.path.get)
@@ -60,7 +60,7 @@ object Tournament {
         var tournament = context.request.getParam("tournament_id")
         var query = model.GameStats.getTeamResults(tournament.get)
 
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
             case Success(result) => {
                 val json = result.body.result
                 val table = model.Tournament.getTournamentTable(json)
@@ -81,7 +81,7 @@ object Tournament {
         var tournament = context.request.getParam("tournament_id")
         var query = model.GameStats.getHomeAdvantage(tournament.get)
 
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
             case Success(result) => {
                 val json = result.body.result
                 logger.info(context.request.path.get)

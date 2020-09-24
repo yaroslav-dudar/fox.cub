@@ -41,7 +41,8 @@ class InfogolSpider(scrapy.Spider):
     ))
 
     custom_settings = {
-        'DOWNLOAD_DELAY': 2
+        'DOWNLOAD_DELAY': 3,
+        'CONCURRENT_REQUESTS': 1
     }
 
     def __init__(self, *a, **kw):
@@ -50,7 +51,7 @@ class InfogolSpider(scrapy.Spider):
         self.global_conf = Config()
         self.config = self.global_conf['infogol_parser']
 
-        self.proxy = "51.68.61.17:80"
+        self.proxy = "103.78.75.165:8080"
         self.leagues_list = {}
         self.init_data()
 

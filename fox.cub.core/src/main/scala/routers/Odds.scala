@@ -28,7 +28,7 @@ object Odds {
 
         var query = model.Odds.get(fixtureIds)
 
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
             case Success(result) => {
                 val json = result.body.result
                 logger.info(context.request.path.get)
@@ -54,7 +54,7 @@ object Odds {
 
         var query = model.Odds.getDiff(fixtureIds)
 
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
             case Success(result) => {
                 val json = result.body.result
                 logger.info(context.request.path.get)

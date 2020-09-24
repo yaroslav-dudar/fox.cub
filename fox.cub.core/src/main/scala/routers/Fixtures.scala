@@ -42,7 +42,7 @@ object Fixtures {
                                         start,
                                         end)
 
-        eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
             case Success(result) => {
                 val json = result.body.result
                 logger.info(context.request.path.get)

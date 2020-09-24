@@ -26,7 +26,7 @@ class SoccerPunterSpider(scrapy.Spider):
         'CONCURRENT_REQUESTS': 1
     }
 
-    tournaments = SoccerPunterLib.laliga
+    tournaments = SoccerPunterLib.bundesliga2
 
     MODES = {
         'default': {
@@ -54,7 +54,7 @@ class SoccerPunterSpider(scrapy.Spider):
     REGULAR_SEASON_NAMINGS = ["Group Stage", "Regular Season"]
     GROUPS = {}
 
-    proxy = "104.41.54.53"
+    proxy = "212.87.220.2:3128"
 
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)

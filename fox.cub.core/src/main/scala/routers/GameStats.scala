@@ -42,7 +42,7 @@ object GameStats {
         var query = model.GameStats.getTeamsStrength(
             tournamentId.get, awayTeamId.get, homeTeamId.get)
 
-        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, query).onComplete {
+        val data = eb.sendFuture[ResultEvent](DbProps.QueueName, Option(query)).onComplete {
             case Success(result) => {
                 val json = result.body.result
                 var teamsScoring: Array[Float] = null
