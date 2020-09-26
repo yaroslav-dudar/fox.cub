@@ -43,6 +43,7 @@ assemblyMergeStrategy in assembly := {
     case PathList(ps @ _*) if ps.mkString("/") contains "macosx-x86_64"     => MergeStrategy.discard
     case PathList(ps @ _*) if ps.mkString("/") contains "ios-x86_64"     => MergeStrategy.discard
     case PathList(ps @ _*) if ps.mkString("/") contains "ios-arm64"     => MergeStrategy.discard
+    case "module-info.class" => MergeStrategy.discard
 
     case PathList("META-INF", "io.netty.versions.properties")     => MergeStrategy.last
     case PathList(ps @ _*) if ps.last endsWith "Nd4jBase64.class" => MergeStrategy.last

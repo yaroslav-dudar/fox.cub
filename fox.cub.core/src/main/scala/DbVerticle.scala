@@ -13,7 +13,6 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.util.{Failure, Success, Try}
-import scala.collection.mutable.ListBuffer
 
 import fox.cub.internals.{QueryEvent, ResultEvent}
 import fox.cub.utils.HttpUtils.jsonResponse
