@@ -17,9 +17,9 @@ run-all:
 infogol:
 	PYTHONPATH=../. ${PYTHON_BIN_DIR}/scrapy runspider infogol.py
 
-.PHONY: infogol
+.PHONY: fivethirtyeight
 fivethirtyeight:
-	${PYTHON_BIN_DIR}/python football_fivethirtyeight.py
+	PYTHONPATH=../. ${PYTHON_BIN_DIR}/python football_fivethirtyeight.py
 
 .PHONY: soccerpunter
 soccerpunter:

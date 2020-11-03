@@ -25,8 +25,8 @@ from models import (
 
 
 str2datetime.TIME_FORMAT = "%d/%m/%Y %H:%M:%S"
-START_TIME_DEFAULT = datetime.utcnow() - timedelta(days=7)
-END_TIME_DEFAULT = datetime.utcnow() + timedelta(days=14)
+START_TIME_DEFAULT = datetime.utcnow() - timedelta(days=1)
+END_TIME_DEFAULT = datetime.utcnow() + timedelta(days=3)
 
 
 def parse_args():
@@ -50,8 +50,10 @@ def modify_fixture_stats(fixture: dict, odds: list):
     if len(fixture_odds) < 2: return False
 
     fixture_odds.sort(key=lambda o: o['date'])
-    f['open'] = fixture_odds[0]
-    f['close'] = fixture_odds[-1]
+    fixture['open'] = fixture_odds[0]
+    fixture['close'] = fixture_odds[-1]
+    print(fixture, fixture_odds)
+    print("="*50)
     return True
 
 
@@ -81,6 +83,23 @@ if __name__ == '__main__':
     fixtures_with_stats = filter(lambda f: f.get('open') and f.get('close'),
                                  fixtures)
 
-    res = FixtureModel.bulk_write_stats(list(fixtures_with_stats))
+    #res = FixtureModel.bulk_write_stats(list(fixtures_with_stats))
     logger.info("Stats collection finished: {}. Execution time: {}"
         .format(res.bulk_api_result, time.time() - start_at))
+
+
+class Notification:
+
+    def compare_moneyline(self, old_line: dict, new_line: dict):
+        pass
+
+    def compare_totals(self, old_line: dict, new_line: dict):
+        pass
+
+    def compare(self, old_line: dict, new_line: dict):
+        old_keys = old_line.keys()
+        new_keys = new_line.keys()
+        assert old_keys == new_keys
+
+
+

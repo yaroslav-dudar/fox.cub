@@ -22,7 +22,7 @@ from models import (
 
 str2datetime.TIME_FORMAT = "%d/%m/%Y %H:%M:%S"
 START_TIME_DEFAULT = datetime.min
-END_TIME_DEFAULT = datetime.utcnow() - timedelta(weeks=12)
+END_TIME_DEFAULT = datetime.utcnow() - timedelta(weeks=8)
 
 # TODO
 # 1. Find deprecated fixtures
@@ -61,6 +61,7 @@ if __name__ == '__main__':
 
         ext_ids.update(f['external_ids'])
 
+    print(len(ext_ids), len(not_remove_odds))
     res = Odds.remove(list(ext_ids), not_remove_odds)
     print("Cleanup finsihed {}. Execution time: {}"
         .format(res, time.time() - start_at))

@@ -138,7 +138,7 @@ class Fixture(metaclass=BaseModel):
     @classmethod
     def add(cls, document):
         """ Insert fixture record if it not existed before """
-
+        # TODO: check date in query
         if document["home_id"] and document["away_id"]:
             query = {
                 "home_id": document["home_id"],
@@ -344,18 +344,21 @@ class Game(metaclass=BaseModel):
         }
 
     @classmethod
-    def find_one(cls, team, opponent, tournament, venue):
+    def find_one(cls, team, opponent, tournament, venue, date=None):
         return cls.db_context.find_one(
-            cls.find_query(team, opponent, tournament, venue))
+            cls.find_query(team, opponent, tournament, venue, date))
 
     @classmethod
-    def find_query(cls, team, opponent, tournament, venue):
-        return {
+    def find_query(cls, team, opponent, tournament, venue, date: int = None):
+        q = {
             'team': team,
             'opponent': opponent,
             'venue': venue,
             'tournament': tournament
         }
+
+        if date: q["date"] = date
+        return q
 
     @classmethod
     def find_all(cls, tournament):

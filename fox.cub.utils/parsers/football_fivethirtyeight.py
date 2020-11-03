@@ -106,10 +106,12 @@ class FivethirtyeightParser:
 
 
     def process_row(self, row, tournament):
+        game_timestamp = self.get_time(row[self.DATE])
         home_game = self.get_game_id(row[self.HOME_TEAM],
                                      row[self.AWAY_TEAM],
                                      'home',
-                                     tournament)
+                                     tournament,
+                                     game_timestamp)
         if not home_game:
             self.add_game(
                 row[self.HOME_TEAM], row[self.AWAY_TEAM],
@@ -120,7 +122,8 @@ class FivethirtyeightParser:
         away_game = self.get_game_id(row[self.AWAY_TEAM],
                                      row[self.HOME_TEAM],
                                      'away',
-                                     tournament)
+                                     tournament,
+                                     game_timestamp)
         if not away_game:
             self.add_game(
                 row[self.AWAY_TEAM], row[self.HOME_TEAM],
@@ -141,7 +144,8 @@ class FivethirtyeightParser:
         return game_row[self.XG_AWAY] and game_row[self.XG_HOME]
 
 
-    def get_game_id(self, team_name, opponent_name, venue, tournament: League):
+    def get_game_id(self, team_name, opponent_name,
+                    venue, tournament: League, date: int):
         """ Get game from db by home team, away team """
 
         team_id = Team.get_id(
@@ -154,7 +158,7 @@ class FivethirtyeightParser:
             self.config["find_team_by"],
             tournament.teams)
 
-        game = Game.find_one(team_id, opponent_id, tournament.id, venue)
+        game = Game.find_one(team_id, opponent_id, tournament.id, venue, date)
         return game['_id'] if game else None
 
 
