@@ -17,6 +17,14 @@ from fox_cub_client import FoxCub
 import gevent.pool
 
 
+class League:
+
+    def __init__(self, t_id, teams, name = None):
+        self.t_id = t_id
+        self.teams = teams
+        self.name = name
+
+
 class Season:
 
     def __init__(self, games: List[BaseGame]):

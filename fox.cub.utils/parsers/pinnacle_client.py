@@ -23,7 +23,7 @@ import pymongo
 from models import (
     Fixture as FixtureModel, Odds, Tournament,
     Team, MongoClient, Pinnacle)
-from utils import SharedDataObj, init_logger
+from utils import SharedDataObj, init_logger, League
 
 
 def _create_tcp_socket(self, family, socktype, protocol):
@@ -42,12 +42,6 @@ def _create_tcp_socket(self, family, socktype, protocol):
 SSLConnectionPool._create_tcp_socket = _create_tcp_socket
 
 
-class League:
-
-    def __init__(self, t_id, teams, name = None):
-        self.t_id = t_id
-        self.teams = teams
-        self.name = name
 
 
 # Pinnacle Fixture object schema
@@ -211,6 +205,7 @@ class PinnacleApi:
 
 
     def read_json(self, response) -> dict:
+        """ Read chunked transfer encoding and parse as JSON text """
         data = ''
         while True:
             chunk = response.read(self.CHUNK_SIZE).decode("utf-8")
