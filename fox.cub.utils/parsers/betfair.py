@@ -1,12 +1,13 @@
 import betfairlightweight
 from betfairlightweight import filters
-from betfairlightweight.resources.bettingresources import MarketCatalogue
+from betfairlightweight.resources.bettingresources import MarketCatalogue, MarketBook
 
-import re
-import argparse
 from datetime import datetime
 from itertools import zip_longest
-from typing import List
+from typing import List, Dict
+from collections import defaultdict
+import re
+import argparse
 
 from utils import init_logger, League
 from models import (
@@ -14,14 +15,26 @@ from models import (
     Team, MongoClient)
 
 
+class BetfairMarket:
+
+    def __init__(self, book: MarketBook, catalogue: MarketCatalogue):
+        self.book = book
+        self.catalogue = catalogue
+
+
 class BerfairApi:
 
     BETFAIE_EVENT_NAME_PATTERN = property(lambda self: re.compile(r'(.+) v (.+)'))
+    TEST_COMPETITION_IDS       = property(lambda self: [10932509])
     FOOTBALL_COMPETITION_IDS   = property(lambda self: [10932509, 7129730, 10020873,
                                                          2005, 81, 61, 59, 117, 141, 228])
     ESPORT_COMPETITION_IDS     = property(lambda self: [11426307, 10817924, 10797727, 11638775, 11622201])
     FIND_TOURN_BY              = property(lambda self: 'betfair_id')
     FIND_TEAM_BY               = property(lambda self: 'name')
+
+    SPREAD_MARKET              = property(lambda self: 'Asian Handicap')
+    MONEYLINE_MARKET           = property(lambda self: 'Match Odds')
+    TOTALS_MARKET              = property(lambda self: 'Over/Under 2.5 Goals')
 
     def __init__(self, username, password, app_key):
 
@@ -34,8 +47,8 @@ class BerfairApi:
 
         self.football_filter = filters.market_filter(
             event_type_ids=[1],  # filter on just soccer
-            competition_ids=self.FOOTBALL_COMPETITION_IDS,
-            market_type_codes=["MATCH_ODDS"],  # filter on just odds market types
+            competition_ids=self.TEST_COMPETITION_IDS,
+            market_type_codes=["OVER_UNDER_25", "MATCH_ODDS"],  # filter on just odds market types
         )
 
         self.esports_filter = filters.market_filter(
@@ -80,42 +93,100 @@ class BerfairApi:
         # price not found
         return None
 
-    def get_odds(self, market_catalogue: list):
-        market_ids_block = self.grouper([i.market_id for i in market_catalogue], 40)
-        events = {i.market_id: i.json() for i in market_catalogue}
 
-        # sum(Weight) * number market ids must
-        # not exceed 200 points per requests
-        # EX_BEST_OFFERS equals to 5 points
+    def get_event_odds(self, markets: List[BetfairMarket]):
+        """ Recieve list of books for a single event and return odds object """
+        moneyline, spreads, totals = None, None, None
+        event_id = markets[0].catalogue.event.id
+
+        for m in markets:
+            if m.catalogue.market_name == self.SPREAD_MARKET:
+                spreads = self.parse_spread(m.book)
+            elif m.catalogue.market_name == self.TOTALS_MARKET:
+                totals = self.parse_totals(m.book)
+            elif m.catalogue.market_name == self.MONEYLINE_MARKET:
+                moneyline = self.parse_moneyline(m.book)
+
+        return Odds.get_document(event_id,
+                                 datetime.utcnow(),
+                                 spreads,
+                                 moneyline,
+                                 totals)
+
+
+    def parse_moneyline(self, book: MarketBook):
+        """ Fetch 1X2 (moneyline) price from market """
+        moneyline = {"home": self.get_runner_price(book.runners[0]),
+                     "away": self.get_runner_price(book.runners[1]),
+                    }
+
+        if len(book.runners) > 2:
+            draw_price = self.get_runner_price(book.runners[2])
+        else:
+            draw_price = None
+
+        moneyline["draw"] = draw_price
+        return moneyline
+
+
+    def parse_spreads(self, book: MarketBook):
+        """ Fetch asian handicap price from market """
+        spreads = []
+        return spreads
+
+
+    def parse_totals(self, book: MarketBook):
+        """ Fetch total goals price from market """
+        totals = [{ "points" : 2.5,
+                    "under"  : self.get_runner_price(book.runners[0]),
+                    "over"   : self.get_runner_price(book.runners[1])  }]
+        return totals
+
+
+    def group_by_event(self, market_books: List[MarketBook],
+                       markets: Dict[str, MarketCatalogue]):
+        """ Grouping market books with market catalogue by event id"""
+
+        groups = defaultdict(list)
+        for market_book in market_books:
+            catalogue = markets[market_book.market_id]
+            item = BetfairMarket(market_book, catalogue)
+            groups[catalogue.event.id].append(item)
+
+        return groups
+
+
+    def request_market_books(self, market_catalogue: List[MarketCatalogue]):
+        """
+        Fetch list of market books by a given market catalogue(s)
+        Rate Limits:
+        sum(Weight) * number market ids must not exceed 200 points per requests
+        EX_BEST_OFFERS equals to 5 points
+        """
+        market_ids_block = self.grouper([i.market_id for i in market_catalogue], 40)
+
+        market_books = []
         for market_ids in market_ids_block:
-            market_books = self.api.betting.list_market_book(
+            market_books.extend(self.api.betting.list_market_book(
                 market_ids=market_ids,
                 price_projection=filters.price_projection(
                     price_data=filters.price_data(ex_best_offers=True)
                 ),
-            )
+            ))
 
-            for market_book in market_books:
-                print(events[market_book.market_id])
-                # TODO: find best price
-                moneyline = {"home": self.get_runner_price(market_book.runners[0]),
-                             "away": self.get_runner_price(market_book.runners[1]),
-                            }
+        return market_books
 
-                if len(market_book.runners) > 2:
-                    draw_price = self.get_runner_price(market_book.runners[2])
-                else:
-                    draw_price = None
 
-                moneyline["draw"] = draw_price
+    def get_odds(self, market_catalogue: List[MarketCatalogue]):
+        markets = {m.market_id: m for m in market_catalogue}
+        market_books = self.request_market_books(market_catalogue)
+        market_groups = self.group_by_event(market_books, markets)
 
-                document = Odds.get_document(market_book.market_id,
-                                             datetime.utcnow(),
-                                             None,
-                                             moneyline,
-                                             None)
-                print(document)
-                print("="*50)
+        for group in market_groups.values():
+            document = self.get_event_odds(group)
+            print(group[0].catalogue.json())
+            print(document)
+            print("="*50)
 
 
     def request_market_catalogue(self, market_projection=None, market_filter=None):
@@ -135,7 +206,7 @@ class BerfairApi:
 
 
     def get_fixture(self, market_catalogue: List[MarketCatalogue]):
-        """ Fetch betfair events from a given market catalogue """
+        """ Fetch betfair events from a given market catalogue(s) """
 
         for ev in market_catalogue:
             home, away = self.get_home_away_teams(ev.event.name)
@@ -144,7 +215,7 @@ class BerfairApi:
                 get_fixture_ids(home, away, ev)
 
             document = FixtureModel.get_document(
-                ev.market_id, home, away,
+                ev.event.id, home, away,
                 ev.market_start_time,
                 ev.competition.name, home_id, away_id,
                 tournament_id)
@@ -202,5 +273,5 @@ if __name__ == '__main__':
     betfair = BerfairApi(args.u, args.p, args.k)
     market_catalogue = betfair.\
         request_market_catalogue(None, betfair.football_filter)
-    betfair.get_fixture(market_catalogue)
+    #betfair.get_fixture(market_catalogue)
     betfair.get_odds(market_catalogue)
