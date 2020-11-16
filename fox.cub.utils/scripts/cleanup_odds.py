@@ -61,7 +61,6 @@ if __name__ == '__main__':
 
         ext_ids.update(f['external_ids'])
 
-    print(len(ext_ids), len(not_remove_odds))
     res = Odds.remove(list(ext_ids), not_remove_odds)
     print("Cleanup finsihed {}. Execution time: {}"
         .format(res, time.time() - start_at))

@@ -375,3 +375,20 @@ class Game(metaclass=BaseModel):
         return cls.db_context.update(query,
                                      {'$set': with_data},
                                      upsert=True)
+
+
+class Notification(metaclass=BaseModel):
+
+    collection = "notification"
+
+    @classmethod
+    def insert(cls, document):
+        cls.db_context.insert_one(document)
+
+    @classmethod
+    def get_document(self, text, odds, date: datetime):
+        return {
+            "text": team,
+            "odds": odds,
+            "date": date
+        }

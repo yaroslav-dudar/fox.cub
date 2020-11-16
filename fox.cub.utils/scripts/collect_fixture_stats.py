@@ -87,19 +87,3 @@ if __name__ == '__main__':
     logger.info("Stats collection finished: {}. Execution time: {}"
         .format(res.bulk_api_result, time.time() - start_at))
 
-
-class Notification:
-
-    def compare_moneyline(self, old_line: dict, new_line: dict):
-        pass
-
-    def compare_totals(self, old_line: dict, new_line: dict):
-        pass
-
-    def compare(self, old_line: dict, new_line: dict):
-        old_keys = old_line.keys()
-        new_keys = new_line.keys()
-        assert old_keys == new_keys
-
-
-

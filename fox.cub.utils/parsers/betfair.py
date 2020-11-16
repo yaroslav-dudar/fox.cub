@@ -1,13 +1,18 @@
 import betfairlightweight
 from betfairlightweight import filters
-from betfairlightweight.resources.bettingresources import MarketCatalogue, MarketBook
+from betfairlightweight.resources.bettingresources import (
+    MarketCatalogue, MarketBook, RunnerCatalogue)
 
 from datetime import datetime
 from itertools import zip_longest
 from typing import List, Dict
 from collections import defaultdict
+
 import re
 import argparse
+import queue
+import threading
+import time
 
 from utils import init_logger, League
 from models import (
@@ -44,11 +49,12 @@ class BerfairApi:
         self.leagues_list, self.last_since_id = {}, {}
         self.init_data()
         self.logger = init_logger()
+        self.grouped_books = []
 
         self.football_filter = filters.market_filter(
             event_type_ids=[1],  # filter on just soccer
-            competition_ids=self.TEST_COMPETITION_IDS,
-            market_type_codes=["OVER_UNDER_25", "MATCH_ODDS"],  # filter on just odds market types
+            competition_ids=self.FOOTBALL_COMPETITION_IDS,
+            market_type_codes=["OVER_UNDER_25", "MATCH_ODDS", "ASIAN_HANDICAP"]
         )
 
         self.esports_filter = filters.market_filter(
@@ -101,7 +107,7 @@ class BerfairApi:
 
         for m in markets:
             if m.catalogue.market_name == self.SPREAD_MARKET:
-                spreads = self.parse_spread(m.book)
+                spreads = self.parse_spreads(m.book)
             elif m.catalogue.market_name == self.TOTALS_MARKET:
                 totals = self.parse_totals(m.book)
             elif m.catalogue.market_name == self.MONEYLINE_MARKET:
@@ -131,8 +137,23 @@ class BerfairApi:
 
     def parse_spreads(self, book: MarketBook):
         """ Fetch asian handicap price from market """
-        spreads = []
+        spreads, handicaps = [], [-2.5, -1.5, -1]
+        # group runners by handicap
+        runners = self.grouper(book.runners, 2)
+
+        for hdp in handicaps:
+            spread = self.find_spread(hdp, runners)
+            if spread: spreads.append(spread)
+
         return spreads
+
+
+    def find_spread(self, handicap: float, runners: list):
+        for r in runners:
+            if r[0].handicap == handicap:
+                return { "hdp" : handicap,
+                         "home" : self.get_runner_price(r[0]),
+                         "away" : self.get_runner_price(r[1]) }
 
 
     def parse_totals(self, book: MarketBook):
@@ -178,6 +199,7 @@ class BerfairApi:
 
 
     def get_odds(self, market_catalogue: List[MarketCatalogue]):
+        """ Request MarketBooks via polling Betfair API"""
         markets = {m.market_id: m for m in market_catalogue}
         market_books = self.request_market_books(market_catalogue)
         market_groups = self.group_by_event(market_books, markets)
@@ -207,8 +229,12 @@ class BerfairApi:
 
     def get_fixture(self, market_catalogue: List[MarketCatalogue]):
         """ Fetch betfair events from a given market catalogue(s) """
-
+        events = set()
         for ev in market_catalogue:
+            if ev.event.id in events:
+                continue
+
+            events.add(ev.event.id)
             home, away = self.get_home_away_teams(ev.event.name)
 
             home_id, away_id, tournament_id = self.\
@@ -257,6 +283,62 @@ class BerfairApi:
         return home_id, away_id, tournament_id
 
 
+    def create_stream(self, output_queue, market_ids):
+        """ Create Betfair stream that allow to establish
+            connection once and receive MarketBook updates in real time
+        """
+        # create stream listener
+        listener = betfairlightweight.StreamListener(output_queue=output_queue)
+
+        # create stream
+        stream = self.api.streaming.create_stream(listener=listener)
+
+        market_filter = filters.streaming_market_filter(
+            market_ids=market_ids
+        )
+        market_data_filter = filters.streaming_market_data_filter(
+            fields=["EX_BEST_OFFERS", "EX_MARKET_DEF"], ladder_levels=3
+        )
+
+        # subscribe
+        streaming_unique_id = stream.subscribe_to_markets(
+            market_filter=market_filter,
+            market_data_filter=market_data_filter,
+            conflate_ms=2000,  # send update every 1000ms
+        )
+
+        return stream
+
+    def parse_market_change(self, msgs: List[MarketBook]):
+        pass
+
+
+    def start_stream(self, stream):
+        """ Betfair stream, simple error handling """
+        while True:
+            try:
+                self.logger.info("Starting Betfair stream ...")
+                stream.start()
+            except betfairlightweight.exceptions.SocketError as err:
+                self.logger.warning(err)
+                time.sleep(5.0)
+
+
+    def listen_stream(self, output_queue):
+        while True:
+            market_books = output_queue.get()
+            print(market_books)
+
+            for market_book in market_books:
+                print(
+                    market_book,
+                    market_book.streaming_unique_id,  # unique id of stream (returned from subscribe request)
+                    market_book.streaming_update,  # json update received
+                    market_book.market_definition.event_id,
+                    market_book.publish_time,  # betfair publish time of update
+                )
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-u', required=True, type=str,
@@ -273,5 +355,16 @@ if __name__ == '__main__':
     betfair = BerfairApi(args.u, args.p, args.k)
     market_catalogue = betfair.\
         request_market_catalogue(None, betfair.football_filter)
+
     #betfair.get_fixture(market_catalogue)
-    betfair.get_odds(market_catalogue)
+    #betfair.get_odds(market_catalogue)
+
+    stream_queue = queue.Queue()
+    market_ids = [i.market_id for i in market_catalogue]
+    stream = betfair.create_stream(stream_queue, market_ids)
+
+    t = threading.Thread(target=betfair.start_stream, args=(stream,), daemon=True, )
+    t.start()
+
+    betfair.listen_stream(stream_queue)
+
