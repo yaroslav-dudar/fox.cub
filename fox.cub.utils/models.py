@@ -2,6 +2,7 @@
 
 import atexit
 from datetime import datetime
+from datetime import timedelta
 
 import pymongo
 from bson.objectid import ObjectId
@@ -138,7 +139,7 @@ class Fixture(metaclass=BaseModel):
     @classmethod
     def add(cls, document):
         """ Insert fixture record if it not existed before """
-        # TODO: check date in query
+
         if document["home_id"] and document["away_id"]:
             query = {
                 "home_id": document["home_id"],
@@ -150,7 +151,9 @@ class Fixture(metaclass=BaseModel):
                 "away_name": document["away_name"]
             }
 
-        cls.db_context.update(
+        query["date"] = cls.date_query(document['date'])
+
+        return cls.db_context.update_one(
             query,
             {
                 '$addToSet': {'external_ids': document['external_id']},
@@ -222,11 +225,24 @@ class Fixture(metaclass=BaseModel):
         query = {'date' : {'$gte':from_date, '$lte':to_date}}
         return list(cls.db_context.find(query, projection))
 
+
     @classmethod
     def get_by_ext_id(cls, ext_ids: list):
         query = {'external_ids' : {'$in': ext_ids}}
-        projection = {'_id': 1}
         return list(cls.db_context.find(query))
+
+
+    @classmethod
+    def date_query(cls, date: datetime):
+        """ Consider fixtures within +-10 days range as a same.
+            For example initial fixture date may change, so we need to
+            persist previous fixture and odds and update
+            fixtture date only.
+        """
+        delta = timedelta(days=10)
+        start_day = date - delta
+        end_day = date + delta
+        return { "$gt": start_day, "$lt": end_day}
 
 
 class StatsModel(metaclass=BaseModel):
@@ -388,7 +404,7 @@ class Notification(metaclass=BaseModel):
     @classmethod
     def get_document(self, text, odds, date: datetime):
         return {
-            "text": team,
+            "text": text,
             "odds": odds,
             "date": date
         }

@@ -337,6 +337,7 @@ if __name__ == '__main__':
     args = parse_args()
     pinnacle = PinnacleApi(args.u, args.p, args.incr)
     pool = gevent.pool.Pool(20)
+    new_fixtures = []
 
     fixtures = pool.spawn(pinnacle.get_fixture,
                           pinnacle.SOCCER_ID,
@@ -348,15 +349,16 @@ if __name__ == '__main__':
     pool.join()
 
     for fixture in fixtures.value:
-        FixtureModel.add(fixture)
+        res = FixtureModel.add(fixture)
+        if res.upserted_id: new_fixtures.append(fixture)
 
     if odds.value:
         Odds.insert_many(odds.value)
-
+    print(new_fixtures, len(fixtures.value))
     pinnacle.close()
 
     if args.o:
-        output = SharedDataObj(odds.value, fixtures.value, None)
+        output = SharedDataObj(odds.value, new_fixtures, None)
         serialized = pickle.dumps(output)
         pinnacle.logger.debug(serialized)
         sys.stdout.buffer.write(serialized)

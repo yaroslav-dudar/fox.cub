@@ -63,25 +63,31 @@ export default class Game {
 
     static asFoxcub(fox_cub_data) {
 
-        return fox_cub_data.map((game, i) => {
-
+        var g = fox_cub_data.map((game, i) => {
             var {team_meta, opponent_meta} = Game.getFoxCubMetadata(game);
 
-            return new Game(
-                i,
-                game.score_for || game.goals_for,
-                game.score_against || game.goals_against,
-                Venue[game.venue],
-                game.team[0]["name"],
-                game.opponent[0]["name"],
-                game.team[0]["_id"]["$oid"],
-                game.opponent[0]["_id"]["$oid"],
-                game.date*1000,
-                team_meta,
-                opponent_meta,
-                game.tournament
-            )
+            try {
+                return new Game(
+                    i,
+                    game.score_for || game.goals_for,
+                    game.score_against || game.goals_against,
+                    Venue[game.venue],
+                    game.team[0]["name"],
+                    game.opponent[0]["name"],
+                    game.team[0]["_id"]["$oid"],
+                    game.opponent[0]["_id"]["$oid"],
+                    game.date*1000,
+                    team_meta,
+                    opponent_meta,
+                    game.tournament
+                )
+            } catch (error) {
+                console.error(error);
+                console.error("Incorrect game:" + game.stringify());
+                return;
+            }
         });
+        return g;
     }
 
     static getWyscoutVenue(team_data) {

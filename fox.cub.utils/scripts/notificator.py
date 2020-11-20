@@ -6,17 +6,19 @@ This module creates notifications, described market changes and movement
 from typing import List, Dict
 from models import Notification
 
+from datetime import datetime
 from enum import Enum
 
 class NotificationType(Enum):
-    SPREAD      = 'spread'
-    TOTAL       = 'total'
-    MONEYLINE   = 'moneyline'
-    NEW_FIXTURE = 'new_fixture'
+    SPREAD    = 'spread'
+    TOTAL     = 'total'
+    MONEYLINE = 'moneyline'
+    FIXTURE   = 'fixture'
+
 
 class LineDelta:
 
-    def __init__(self, delta, line, line_type):
+    def __init__(self, delta, line, line_type: NotificationType):
         self.delta = delta # line diff in #
         self.line = line # line naming
         self.line_type: NotificationType = line_type
@@ -70,17 +72,43 @@ class Notificator:
         assert old_keys == new_keys
 
 
-    def process_fixture(self, fixture: dict, new_odds: dict,
+    def process_new_odds(self, fixture: dict, new_odds: dict,
                         prev_notification: dict = None):
-        """ Process input fixture and generate notification if needed """
+        """ Process new odds for a given fixture and
+        generate notification if needed """
 
         if prev_notification:
             old_odds = prev_notification['odds']
         else:
             old_odds = fixture['open']
 
-        m_delta = self.compare_moneyline(old_odds["moneyline"], new_odds["moneyline"])
-        t_delta = self.compare_totals(old_odds["totals"], new_odds["totals"])
+        m_delta = self.compare_moneyline(old_odds["moneyline"],
+                                         new_odds["moneyline"])
+        t_delta = self.compare_totals(old_odds["totals"],
+                                      new_odds["totals"])
 
-        print(m_delta + t_delta)
-        self.changes = []
+        return [self.create_notification(fixture, new_odds, delta)
+                for delta in m_delta + t_delta]
+
+
+    def process_new_fixture(self, fixture: dict, odds: dict):
+        """ Process input fixture and generate notification if needed """
+
+        # TODO: check if notification required
+        return [self.create_notification(fixture, odds)]
+
+
+    def create_notification(self, fixture, odds, linedelta: LineDelta=None):
+        type_text_pattern = "NOTIFICATION TYPE - [{0}]."
+        fixture_text = "[{0}] {1} - {2}.".format(fixture["tournament_name"],
+                                             fixture["home_name"],
+                                             fixture["away_name"])
+        if not linedelta:
+            type_text  = type_text_pattern.format(NotificationType.FIXTURE.value)
+            delta_text = ''
+        else:
+            type_text  = type_text_pattern.format(linedelta.line_type.value)
+            delta_text = '[{0}] moved by [{1}]'.format(linedelta.line, linedelta.delta)
+
+        text = " ".join([type_text, fixture_text, delta_text])
+        return Notification.get_document(text, odds, datetime.utcnow())
