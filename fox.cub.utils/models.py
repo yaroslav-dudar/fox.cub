@@ -136,6 +136,8 @@ class Odds(metaclass=BaseModel):
 class Fixture(metaclass=BaseModel):
     collection = "fixtures"
 
+    BULK_WRITE_ALLOWED = {"open", "close", "note"}
+
     @classmethod
     def add(cls, document):
         """ Insert fixture record if it not existed before """
@@ -194,14 +196,22 @@ class Fixture(metaclass=BaseModel):
         return None if not fixture else str(fixture['_id'])
 
     @classmethod
-    def bulk_write_stats(cls, fixtures: list):
+    def bulk_write(cls, fixtures: list, fields: list):
+        """Update multiple fixtures with a single query
+        Args:
+            fixtures (list): fixtures to update
+            fields: Specific fields to update, should be a subset of
+                BULK_WRITE_ALLOWED
+        """
+        if not set(fields).issubset(cls.BULK_WRITE_ALLOWED):
+            raise ValueError("Input fields {0} should be a subset of {1}".\
+                             format(fields, cls.BULK_WRITE_ALLOWED))
+
         requests = []
-        for f in fixtures:
+        for fixture in fixtures:
+            _set = {field: fixture.get(field) for field in fields}
             upd_req = pymongo.UpdateOne(
-                {'_id': f['_id']},
-                {'$set': {'open': f['open'],
-                          'close': f['close']}
-                })
+                {'_id': fixture['_id']}, {'$set': _set})
             requests.append(upd_req)
 
         return cls.db_context.bulk_write(requests)
@@ -398,8 +408,8 @@ class Notification(metaclass=BaseModel):
     collection = "notification"
 
     @classmethod
-    def insert(cls, document):
-        cls.db_context.insert_one(document)
+    def insert_many(cls, documents):
+        cls.db_context.insert_many(documents)
 
     @classmethod
     def get_document(self, text, odds, date: datetime):

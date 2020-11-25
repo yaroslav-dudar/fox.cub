@@ -354,7 +354,7 @@ if __name__ == '__main__':
 
     if odds.value:
         Odds.insert_many(odds.value)
-    print(new_fixtures, len(fixtures.value))
+
     pinnacle.close()
 
     if args.o:

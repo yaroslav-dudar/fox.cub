@@ -34,13 +34,19 @@ class Notificator:
     total_field = "under"
 
     def compare_moneyline(self, old_moneyline: dict, new_moneyline: dict):
-        for field in old_moneyline.keys():
-            delta = 1/old_moneyline[field] - 1/new_moneyline[field]
+        for bet in old_moneyline.keys():
+            delta = self.get_chance(old_moneyline, bet) -\
+                    self.get_chance(new_moneyline, bet)
 
             if abs(delta) >= self.threshold:
-                return [LineDelta(delta, field, NotificationType.MONEYLINE)]
+                return [LineDelta(delta, bet, NotificationType.MONEYLINE)]
 
         return []
+
+
+    def get_chance(self, line, bet):
+        """ Returns event probability from 0 to 1"""
+        return 1/line[bet] if line[bet] else 0
 
 
     def find_total(self, totals: list, points: float):
@@ -55,8 +61,8 @@ class Notificator:
         for old_total in old_totals:
             new_total = self.find_total(new_totals, old_total['points'])
             if new_total:
-                delta = 1/old_total[self.total_field] -\
-                    1/new_total[self.total_field]
+                delta = self.get_chance(old_total, self.total_field) -\
+                        self.get_chance(new_total, self.total_field)
 
                 if abs(delta) >= self.threshold:
                     return [LineDelta(delta, self.total_field, NotificationType.TOTAL)]
@@ -72,13 +78,15 @@ class Notificator:
         assert old_keys == new_keys
 
 
-    def process_new_odds(self, fixture: dict, new_odds: dict,
-                        prev_notification: dict = None):
+    def process_new_odds(self, fixture: dict, new_odds: dict):
         """ Process new odds for a given fixture and
         generate notification if needed """
 
-        if prev_notification:
-            old_odds = prev_notification['odds']
+        if self.is_new_fixture(fixture):
+            return self.process_new_fixture(fixture, fixture['open'])
+
+        if fixture.get('notification'):
+            old_odds = fixture['notification']['odds']
         else:
             old_odds = fixture['open']
 
@@ -89,6 +97,11 @@ class Notificator:
 
         return [self.create_notification(fixture, new_odds, delta)
                 for delta in m_delta + t_delta]
+
+
+    def is_new_fixture(self, fixture: dict):
+        """ Check if fixture has only one odd record """
+        return str(fixture['open']['_id']) == str(fixture['close']['_id'])
 
 
     def process_new_fixture(self, fixture: dict, odds: dict):
