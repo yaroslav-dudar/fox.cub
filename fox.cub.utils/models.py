@@ -136,7 +136,7 @@ class Odds(metaclass=BaseModel):
 class Fixture(metaclass=BaseModel):
     collection = "fixtures"
 
-    BULK_WRITE_ALLOWED = {"open", "close", "note"}
+    BULK_WRITE_ALLOWED = {"open", "close", "notification"}
 
     @classmethod
     def add(cls, document):

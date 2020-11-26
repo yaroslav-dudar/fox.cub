@@ -19,7 +19,7 @@ class NotificationType(Enum):
 class LineDelta:
 
     def __init__(self, delta, line, line_type: NotificationType):
-        self.delta = delta # line diff in #
+        self.delta = delta * 100 # line diff in %
         self.line = line # line naming
         self.line_type: NotificationType = line_type
 
