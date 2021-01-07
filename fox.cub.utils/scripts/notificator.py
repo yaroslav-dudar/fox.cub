@@ -9,6 +9,7 @@ from models import Notification
 from datetime import datetime
 from enum import Enum
 
+
 class NotificationType(Enum):
     SPREAD    = 'spread'
     TOTAL     = 'total'
@@ -18,8 +19,11 @@ class NotificationType(Enum):
 
 class LineDelta:
 
-    def __init__(self, delta, line, line_type: NotificationType):
+    def __init__(self, prev_price: float, new_price: float,
+                 delta: float, line: str, line_type: NotificationType):
         self.delta = delta * 100 # line diff in %
+        self.prev_price = prev_price
+        self.new_price = new_price
         self.line = line # line naming
         self.line_type: NotificationType = line_type
 
@@ -39,7 +43,8 @@ class Notificator:
                     self.get_chance(new_moneyline, bet)
 
             if abs(delta) >= self.threshold:
-                return [LineDelta(delta, bet, NotificationType.MONEYLINE)]
+                return [LineDelta(old_moneyline[bet], new_moneyline[bet],
+                        delta, bet, NotificationType.MONEYLINE)]
 
         return []
 
@@ -63,9 +68,12 @@ class Notificator:
             if new_total:
                 delta = self.get_chance(old_total, self.total_field) -\
                         self.get_chance(new_total, self.total_field)
+                line_name = '{0} {1}'.format(self.total_field, old_total['points'])
 
                 if abs(delta) >= self.threshold:
-                    return [LineDelta(delta, self.total_field, NotificationType.TOTAL)]
+                    return [LineDelta(old_total[self.total_field],
+                                      new_total[self.total_field], delta,
+                                      line_name, NotificationType.TOTAL)]
                 else:
                     return []
 
@@ -79,8 +87,11 @@ class Notificator:
 
 
     def process_new_odds(self, fixture: dict, new_odds: dict):
-        """ Process new odds for a given fixture and
-        generate notification if needed """
+        """
+        Process new odds for a given fixture and
+        generate notification if needed. Generate diff based on prev
+        notification, if not exists - use open line
+        """
 
         if self.is_new_fixture(fixture):
             return self.process_new_fixture(fixture, fixture['open'])
@@ -113,7 +124,7 @@ class Notificator:
 
     def create_notification(self, fixture, odds, linedelta: LineDelta=None):
         type_text_pattern = "NOTIFICATION TYPE - [{0}]."
-        fixture_text = "[{0}] {1} - {2}.".format(fixture["tournament_name"],
+        fixture_text = "*{0}* *{1}* - *{2}*.".format(fixture["tournament_name"],
                                              fixture["home_name"],
                                              fixture["away_name"])
         if not linedelta:
@@ -121,7 +132,9 @@ class Notificator:
             delta_text = ''
         else:
             type_text  = type_text_pattern.format(linedelta.line_type.value)
-            delta_text = '[{0}] moved by [{1}]'.format(linedelta.line, linedelta.delta)
+            delta_text = '[{0}] moved FROM *{1}* TO *{2}*. Diff is - *{3}*'.\
+                         format(linedelta.line, linedelta.prev_price,
+                                linedelta.new_price, linedelta.delta)
 
         text = " ".join([type_text, fixture_text, delta_text])
         return Notification.get_document(text, odds, datetime.utcnow())

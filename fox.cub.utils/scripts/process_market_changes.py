@@ -22,6 +22,8 @@ from typing import Optional
 
 from utils import str2datetime, init_logger, SharedDataObj
 from scripts.notificator import Notificator
+from messenger import BaseMessenger, messenger_factory
+
 from models import (
     Fixture as FixtureModel, Odds, Tournament,
     Team, MongoClient, Pinnacle, Notification)
@@ -45,6 +47,8 @@ def parse_args():
                         help='Collect stats for fixtures to this date. Ignored data transfered via stdin')
     parser.add_argument('-test', default=False, action='store_true',
                         help='Disable write to DB.')
+    parser.add_argument('-messenger', default=None, type=messenger_factory,
+                        help='Enable messenger notifications')
     return parser.parse_args()
 
 
@@ -71,12 +75,15 @@ class FixtureDelta:
 
 class DeltaProcessor:
 
-    def __init__(self, shared_data: Optional[SharedDataObj], start, end):
+    def __init__(self, start, end,
+                 messenger: Optional[BaseMessenger],
+                 shared_data: Optional[SharedDataObj]):
         self.start = start
         self.end = end
         self.shared_data = shared_data
         self.notificator = Notificator()
         self.init_data()
+        self.messenger = messenger
 
 
     def init_data(self):
@@ -138,17 +145,21 @@ class DeltaProcessor:
         for n in fixture_notifications:
             logger.info(n['text'])
 
+            if self.messenger:
+                self.messenger.send_message(n['text'])
+
 
 if __name__ == '__main__':
     start_at = time.time()
-
     args = parse_args()
     shared_data = read_stdin()
-    processor = DeltaProcessor(shared_data, args.start, args.end)
+
+    processor = DeltaProcessor(args.start, args.end,
+                               args.messenger, shared_data)
     fixtures = processor.modify_fixture_stats()
     for f in fixtures:
         processor.generate_notification(f)
 
-    res = processor.write_fixtures(fixtures)
+    #res = processor.write_fixtures(fixtures)
     logger.info("Stats collection finished: {}. Execution time: {}"
         .format(res.bulk_api_result, time.time() - start_at))
