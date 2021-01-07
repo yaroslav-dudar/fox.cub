@@ -160,6 +160,6 @@ if __name__ == '__main__':
     for f in fixtures:
         processor.generate_notification(f)
 
-    #res = processor.write_fixtures(fixtures)
+    res = processor.write_fixtures(fixtures)
     logger.info("Stats collection finished: {}. Execution time: {}"
         .format(res.bulk_api_result, time.time() - start_at))
