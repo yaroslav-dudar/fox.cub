@@ -6,8 +6,10 @@ from datetime import timedelta
 
 import pymongo
 from bson.objectid import ObjectId
+from bson.codec_options import TypeRegistry, CodecOptions
 
 from config import Config
+from scripts.notificator import LineDeltaCodec
 
 class Connection:
     def __set_name__(self, owner, name):
@@ -33,7 +35,10 @@ class BaseModel(type):
         if attr.get("capped_settings"):
             cls.setup_capped_collection(attr)
 
-        attr['db_context'] = attr['client'].db[attr["collection"]]
+        attr['db_context'] = attr['client'].db.get_collection(
+            attr["collection"],
+            codec_options=attr.get('codec_options'))
+
         return super().__new__(cls, name, bases, attr)
 
 
@@ -135,6 +140,7 @@ class Odds(metaclass=BaseModel):
 
 class Fixture(metaclass=BaseModel):
     collection = "fixtures"
+    codec_options = CodecOptions(type_registry=TypeRegistry([LineDeltaCodec()]))
 
     BULK_WRITE_ALLOWED = {"open", "close", "notification"}
 

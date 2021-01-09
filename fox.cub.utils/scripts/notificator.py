@@ -3,12 +3,13 @@
 This module creates notifications, described market changes and movement
 """
 
-from typing import List, Dict
-from models import Notification
+from bson.codec_options import TypeCodec
 
+from typing import List, Dict
 from datetime import datetime
 from enum import Enum
 
+import models
 
 class NotificationType(Enum):
     SPREAD    = 'spread'
@@ -28,10 +29,25 @@ class LineDelta:
         self.line_type: NotificationType = line_type
 
     def __repr__(self):
-        return 'LineDelta(new_price={0}, prev_price={1},' +\
-               ' delta={2}, line={3}, line_type={4})'.\
+        return ('LineDelta(new_price={0}, prev_price={1},' +\
+               ' delta={2}, line={3}, line_type={4})').\
                format(self.new_price, self.prev_price,
                       self.delta, self.line, self.line_type)
+
+
+class LineDeltaCodec(TypeCodec):
+    python_type = LineDelta    # the Python type acted upon by this type codec
+    bson_type = str   # the BSON type acted upon by this type codec
+
+    def transform_python(self, value):
+        """Function that transforms a custom type value into a type
+        that BSON can encode."""
+        return str(value)
+
+    def transform_bson(self, value):
+        """Function that transforms a vanilla BSON type value into our
+        custom type."""
+        return value
 
 
 class Notificator:
@@ -125,4 +141,4 @@ class Notificator:
 
 
     def create_notification(self, fixture, odds, linedelta: LineDelta=None):
-        return Notification.get_document(linedelta, odds, datetime.utcnow())
+        return models.Notification.get_document(linedelta, odds, datetime.utcnow())
