@@ -21,15 +21,17 @@ class LineDelta:
 
     def __init__(self, prev_price: float, new_price: float,
                  delta: float, line: str, line_type: NotificationType):
-        self.delta = delta * 100 # line diff in %
+        self.delta = round(delta * 100, 2) # line diff in %
         self.prev_price = prev_price
         self.new_price = new_price
         self.line = line # line naming
         self.line_type: NotificationType = line_type
 
     def __repr__(self):
-        return 'LineDelta(delta={0},line={1},line_type={2})'.\
-            format(self.delta, self.line, self.line_type)
+        return 'LineDelta(new_price={0}, prev_price={1},' +\
+               ' delta={2}, line={3}, line_type={4})'.\
+               format(self.new_price, self.prev_price,
+                      self.delta, self.line, self.line_type)
 
 
 class Notificator:
@@ -123,18 +125,4 @@ class Notificator:
 
 
     def create_notification(self, fixture, odds, linedelta: LineDelta=None):
-        type_text_pattern = "NOTIFICATION TYPE - [{0}]."
-        fixture_text = "*{0}* *{1}* - *{2}*.".format(fixture["tournament_name"],
-                                             fixture["home_name"],
-                                             fixture["away_name"])
-        if not linedelta:
-            type_text  = type_text_pattern.format(NotificationType.FIXTURE.value)
-            delta_text = ''
-        else:
-            type_text  = type_text_pattern.format(linedelta.line_type.value)
-            delta_text = '[{0}] moved FROM *{1}* TO *{2}*. Diff is - *{3}*'.\
-                         format(linedelta.line, linedelta.prev_price,
-                                linedelta.new_price, linedelta.delta)
-
-        text = " ".join([type_text, fixture_text, delta_text])
-        return Notification.get_document(text, odds, datetime.utcnow())
+        return Notification.get_document(linedelta, odds, datetime.utcnow())

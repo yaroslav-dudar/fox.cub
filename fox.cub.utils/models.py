@@ -412,9 +412,9 @@ class Notification(metaclass=BaseModel):
         cls.db_context.insert_many(documents)
 
     @classmethod
-    def get_document(self, text, odds, date: datetime):
+    def get_document(self, delta, odds, date: datetime):
         return {
-            "text": text,
+            "delta": delta,
             "odds": odds,
             "date": date
         }

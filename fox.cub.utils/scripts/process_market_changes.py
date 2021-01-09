@@ -143,10 +143,10 @@ class DeltaProcessor:
             fixture['notification'] = fixture_notifications[0]
 
         for n in fixture_notifications:
-            logger.info(n['text'])
+            logger.info(n['delta'])
 
             if self.messenger:
-                self.messenger.send_message(n['text'])
+                self.messenger.send_message(fixture, n['delta'])
 
 
 if __name__ == '__main__':
