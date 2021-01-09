@@ -26,7 +26,7 @@ from messenger import BaseMessenger, messenger_factory
 
 from models import (
     Fixture as FixtureModel, Odds, Tournament,
-    Team, MongoClient, Pinnacle, Notification)
+    Team, MongoClient, Pinnacle)
 
 
 logger = init_logger()

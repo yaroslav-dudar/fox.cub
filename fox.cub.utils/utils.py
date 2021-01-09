@@ -3,19 +3,19 @@ from collections import OrderedDict, defaultdict
 from enum import Enum
 from typing import List
 from statistics import mean
-
+from logging.handlers import RotatingFileHandler
 import os
 import time
 import uuid
 import functools
 import logging
-from logging.handlers import RotatingFileHandler
 import sys
+
+import gevent.pool
+from bson.codec_options import TypeCodec
 
 from games import BaseGame
 from fox_cub_client import FoxCub
-import gevent.pool
-
 
 class League:
 
@@ -326,3 +326,35 @@ def init_logger():
     sys.stderr = err_fp
 
     return logger
+
+
+class LineDelta:
+
+    def __init__(self, prev_price: float, new_price: float,
+                 delta: float, line: str, line_type):
+        self.delta = round(delta * 100, 2) # line diff in %
+        self.prev_price = prev_price
+        self.new_price = new_price
+        self.line = line # line naming
+        self.line_type = line_type
+
+    def __repr__(self):
+        return ('LineDelta(new_price={0}, prev_price={1},' +\
+               ' delta={2}, line={3}, line_type={4})').\
+               format(self.new_price, self.prev_price,
+                      self.delta, self.line, self.line_type)
+
+
+class LineDeltaCodec(TypeCodec):
+    python_type = LineDelta    # the Python type acted upon by this type codec
+    bson_type = str   # the BSON type acted upon by this type codec
+
+    def transform_python(self, value):
+        """Function that transforms a custom type value into a type
+        that BSON can encode."""
+        return str(value)
+
+    def transform_bson(self, value):
+        """Function that transforms a vanilla BSON type value into our
+        custom type."""
+        return value

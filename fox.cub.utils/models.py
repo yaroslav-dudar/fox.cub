@@ -9,7 +9,7 @@ from bson.objectid import ObjectId
 from bson.codec_options import TypeRegistry, CodecOptions
 
 from config import Config
-from scripts.notificator import LineDeltaCodec
+from utils import LineDeltaCodec
 
 class Connection:
     def __set_name__(self, owner, name):
@@ -140,9 +140,8 @@ class Odds(metaclass=BaseModel):
 
 class Fixture(metaclass=BaseModel):
     collection = "fixtures"
-    codec_options = CodecOptions(type_registry=TypeRegistry([LineDeltaCodec()]))
-
     BULK_WRITE_ALLOWED = {"open", "close", "notification"}
+    codec_options = CodecOptions(type_registry=TypeRegistry([LineDeltaCodec()]))
 
     @classmethod
     def add(cls, document):
